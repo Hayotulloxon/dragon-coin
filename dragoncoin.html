@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dragon Coin - Tap to Earn</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%),
+                linear-gradient(135deg, #0a0a0f 0%, #1a0a1a 25%, #0f0a1a 50%, #1a1a0f 75%, #0a0f1a 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            user-select: none;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 98px,
+                    rgba(0, 255, 136, 0.03) 100px
+                ),
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 98px,
+                    rgba(255, 107, 53, 0.03) 100px
+                );
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(20px);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid rgba(0, 255, 136, 0.3);
+            box-shadow: 
+                0 0 20px rgba(0, 255, 136, 0.2),
+                inset 0 0 20px rgba(255, 255, 255, 0.05);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .level-badge {
+            background: #00ff88;
+            color: #000;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .energy-bar {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 8px 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .energy-fill {
+            width: 100px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .energy-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #00cc6a);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .main-container {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .navigation-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .nav-tab {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-tab:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(0, 255, 136, 0.5);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(45deg, #00ff88, #00cc6a);
+            color: #000000;
+            border-color: #00ff88;
+            box-shadow: 
+                0 0 30px rgba(0, 255, 136, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+
+        .balance-display {
+            margin-bottom: 30px;
+        }
+
+        .balance-amount {
+            font-size: 48px;
+            font-weight: bold;
+            color: #00ff88;
+            margin-bottom: 5px;
+            text-shadow: 
+                0 0 10px #00ff88,
+                0 0 20px #00ff88,
+                0 0 30px #00ff88,
+                0 0 40px #00ff88;
+            animation: balanceGlow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes balanceGlow {
+            0% {
+                text-shadow: 
+                    0 0 10px #00ff88,
+                    0 0 20px #00ff88,
+                    0 0 30px #00ff88,
+                    0 0 40px #00ff88;
+            }
+            100% {
+                text-shadow: 
+                    0 0 15px #00ff88,
+                    0 0 30px #00ff88,
+                    0 0 45px #00ff88,
+                    0 0 60px #00ff88;
+            }
+        }
+
+        .balance-label {
+            color: #cccccc;
+            font-size: 16px;
+        }
+
+        .coin-container {
+            position: relative;
+            margin: 40px auto;
+            width: 250px;
+            height: 250px;
+        }
+
+        .main-coin {
+            width: 250px;
+            height: 250px;
+            background: 
+                radial-gradient(ellipse at 30% 20%, rgba(255, 255, 255, 0.9) 0%, transparent 25%),
+                radial-gradient(ellipse at 70% 80%, rgba(255, 215, 0, 0.4) 0%, transparent 40%),
+                linear-gradient(145deg, #FFD700 0%, #FFA500 30%, #FF8C00 60%, #FFD700 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 100px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border: 4px solid #FFD700;
+            box-shadow: 
+                0 15px 35px rgba(255, 215, 0, 0.4),
+                0 5px 15px rgba(0, 0, 0, 0.3),
+                inset 0 5px 20px rgba(255, 255, 255, 0.4),
+                inset 0 -5px 20px rgba(255, 140, 0, 0.3);
+            transform: perspective(1000px) rotateX(10deg);
+        }
+
+        @keyframes coinGlow {
+            0% {
+                box-shadow: 
+                    0 15px 35px rgba(255, 215, 0, 0.4),
+                    0 5px 15px rgba(0, 0, 0, 0.3),
+                    inset 0 5px 20px rgba(255, 255, 255, 0.4),
+                    inset 0 -5px 20px rgba(255, 140, 0, 0.3);
+            }
+            100% {
+                box-shadow: 
+                    0 20px 45px rgba(255, 215, 0, 0.6),
+                    0 8px 25px rgba(0, 0, 0, 0.4),
+                    inset 0 8px 30px rgba(255, 255, 255, 0.6),
+                    inset 0 -8px 30px rgba(255, 140, 0, 0.5);
+            }
+        }
+
+        .main-coin:hover {
+            transform: perspective(1000px) rotateX(5deg) scale(1.05);
+            box-shadow: 
+                0 25px 50px rgba(255, 215, 0, 0.8),
+                0 10px 30px rgba(0, 0, 0, 0.5),
+                inset 0 10px 40px rgba(255, 255, 255, 0.7),
+                inset 0 -10px 40px rgba(255, 140, 0, 0.6);
+        }
+
+        .main-coin:active {
+            transform: perspective(1000px) rotateX(15deg) scale(0.95);
+            box-shadow: 
+                0 10px 25px rgba(255, 215, 0, 0.6),
+                0 3px 10px rgba(0, 0, 0, 0.4),
+                inset 0 3px 15px rgba(255, 255, 255, 0.5),
+                inset 0 -3px 15px rgba(255, 140, 0, 0.4);
+        }
+
+        .main-coin::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 10%;
+            width: 80%;
+            height: 80%;
+            background: 
+                radial-gradient(ellipse at 40% 30%, rgba(255, 255, 255, 0.8) 0%, transparent 50%);
+            border-radius: 50%;
+            animation: coinGlow 3s ease-in-out infinite alternate;
+        }
+
+        .main-coin::after {
+            content: '🐉';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 100px;
+            text-shadow: 
+                2px 2px 4px rgba(0, 0, 0, 0.3),
+                0 0 20px rgba(255, 215, 0, 0.5);
+            z-index: 2;
+        }
+
+
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .tap-effect {
+            position: absolute;
+            color: #00ff88;
+            font-size: 24px;
+            font-weight: bold;
+            pointer-events: none;
+            text-shadow: 
+                0 0 10px #00ff88,
+                0 0 20px #00ff88,
+                0 0 30px #00ff88,
+                0 0 40px #00ff88;
+            animation: neonFloatUp 1s ease-out forwards;
+        }
+
+        @keyframes neonFloatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                text-shadow: 
+                    0 0 10px #00ff88,
+                    0 0 20px #00ff88,
+                    0 0 30px #00ff88,
+                    0 0 40px #00ff88;
+            }
+            50% {
+                transform: translateY(-50px) scale(1.2);
+                text-shadow: 
+                    0 0 15px #00ff88,
+                    0 0 30px #00ff88,
+                    0 0 45px #00ff88,
+                    0 0 60px #00ff88;
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px) scale(0.8);
+                text-shadow: 
+                    0 0 5px #00ff88,
+                    0 0 10px #00ff88,
+                    0 0 15px #00ff88,
+                    0 0 20px #00ff88;
+            }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 30px 0;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            box-shadow: 
+                0 0 20px rgba(0, 255, 136, 0.2),
+                inset 0 0 20px rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            border-color: rgba(0, 255, 136, 0.6);
+            box-shadow: 
+                0 0 30px rgba(0, 255, 136, 0.4),
+                inset 0 0 30px rgba(255, 255, 255, 0.1);
+            transform: translateY(-5px);
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ff88;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #cccccc;
+            margin-top: 5px;
+        }
+
+        .conditions-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .condition-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .condition-item:last-child {
+            border-bottom: none;
+        }
+
+        .task-button {
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .task-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(0, 255, 136, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.2);
+        }
+
+        .task-button.completed {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: #00ff88;
+            cursor: default;
+        }
+
+        .task-button.completed:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .task-button.task-ready {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: #00ff88;
+            animation: taskPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes taskPulse {
+            0% { box-shadow: 0 0 10px rgba(0, 255, 136, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(0, 255, 136, 0.6); }
+            100% { box-shadow: 0 0 10px rgba(0, 255, 136, 0.3); }
+        }
+
+        .condition-text {
+            flex: 1;
+        }
+
+        .condition-reward {
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        .condition-status {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+
+        .condition-completed {
+            background: #00ff88;
+        }
+
+        .condition-pending {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .boost-section {
+            margin-top: 30px;
+        }
+
+        .boost-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .boost-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .boost-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .boost-card.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .section {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .boost-description {
+            font-size: 12px;
+            color: #cccccc;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .boost-icon {
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+
+        .boost-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .boost-cost {
+            color: #ff6b35;
+            font-size: 14px;
+        }
+
+        .warning-message {
+            background: rgba(255, 107, 53, 0.2);
+            border: 1px solid #ff6b35;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #ff6b35;
+        }
+
+        .progress-bar {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            height: 8px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b35, #f7931e);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .login-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .login-form {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            border: 2px solid rgba(255, 107, 53, 0.3);
+            border-radius: 20px;
+            padding: 40px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .login-title {
+            color: #ff6b35;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .login-input:focus {
+            outline: none;
+            border-color: #ff6b35;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .login-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .login-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .login-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .login-btn.primary {
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            color: white;
+        }
+
+        .login-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.4);
+        }
+
+        .login-btn.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .login-btn.secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .login-error {
+            background: rgba(255, 85, 85, 0.2);
+            border: 1px solid #ff5555;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 15px 0;
+            color: #ff5555;
+            font-size: 14px;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .main-coin {
+                width: 200px;
+                height: 200px;
+                font-size: 80px;
+            }
+            
+            .coin-container {
+                width: 200px;
+                height: 200px;
+            }
+            
+            .balance-amount {
+                font-size: 36px;
+            }
+
+            .login-form {
+                padding: 30px 20px;
+                margin: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="user-info">
+            <div class="avatar">🐉</div>
+            <div>
+                <div style="font-weight: bold;">Dragon Miner</div>
+                <div class="level-badge" id="levelBadge">Level 1</div>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <button onclick="showAdminLogin()" style="background: #ff6b35; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-size: 12px; cursor: pointer;">👑 Admin</button>
+            <div class="energy-bar">
+                <span>⚡</span>
+                <div class="energy-fill">
+                    <div class="energy-progress" id="energyProgress"></div>
+                </div>
+                <span id="energyText">1000/1000</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="navigation-tabs">
+            <button class="nav-tab active" id="tapTab" onclick="showSection('tap')">🐉 Tapping</button>
+            <button class="nav-tab" id="tasksTab" onclick="showSection('tasks')">📋 Vazifalar</button>
+            <button class="nav-tab" id="boostTab" onclick="showSection('boost')">🚀 Boostlar</button>
+        </div>
+
+        <div class="balance-display">
+            <div class="balance-amount" id="balance">0</div>
+            <div class="balance-label">Dragon Coins</div>
+        </div>
+
+        <div class="section" id="tapSection">
+            <div class="coin-container">
+                <div class="main-coin" id="mainCoin" onclick="tapCoin()">
+                    🐉
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="tapPower">1</div>
+                    <div class="stat-label">Coins per tap</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalTaps">0</div>
+                    <div class="stat-label">Total taps</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="level">1</div>
+                    <div class="stat-label">Level</div>
+                </div>
+            </div>
+
+            <div id="energyWarning" class="warning-message" style="display: none;">
+                ⚠️ Energy bo'sh! Energiya to'lishi uchun kutib turing yoki boost sotib oling.
+            </div>
+        </div>
+
+        <div class="section" id="tasksSection" style="display: none;">
+            <div class="conditions-panel" id="conditionsPanel">
+                <h3 style="margin-bottom: 15px; color: #ff6b35;">📋 Vazifalar</h3>
+                <div class="condition-item task-button" onclick="claimTask('taps')" id="tapTask">
+                    <div class="condition-text">
+                        <div>500 marta tap qiling</div>
+                        <div style="font-size: 12px; color: #ccc;">Progress: <span id="tapProgress">0</span>/500</div>
+                    </div>
+                    <div class="condition-reward">+1000 DRC</div>
+                    <div class="condition-status condition-pending" id="tapCondition"></div>
+                </div>
+                <div class="condition-item task-button" onclick="claimTask('level')" id="levelTask">
+                    <div class="condition-text">
+                        <div>Level 5 ga yeting</div>
+                        <div style="font-size: 12px; color: #ccc;">Hozirgi level: <span id="currentLevel">1</span></div>
+                    </div>
+                    <div class="condition-reward">+2000 DRC</div>
+                    <div class="condition-status condition-pending" id="levelCondition"></div>
+                </div>
+                <div class="condition-item task-button" onclick="claimTask('coins')" id="coinTask">
+                    <div class="condition-text">
+                        <div>10000 coin to'plang</div>
+                        <div style="font-size: 12px; color: #ccc;">Progress: <span id="coinProgress">0</span>/10000</div>
+                    </div>
+                    <div class="condition-reward">+5000 DRC</div>
+                    <div class="condition-status condition-pending" id="coinCondition"></div>
+                </div>
+                <div id="customConditionsContainer"></div>
+            </div>
+        </div>
+
+        <div class="admin-panel" id="adminPanel" style="display: none;">
+            <h3 style="margin-bottom: 15px; color: #ff6b35;">👑 Admin Panel</h3>
+            <div style="background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
+                <h4 style="margin-bottom: 15px;">Yangi shart qo'shish</h4>
+                <input type="text" id="conditionText" placeholder="Shart matni" style="width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: none; background: rgba(255,255,255,0.1); color: white;">
+                <input type="number" id="conditionTarget" placeholder="Maqsad (masalan: 500)" style="width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: none; background: rgba(255,255,255,0.1); color: white;">
+                <input type="number" id="conditionReward" placeholder="Mukofot (DRC)" style="width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: none; background: rgba(255,255,255,0.1); color: white;">
+                <select id="conditionType" style="width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: none; background: rgba(255,255,255,0.1); color: white;">
+                    <option value="taps">Tap soni</option>
+                    <option value="balance">Balans</option>
+                    <option value="level">Level</option>
+                    <option value="telegram">Telegram obuna</option>
+                    <option value="youtube">YouTube obuna</option>
+                    <option value="video_code">Video kod</option>
+                </select>
+                <input type="text" id="conditionLink" placeholder="Link (Telegram/YouTube uchun)" style="width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: none; background: rgba(255,255,255,0.1); color: white; display: none;">
+                <input type="text" id="conditionCode" placeholder="Video kodi" style="width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: none; background: rgba(255,255,255,0.1); color: white; display: none;">
+                <button onclick="addCondition()" style="width: 100%; padding: 10px; margin: 10px 0; background: #00ff88; color: black; border: none; border-radius: 5px; font-weight: bold;">Shart qo'shish</button>
+            </div>
+            <div id="adminConditionsList"></div>
+            
+            <div style="background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 20px; margin-top: 20px;">
+                <h4 style="margin-bottom: 15px; color: #ff6b35;">🔒 Xavfsizlik Logi</h4>
+                <button onclick="showSecurityLog()" style="background: #ff6b35; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-bottom: 10px;">📊 Login urinishlarini ko'rish</button>
+                <button onclick="clearSecurityLog()" style="background: #ff5555; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-bottom: 10px; margin-left: 10px;">🗑️ Logni tozalash</button>
+                <div id="securityLogDisplay" style="max-height: 200px; overflow-y: auto; margin-top: 10px;"></div>
+            </div>
+        </div>
+
+        <div class="section" id="boostSection" style="display: none;">
+            <div class="boost-section">
+                <h3 style="margin-bottom: 15px; color: #ff6b35;">🚀 Boostlar</h3>
+                <div class="boost-grid">
+                    <div class="boost-card" onclick="buyBoost('energy')">
+                        <div class="boost-icon">⚡</div>
+                        <div class="boost-name">Energy Refill</div>
+                        <div class="boost-cost">100 DRC</div>
+                        <div class="boost-description">Energiyani to'liq tiklaydi</div>
+                    </div>
+                    <div class="boost-card" onclick="buyBoost('power')" id="powerBoost">
+                        <div class="boost-icon">💪</div>
+                        <div class="boost-name">Tap Power +1</div>
+                        <div class="boost-cost">500 DRC</div>
+                        <div class="boost-description">Har bir tap uchun +1 coin</div>
+                    </div>
+                    <div class="boost-card" onclick="buyBoost('maxEnergy')" id="energyBoost">
+                        <div class="boost-icon">🔋</div>
+                        <div class="boost-name">Max Energy +500</div>
+                        <div class="boost-cost">1000 DRC</div>
+                        <div class="boost-description">Maksimal energiyani oshiradi</div>
+                    </div>
+                    <div class="boost-card" onclick="buyBoost('autoTap')" id="autoTapBoost">
+                        <div class="boost-icon">🤖</div>
+                        <div class="boost-name">Auto Tap (4h)</div>
+                        <div class="boost-cost">5000 DRC</div>
+                        <div class="boost-description">4 soat avtomatik tap qiladi</div>
+                    </div>
+                    <div class="boost-card" onclick="buyBoost('energyRegen')" id="energyRegenBoost">
+                        <div class="boost-icon">⚡</div>
+                        <div class="boost-name">Fast Energy Regen</div>
+                        <div class="boost-cost">1500 DRC</div>
+                        <div class="boost-description">Energiya 2x tez tiklanadi</div>
+                    </div>
+                    <div class="boost-card" onclick="buyBoost('coinMultiplier')" id="coinMultiplierBoost">
+                        <div class="boost-icon">💰</div>
+                        <div class="boost-name">2x Coin (30min)</div>
+                        <div class="boost-cost">3000 DRC</div>
+                        <div class="boost-description">30 daqiqa 2x coin olasiz</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div class="login-modal" id="loginModal" style="display: none;">
+        <div class="login-form">
+            <div class="login-title">
+                👑 Admin Panel
+            </div>
+            <div class="login-error" id="loginError"></div>
+            <input type="text" class="login-input" id="usernameInput" placeholder="Username kiriting" autocomplete="username">
+            <input type="password" class="login-input" id="passwordInput" placeholder="Parol kiriting" autocomplete="current-password">
+            <div class="login-buttons">
+                <button class="login-btn secondary" onclick="closeLoginModal()">Bekor qilish</button>
+                <button class="login-btn primary" onclick="attemptLogin()">Kirish</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let gameState = {
+            balance: 0,
+            energy: 1000,
+            maxEnergy: 1000,
+            tapPower: 1,
+            totalTaps: 0,
+            level: 1,
+            completedTasks: {
+                taps: false,
+                level: false,
+                coins: false
+            },
+            lastSaveTime: Date.now(),
+            autoTapEndTime: 0,
+            autoTapCoins: 0
+        };
+
+        let customConditions = [];
+        let isAdmin = false;
+        const ADMIN_CREDENTIALS = {
+            username: "dragonadmin",
+            password: "dragon2024"
+        };
+        let adminLoginAttempts = [];
+
+        // Load game state from localStorage
+        function loadGameState() {
+            const saved = localStorage.getItem('dragonCoinGame');
+            if (saved) {
+                const savedState = JSON.parse(saved);
+                gameState = { ...gameState, ...savedState };
+                
+                // Calculate offline energy regeneration
+                const timeDiff = Date.now() - gameState.lastSaveTime;
+                const energyToAdd = Math.floor(timeDiff / 5000); // 1 energy per 5 seconds
+                gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + energyToAdd);
+                
+                // Check offline auto tap collection
+                if (gameState.autoTapEndTime > 0 && gameState.autoTapCoins > 0) {
+                    showAutoTapCollection();
+                }
+            }
+            
+            const savedConditions = localStorage.getItem('dragonCoinConditions');
+            if (savedConditions) {
+                customConditions = JSON.parse(savedConditions);
+            }
+        }
+
+        function showAutoTapCollection() {
+            const collectedCoins = gameState.autoTapCoins;
+            if (collectedCoins > 0) {
+                const collectButton = document.createElement('div');
+                collectButton.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: linear-gradient(45deg, #00ff88, #00cc6a);
+                    color: black;
+                    padding: 20px 30px;
+                    border-radius: 15px;
+                    font-size: 18px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    z-index: 1000;
+                    box-shadow: 0 10px 30px rgba(0, 255, 136, 0.5);
+                    animation: collectPulse 2s ease-in-out infinite;
+                `;
+                collectButton.innerHTML = `
+                    🤖 Auto Tap Natijasi<br>
+                    💰 ${collectedCoins.toLocaleString()} DRC<br>
+                    <small style="color: #333;">Bosib oling!</small>
+                `;
+                
+                collectButton.onclick = function() {
+                    gameState.balance += collectedCoins;
+                    gameState.autoTapCoins = 0;
+                    gameState.autoTapEndTime = 0;
+                    document.body.removeChild(collectButton);
+                    updateUI();
+                    saveGameState();
+                    alert(`🎉 ${collectedCoins.toLocaleString()} DRC yig'ildi! Auto tap yana ishlatishingiz mumkin.`);
+                };
+                
+                document.body.appendChild(collectButton);
+                
+                // Add CSS animation
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes collectPulse {
+                        0% { transform: translate(-50%, -50%) scale(1); }
+                        50% { transform: translate(-50%, -50%) scale(1.05); }
+                        100% { transform: translate(-50%, -50%) scale(1); }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+
+        // Save game state to localStorage
+        function saveGameState() {
+            gameState.lastSaveTime = Date.now();
+            localStorage.setItem('dragonCoinGame', JSON.stringify(gameState));
+            localStorage.setItem('dragonCoinConditions', JSON.stringify(customConditions));
+        }
+
+        // Load admin attempts from localStorage
+        function loadAdminAttempts() {
+            const saved = localStorage.getItem('dragonCoinAdminAttempts');
+            if (saved) {
+                adminLoginAttempts = JSON.parse(saved);
+            }
+        }
+
+        // Save admin attempts to localStorage
+        function saveAdminAttempts() {
+            localStorage.setItem('dragonCoinAdminAttempts', JSON.stringify(adminLoginAttempts));
+        }
+
+        // Admin functions
+        function showAdminLogin() {
+            document.getElementById('loginModal').style.display = 'flex';
+            document.getElementById('usernameInput').focus();
+            // Clear previous inputs and errors
+            document.getElementById('usernameInput').value = '';
+            document.getElementById('passwordInput').value = '';
+            document.getElementById('loginError').style.display = 'none';
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').style.display = 'none';
+        }
+
+        function attemptLogin() {
+            const username = document.getElementById('usernameInput').value;
+            const password = document.getElementById('passwordInput').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            if (!username || !password) {
+                showLoginError("Username va parolni kiriting!");
+                return;
+            }
+            
+            const currentTime = new Date().toLocaleString('uz-UZ');
+            const userAgent = navigator.userAgent;
+            const ipInfo = `Browser: ${navigator.platform}`;
+            
+            if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+                // Successful login
+                isAdmin = true;
+                document.getElementById('adminPanel').style.display = 'block';
+                updateAdminConditionsList();
+                closeLoginModal();
+                
+                // Record successful login
+                const loginRecord = {
+                    type: 'success',
+                    username: username,
+                    time: currentTime,
+                    userAgent: userAgent,
+                    ipInfo: ipInfo
+                };
+                adminLoginAttempts.push(loginRecord);
+                saveAdminAttempts();
+                
+                alert("✅ Admin panelga xush kelibsiz!");
+            } else {
+                // Failed login attempt
+                const failedAttempt = {
+                    type: 'failed',
+                    username: username,
+                    time: currentTime,
+                    userAgent: userAgent,
+                    ipInfo: ipInfo
+                };
+                adminLoginAttempts.push(failedAttempt);
+                saveAdminAttempts();
+                
+                // Show error in modal
+                showLoginError("❌ Noto'g'ri username yoki parol!\n⚠️ Bu urinish qayd etildi va admin xabardor qilindi!");
+                
+                // Show warning to legitimate admin
+                if (adminLoginAttempts.filter(a => a.type === 'failed').length > 0) {
+                    console.warn("🚨 ADMIN OGOHLANTIRISH: Kimdir admin panelga kirishga urinmoqda!");
+                    console.warn("Vaqt:", currentTime);
+                    console.warn("Username:", username);
+                    console.warn("Browser:", userAgent);
+                }
+                
+                // Clear password field
+                document.getElementById('passwordInput').value = '';
+            }
+        }
+
+        function showLoginError(message) {
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function toggleAdmin() {
+            isAdmin = !isAdmin;
+            document.getElementById('adminPanel').style.display = isAdmin ? 'block' : 'none';
+            if (isAdmin) {
+                updateAdminConditionsList();
+            }
+        }
+
+        function addCondition() {
+            const text = document.getElementById('conditionText').value;
+            const target = parseInt(document.getElementById('conditionTarget').value) || 1;
+            const reward = parseInt(document.getElementById('conditionReward').value);
+            const type = document.getElementById('conditionType').value;
+            const link = document.getElementById('conditionLink').value;
+            const code = document.getElementById('conditionCode').value;
+            
+            if (!text || !reward) {
+                alert('Shart matni va mukofotni kiriting!');
+                return;
+            }
+            
+            if ((type === 'telegram' || type === 'youtube') && !link) {
+                alert('Link kiriting!');
+                return;
+            }
+            
+            if (type === 'video_code' && !code) {
+                alert('Video kodini kiriting!');
+                return;
+            }
+            
+            const newCondition = {
+                id: Date.now(),
+                text: text,
+                target: target,
+                reward: reward,
+                type: type,
+                link: link,
+                code: code,
+                completed: false
+            };
+            
+            customConditions.push(newCondition);
+            saveGameState();
+            updateAdminConditionsList();
+            updateConditionsDisplay();
+            
+            // Clear form
+            document.getElementById('conditionText').value = '';
+            document.getElementById('conditionTarget').value = '';
+            document.getElementById('conditionReward').value = '';
+            document.getElementById('conditionLink').value = '';
+            document.getElementById('conditionCode').value = '';
+        }
+
+        // Handle condition type change
+        document.addEventListener('DOMContentLoaded', function() {
+            const typeSelect = document.getElementById('conditionType');
+            const linkInput = document.getElementById('conditionLink');
+            const codeInput = document.getElementById('conditionCode');
+            const targetInput = document.getElementById('conditionTarget');
+            
+            typeSelect.addEventListener('change', function() {
+                const type = this.value;
+                
+                if (type === 'telegram' || type === 'youtube') {
+                    linkInput.style.display = 'block';
+                    codeInput.style.display = 'none';
+                    targetInput.style.display = 'none';
+                } else if (type === 'video_code') {
+                    linkInput.style.display = 'block';
+                    codeInput.style.display = 'block';
+                    targetInput.style.display = 'none';
+                } else {
+                    linkInput.style.display = 'none';
+                    codeInput.style.display = 'none';
+                    targetInput.style.display = 'block';
+                }
+            });
+        });
+
+        function removeCondition(id) {
+            customConditions = customConditions.filter(c => c.id !== id);
+            saveGameState();
+            updateAdminConditionsList();
+            updateConditionsDisplay();
+        }
+
+        function updateAdminConditionsList() {
+            const list = document.getElementById('adminConditionsList');
+            list.innerHTML = '<h4 style="margin-bottom: 10px;">Mavjud shartlar:</h4>';
+            
+            customConditions.forEach(condition => {
+                const div = document.createElement('div');
+                div.style.cssText = 'background: rgba(255,255,255,0.1); padding: 15px; margin: 10px 0; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;';
+                div.innerHTML = `
+                    <div>
+                        <div style="font-weight: bold;">${condition.text}</div>
+                        <div style="font-size: 12px; color: #ccc;">Maqsad: ${condition.target} | Mukofot: ${condition.reward} DRC</div>
+                    </div>
+                    <button onclick="removeCondition(${condition.id})" style="background: #ff5555; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">O'chirish</button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function showSecurityLog() {
+            const display = document.getElementById('securityLogDisplay');
+            display.innerHTML = '';
+            
+            if (adminLoginAttempts.length === 0) {
+                display.innerHTML = '<p style="color: #ccc;">Hech qanday login urinishi topilmadi.</p>';
+                return;
+            }
+            
+            const sortedAttempts = adminLoginAttempts.sort((a, b) => new Date(b.time) - new Date(a.time));
+            
+            sortedAttempts.forEach(attempt => {
+                const div = document.createElement('div');
+                const statusColor = attempt.type === 'success' ? '#00ff88' : '#ff5555';
+                const statusIcon = attempt.type === 'success' ? '✅' : '❌';
+                const statusText = attempt.type === 'success' ? 'Muvaffaqiyatli' : 'Muvaffaqiyatsiz';
+                
+                div.style.cssText = `background: rgba(255,255,255,0.05); padding: 10px; margin: 5px 0; border-radius: 8px; border-left: 3px solid ${statusColor};`;
+                div.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: bold; color: ${statusColor};">${statusIcon} ${statusText}</div>
+                            <div style="font-size: 12px; color: #ccc;">Username: ${attempt.username}</div>
+                            <div style="font-size: 12px; color: #ccc;">Vaqt: ${attempt.time}</div>
+                            <div style="font-size: 12px; color: #ccc;">${attempt.ipInfo}</div>
+                        </div>
+                    </div>
+                `;
+                display.appendChild(div);
+            });
+        }
+
+        function clearSecurityLog() {
+            if (confirm('Barcha xavfsizlik loglarini o\'chirmoqchimisiz?')) {
+                adminLoginAttempts = [];
+                saveAdminAttempts();
+                document.getElementById('securityLogDisplay').innerHTML = '<p style="color: #ccc;">Loglar tozalandi.</p>';
+                alert('✅ Xavfsizlik loglari tozalandi!');
+            }
+        }
+
+        // Energy regeneration (slower - 1 energy per 5 seconds)
+        setInterval(() => {
+            if (gameState.energy < gameState.maxEnergy) {
+                gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + 1);
+                updateUI();
+                saveGameState();
+            }
+        }, 5000); // 1 energy per 5 seconds
+
+        function tapCoin() {
+            if (gameState.energy <= 0) {
+                showEnergyWarning();
+                return;
+            }
+
+            // Decrease energy
+            gameState.energy -= 1;
+            
+            // Add coins (with multiplier if active)
+            const coinsToAdd = coinMultiplierActive ? gameState.tapPower * 2 : gameState.tapPower;
+            gameState.balance += coinsToAdd;
+            gameState.totalTaps += 1;
+
+            // Check level up
+            checkLevelUp();
+            
+            // Check conditions
+            checkConditions();
+            
+            // Create tap effect
+            createTapEffect();
+            
+            // Update UI
+            updateUI();
+            
+            // Save game state
+            saveGameState();
+            
+            // Hide energy warning if shown
+            document.getElementById('energyWarning').style.display = 'none';
+        }
+
+        function createTapEffect() {
+            const coin = document.getElementById('mainCoin');
+            const effect = document.createElement('div');
+            effect.className = 'tap-effect';
+            const coinsToShow = coinMultiplierActive ? gameState.tapPower * 2 : gameState.tapPower;
+            effect.textContent = '+' + coinsToShow + (coinMultiplierActive ? ' (2x)' : '');
+            
+            // Random position around the coin
+            const angle = Math.random() * 2 * Math.PI;
+            const radius = 80;
+            const x = Math.cos(angle) * radius;
+            const y = Math.sin(angle) * radius;
+            
+            effect.style.left = (125 + x) + 'px';
+            effect.style.top = (125 + y) + 'px';
+            
+            coin.parentElement.appendChild(effect);
+            
+            setTimeout(() => {
+                if (effect.parentElement) {
+                    effect.parentElement.removeChild(effect);
+                }
+            }, 1000);
+        }
+
+        function checkLevelUp() {
+            const newLevel = Math.floor(gameState.totalTaps / 200) + 1; // Slower: 200 taps per level
+            if (newLevel > gameState.level) {
+                gameState.level = newLevel;
+                gameState.balance += 100 * newLevel; // Level up bonus
+                showLevelUpEffect();
+            }
+        }
+
+        function showLevelUpEffect() {
+            alert(`🎉 Level Up! Siz ${gameState.level} levelga yetdingiz! Bonus: ${100 * gameState.level} DRC`);
+        }
+
+        function checkConditions() {
+            // Check default tap condition
+            if (!gameState.completedTasks.taps && gameState.totalTaps >= 500) {
+                document.getElementById('tapTask').classList.add('task-ready');
+                document.getElementById('tapCondition').className = 'condition-status condition-completed';
+            }
+
+            // Check default level condition
+            if (!gameState.completedTasks.level && gameState.level >= 5) {
+                document.getElementById('levelTask').classList.add('task-ready');
+                document.getElementById('levelCondition').className = 'condition-status condition-completed';
+            }
+
+            // Check default coin condition
+            if (!gameState.completedTasks.coins && gameState.balance >= 10000) {
+                document.getElementById('coinTask').classList.add('task-ready');
+                document.getElementById('coinCondition').className = 'condition-status condition-completed';
+            }
+
+            // Check custom conditions
+            customConditions.forEach(condition => {
+                if (!condition.completed) {
+                    let currentValue = 0;
+                    switch(condition.type) {
+                        case 'taps':
+                            currentValue = gameState.totalTaps;
+                            break;
+                        case 'balance':
+                            currentValue = gameState.balance;
+                            break;
+                        case 'level':
+                            currentValue = gameState.level;
+                            break;
+                    }
+                    
+                    if (currentValue >= condition.target) {
+                        condition.completed = true;
+                        gameState.balance += condition.reward;
+                        showTaskComplete(`${condition.text} bajarildi! +${condition.reward} DRC`);
+                        saveGameState();
+                    }
+                }
+            });
+        }
+
+        function claimTask(taskType) {
+            let canClaim = false;
+            let reward = 0;
+            let message = '';
+
+            switch(taskType) {
+                case 'taps':
+                    if (!gameState.completedTasks.taps && gameState.totalTaps >= 500) {
+                        gameState.completedTasks.taps = true;
+                        reward = 1000;
+                        message = '500 tap vazifasi bajarildi!';
+                        canClaim = true;
+                        document.getElementById('tapTask').classList.add('completed');
+                        document.getElementById('tapTask').classList.remove('task-ready');
+                    }
+                    break;
+                case 'level':
+                    if (!gameState.completedTasks.level && gameState.level >= 5) {
+                        gameState.completedTasks.level = true;
+                        reward = 2000;
+                        message = 'Level 5 vazifasi bajarildi!';
+                        canClaim = true;
+                        document.getElementById('levelTask').classList.add('completed');
+                        document.getElementById('levelTask').classList.remove('task-ready');
+                    }
+                    break;
+                case 'coins':
+                    if (!gameState.completedTasks.coins && gameState.balance >= 10000) {
+                        gameState.completedTasks.coins = true;
+                        reward = 5000;
+                        message = '10000 coin vazifasi bajarildi!';
+                        canClaim = true;
+                        document.getElementById('coinTask').classList.add('completed');
+                        document.getElementById('coinTask').classList.remove('task-ready');
+                    }
+                    break;
+            }
+
+            if (canClaim) {
+                gameState.balance += reward;
+                updateUI();
+                saveGameState();
+                showTaskComplete(`${message} +${reward} DRC`);
+            } else {
+                alert('❌ Vazifa hali bajarilmagan yoki allaqachon olingan!');
+            }
+        }
+
+        function updateConditionsDisplay() {
+            const container = document.getElementById('customConditionsContainer');
+            container.innerHTML = '';
+            
+            customConditions.forEach(condition => {
+                let currentValue = 0;
+                let progressText = '';
+                let buttonHtml = '';
+                
+                switch(condition.type) {
+                    case 'taps':
+                        currentValue = gameState.totalTaps;
+                        progressText = `Progress: ${currentValue}/${condition.target}`;
+                        break;
+                    case 'balance':
+                        currentValue = gameState.balance;
+                        progressText = `Progress: ${currentValue}/${condition.target}`;
+                        break;
+                    case 'level':
+                        currentValue = gameState.level;
+                        progressText = `Progress: ${currentValue}/${condition.target}`;
+                        break;
+                    case 'telegram':
+                        progressText = condition.completed ? 'Bajarildi ✅' : 'Obuna bo\'ling';
+                        if (!condition.completed) {
+                            buttonHtml = `<button onclick="openLink('${condition.link}')" style="background: #0088cc; color: white; border: none; padding: 5px 10px; border-radius: 5px; margin: 5px 0; cursor: pointer;">📱 Telegram</button>
+                                         <button onclick="verifySubscription(${condition.id})" style="background: #00ff88; color: black; border: none; padding: 5px 10px; border-radius: 5px; margin: 5px 0; cursor: pointer;">✅ Tekshirish</button>`;
+                        }
+                        break;
+                    case 'youtube':
+                        progressText = condition.completed ? 'Bajarildi ✅' : 'Obuna bo\'ling';
+                        if (!condition.completed) {
+                            buttonHtml = `<button onclick="openLink('${condition.link}')" style="background: #ff0000; color: white; border: none; padding: 5px 10px; border-radius: 5px; margin: 5px 0; cursor: pointer;">📺 YouTube</button>
+                                         <button onclick="verifySubscription(${condition.id})" style="background: #00ff88; color: black; border: none; padding: 5px 10px; border-radius: 5px; margin: 5px 0; cursor: pointer;">✅ Tekshirish</button>`;
+                        }
+                        break;
+                    case 'video_code':
+                        progressText = condition.completed ? 'Bajarildi ✅' : 'Video ko\'rib kod kiriting';
+                        if (!condition.completed) {
+                            buttonHtml = `<button onclick="openLink('${condition.link}')" style="background: #ff6b35; color: white; border: none; padding: 5px 10px; border-radius: 5px; margin: 5px 0; cursor: pointer;">🎥 Video</button>
+                                         <button onclick="enterVideoCode(${condition.id})" style="background: #00ff88; color: black; border: none; padding: 5px 10px; border-radius: 5px; margin: 5px 0; cursor: pointer;">🔑 Kod</button>`;
+                        }
+                        break;
+                }
+                
+                const conditionDiv = document.createElement('div');
+                conditionDiv.className = 'condition-item';
+                conditionDiv.innerHTML = `
+                    <div class="condition-text">
+                        <div>${condition.text}</div>
+                        <div style="font-size: 12px; color: #ccc;">${progressText}</div>
+                        ${buttonHtml}
+                    </div>
+                    <div class="condition-reward">+${condition.reward} DRC</div>
+                    <div class="condition-status ${condition.completed ? 'condition-completed' : 'condition-pending'}"></div>
+                `;
+                container.appendChild(conditionDiv);
+            });
+        }
+
+        function openLink(url) {
+            window.open(url, '_blank');
+        }
+
+        function verifySubscription(conditionId) {
+            const condition = customConditions.find(c => c.id === conditionId);
+            if (condition) {
+                // Simulate subscription verification
+                const confirmed = confirm(`${condition.text} vazifasini bajardingizmi?`);
+                if (confirmed) {
+                    condition.completed = true;
+                    gameState.balance += condition.reward;
+                    saveGameState();
+                    updateConditionsDisplay();
+                    updateUI();
+                    alert(`🎉 ${condition.text} bajarildi! +${condition.reward} DRC`);
+                }
+            }
+        }
+
+        function enterVideoCode(conditionId) {
+            const condition = customConditions.find(c => c.id === conditionId);
+            if (condition) {
+                const userCode = prompt('Video kodini kiriting:');
+                if (userCode && userCode.toLowerCase() === condition.code.toLowerCase()) {
+                    condition.completed = true;
+                    gameState.balance += condition.reward;
+                    saveGameState();
+                    updateConditionsDisplay();
+                    updateUI();
+                    alert(`🎉 To'g'ri kod! +${condition.reward} DRC`);
+                } else if (userCode !== null) {
+                    alert('❌ Noto\'g\'ri kod! Videoni qaytadan ko\'ring.');
+                }
+            }
+        }
+
+        function showTaskComplete(message) {
+            setTimeout(() => alert('🎉 ' + message), 100);
+        }
+
+        function showEnergyWarning() {
+            document.getElementById('energyWarning').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('energyWarning').style.display = 'none';
+            }, 3000);
+        }
+
+        function buyBoost(type) {
+            let cost, success = false;
+            
+            switch(type) {
+                case 'energy':
+                    cost = 100;
+                    if (gameState.balance >= cost) {
+                        gameState.balance -= cost;
+                        gameState.energy = gameState.maxEnergy;
+                        success = true;
+                    }
+                    break;
+                    
+                case 'power':
+                    cost = 500;
+                    if (gameState.balance >= cost) {
+                        gameState.balance -= cost;
+                        gameState.tapPower += 1;
+                        success = true;
+                    }
+                    break;
+                    
+                case 'maxEnergy':
+                    cost = 1000;
+                    if (gameState.balance >= cost) {
+                        gameState.balance -= cost;
+                        gameState.maxEnergy += 500;
+                        gameState.energy = gameState.maxEnergy;
+                        success = true;
+                    }
+                    break;
+                    
+                case 'autoTap':
+                    cost = 5000;
+                    if (gameState.balance >= cost) {
+                        gameState.balance -= cost;
+                        startAutoTap(14400000); // 4 hours
+                        success = true;
+                    }
+                    break;
+                    
+                case 'energyRegen':
+                    cost = 1500;
+                    if (gameState.balance >= cost) {
+                        gameState.balance -= cost;
+                        startFastEnergyRegen(1800000); // 30 minutes
+                        success = true;
+                    }
+                    break;
+                    
+                case 'coinMultiplier':
+                    cost = 3000;
+                    if (gameState.balance >= cost) {
+                        gameState.balance -= cost;
+                        startCoinMultiplier(1800000); // 30 minutes
+                        success = true;
+                    }
+                    break;
+            }
+            
+            if (success) {
+                updateUI();
+                saveGameState();
+                alert('✅ Boost sotib olindi!');
+            } else {
+                alert('❌ Yetarli coin yo\'q!');
+            }
+        }
+
+        // Auto tap functionality
+        let autoTapInterval = null;
+        function startAutoTap(duration) {
+            if (autoTapInterval) clearInterval(autoTapInterval);
+            
+            // Set auto tap end time
+            gameState.autoTapEndTime = Date.now() + duration;
+            gameState.autoTapCoins = 0;
+            
+            autoTapInterval = setInterval(() => {
+                if (gameState.energy > 0) {
+                    // Simulate tap without UI effects for performance
+                    gameState.energy -= 1;
+                    const coinsToAdd = coinMultiplierActive ? gameState.tapPower * 2 : gameState.tapPower;
+                    gameState.autoTapCoins += coinsToAdd;
+                    gameState.totalTaps += 1;
+                    
+                    // Check level up
+                    const newLevel = Math.floor(gameState.totalTaps / 200) + 1;
+                    if (newLevel > gameState.level) {
+                        gameState.level = newLevel;
+                        gameState.autoTapCoins += 100 * newLevel; // Level up bonus
+                    }
+                }
+            }, 1000); // Auto tap every second
+            
+            setTimeout(() => {
+                if (autoTapInterval) {
+                    clearInterval(autoTapInterval);
+                    autoTapInterval = null;
+                    saveGameState();
+                    alert('🤖 Auto tap tugadi! Yig\'ilgan coinlarni olish uchun o\'yinni qayta oching.');
+                }
+            }, duration);
+            
+            alert('🤖 Auto tap 4 soat davomida faol!');
+        }
+
+        // Fast energy regeneration
+        let fastEnergyInterval = null;
+        function startFastEnergyRegen(duration) {
+            if (fastEnergyInterval) clearInterval(fastEnergyInterval);
+            
+            fastEnergyInterval = setInterval(() => {
+                if (gameState.energy < gameState.maxEnergy) {
+                    gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + 2);
+                    updateUI();
+                }
+            }, 2500); // 2 energy per 2.5 seconds (2x faster)
+            
+            setTimeout(() => {
+                if (fastEnergyInterval) {
+                    clearInterval(fastEnergyInterval);
+                    fastEnergyInterval = null;
+                    alert('⚡ Tez energiya tiklash tugadi!');
+                }
+            }, duration);
+            
+            alert('⚡ Energiya 30 daqiqa davomida 2x tez tiklanadi!');
+        }
+
+        // Coin multiplier
+        let coinMultiplierActive = false;
+        function startCoinMultiplier(duration) {
+            coinMultiplierActive = true;
+            
+            setTimeout(() => {
+                coinMultiplierActive = false;
+                alert('💰 2x coin boost tugadi!');
+            }, duration);
+            
+            alert('💰 30 daqiqa davomida 2x coin olasiz!');
+        }
+
+        function updateUI() {
+            document.getElementById('balance').textContent = gameState.balance.toLocaleString();
+            document.getElementById('tapPower').textContent = gameState.tapPower;
+            document.getElementById('totalTaps').textContent = gameState.totalTaps.toLocaleString();
+            document.getElementById('level').textContent = gameState.level;
+            document.getElementById('levelBadge').textContent = 'Level ' + gameState.level;
+            document.getElementById('energyText').textContent = gameState.energy + '/' + gameState.maxEnergy;
+            
+            // Update energy bar
+            const energyPercent = (gameState.energy / gameState.maxEnergy) * 100;
+            document.getElementById('energyProgress').style.width = energyPercent + '%';
+            
+            // Update condition progress
+            document.getElementById('tapProgress').textContent = Math.min(gameState.totalTaps, 500);
+            document.getElementById('currentLevel').textContent = gameState.level;
+            document.getElementById('coinProgress').textContent = Math.min(gameState.balance, 10000);
+            
+            // Update custom conditions display
+            updateConditionsDisplay();
+            
+            // Update boost availability
+            updateBoostAvailability();
+        }
+
+        function updateBoostAvailability() {
+            const powerBoost = document.getElementById('powerBoost');
+            const energyBoost = document.getElementById('energyBoost');
+            
+            if (gameState.balance < 500) {
+                powerBoost.classList.add('disabled');
+            } else {
+                powerBoost.classList.remove('disabled');
+            }
+            
+            if (gameState.balance < 1000) {
+                energyBoost.classList.add('disabled');
+            } else {
+                energyBoost.classList.remove('disabled');
+            }
+        }
+
+        // Keyboard support for login modal
+        document.addEventListener('keydown', function(event) {
+            const loginModal = document.getElementById('loginModal');
+            if (loginModal.style.display === 'flex') {
+                if (event.key === 'Enter') {
+                    attemptLogin();
+                } else if (event.key === 'Escape') {
+                    closeLoginModal();
+                }
+            }
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('loginModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeLoginModal();
+            }
+        });
+
+        // Navigation functions
+        function showSection(sectionName) {
+            // Hide all sections
+            document.getElementById('tapSection').style.display = 'none';
+            document.getElementById('tasksSection').style.display = 'none';
+            document.getElementById('boostSection').style.display = 'none';
+            
+            // Remove active class from all tabs
+            document.getElementById('tapTab').classList.remove('active');
+            document.getElementById('tasksTab').classList.remove('active');
+            document.getElementById('boostTab').classList.remove('active');
+            
+            // Show selected section and activate tab
+            if (sectionName === 'tap') {
+                document.getElementById('tapSection').style.display = 'block';
+                document.getElementById('tapTab').classList.add('active');
+            } else if (sectionName === 'tasks') {
+                document.getElementById('tasksSection').style.display = 'block';
+                document.getElementById('tasksTab').classList.add('active');
+            } else if (sectionName === 'boost') {
+                document.getElementById('boostSection').style.display = 'block';
+                document.getElementById('boostTab').classList.add('active');
+            }
+        }
+
+        // Initialize game
+        loadGameState();
+        loadAdminAttempts();
+        updateUI();
+        updateConditionsDisplay();
+        
+        // Save game state periodically
+        setInterval(saveGameState, 10000); // Save every 10 seconds
+        
+        // Save when page is closed
+        window.addEventListener('beforeunload', saveGameState);
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96bf3b87d5b99920',t:'MTc1NDY1ODQwMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
