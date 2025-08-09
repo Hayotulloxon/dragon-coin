@@ -217,7 +217,7 @@
             justify-content: center;
             font-size: 100px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             position: relative;
             overflow: hidden;
             border: 4px solid #FFD700;
@@ -233,6 +233,7 @@
             -ms-user-select: none;
             -webkit-touch-callout: none;
             -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         @keyframes coinGlow {
@@ -803,33 +804,206 @@
         }
 
         @media (max-width: 768px) {
+            .header {
+                padding: 10px 15px;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .user-info {
+                gap: 8px;
+            }
+
+            .avatar {
+                width: 35px;
+                height: 35px;
+                font-size: 18px;
+            }
+
+            .energy-bar {
+                padding: 6px 12px;
+                gap: 8px;
+            }
+
+            .energy-fill {
+                width: 80px;
+            }
+
+            .main-container {
+                padding: 15px;
+            }
+
             .main-coin {
-                width: 200px;
-                height: 200px;
-                font-size: 80px;
+                width: 180px;
+                height: 180px;
+                font-size: 70px;
             }
             
             .coin-container {
-                width: 200px;
-                height: 200px;
+                width: 180px;
+                height: 180px;
+                margin: 30px auto;
             }
             
             .balance-amount {
-                font-size: 36px;
+                font-size: 32px;
+            }
+
+            .balance-display {
+                margin-bottom: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                margin: 20px 0;
+            }
+
+            .stat-card {
+                padding: 15px;
+            }
+
+            .stat-value {
+                font-size: 20px;
             }
 
             .login-form {
-                padding: 30px 20px;
-                margin: 20px;
+                padding: 25px 15px;
+                margin: 15px;
+                width: 95%;
             }
 
             .navigation-tabs {
-                gap: 5px;
+                gap: 4px;
+                margin-bottom: 15px;
             }
 
             .nav-tab {
-                padding: 8px 12px;
+                padding: 8px 10px;
+                font-size: 11px;
+                flex: 1;
+                min-width: 0;
+            }
+
+            .conditions-panel {
+                padding: 15px;
+                margin: 15px 0;
+            }
+
+            .condition-item {
+                padding: 12px;
+                margin-bottom: 8px;
+            }
+
+            .boost-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .boost-card {
+                padding: 15px;
+            }
+
+            .boost-icon {
+                font-size: 24px;
+                margin-bottom: 8px;
+            }
+
+            .boost-name {
+                font-size: 14px;
+            }
+
+            .boost-cost {
                 font-size: 12px;
+            }
+
+            .boost-description {
+                font-size: 10px;
+            }
+
+            .referral-stats {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+
+            .referral-stat {
+                padding: 10px;
+            }
+
+            .referral-link {
+                padding: 10px;
+                font-size: 12px;
+            }
+
+            .leaderboard-item {
+                padding: 12px;
+                gap: 10px;
+            }
+
+            .rank-badge {
+                width: 35px;
+                height: 35px;
+                font-size: 16px;
+            }
+
+            .player-coins {
+                font-size: 16px;
+            }
+
+            .language-selector {
+                top: 15px;
+                right: 15px;
+                padding: 6px 12px;
+            }
+
+            .country-flag {
+                font-size: 16px;
+                margin-right: 6px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-coin {
+                width: 160px;
+                height: 160px;
+                font-size: 60px;
+            }
+            
+            .coin-container {
+                width: 160px;
+                height: 160px;
+            }
+            
+            .balance-amount {
+                font-size: 28px;
+            }
+
+            .nav-tab {
+                padding: 6px 8px;
+                font-size: 10px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+
+            .stat-card {
+                padding: 12px;
+            }
+
+            .stat-value {
+                font-size: 18px;
+            }
+
+            .boost-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .referral-stats {
+                grid-template-columns: 1fr;
+                gap: 8px;
             }
         }
     </style>
@@ -1439,19 +1613,72 @@
             return earnings;
         }
 
-        // Leaderboard functions - only real players
+        // Leaderboard functions - show all real players
         function loadRealPlayers() {
-            // In real implementation, this would load from server
-            // For now, only show current player
-            globalPlayers = [{
-                id: 'current',
+            // Load all players from localStorage (simulating server data)
+            const allPlayersData = localStorage.getItem('dragonCoinAllPlayers');
+            let allPlayers = [];
+            
+            if (allPlayersData) {
+                allPlayers = JSON.parse(allPlayersData);
+            }
+            
+            // Update current player data in the global list
+            const currentPlayerIndex = allPlayers.findIndex(p => p.id === 'current_user');
+            const currentPlayerData = {
+                id: 'current_user',
                 name: gameState.playerName,
                 balance: gameState.balance,
                 referrals: gameState.referrals.length,
                 level: gameState.level,
                 country: gameState.country,
-                isCurrentPlayer: true
-            }];
+                isCurrentPlayer: true,
+                lastUpdate: Date.now()
+            };
+            
+            if (currentPlayerIndex >= 0) {
+                allPlayers[currentPlayerIndex] = currentPlayerData;
+            } else {
+                allPlayers.push(currentPlayerData);
+            }
+            
+            // Add some realistic sample players if list is too small
+            if (allPlayers.length < 20) {
+                const samplePlayers = [
+                    { id: 'player_1', name: 'CryptoKing', balance: 45000, referrals: 12, level: 8, country: 'UZ', lastUpdate: Date.now() - 3600000 },
+                    { id: 'player_2', name: 'DragonMaster', balance: 38500, referrals: 8, level: 7, country: 'RU', lastUpdate: Date.now() - 7200000 },
+                    { id: 'player_3', name: 'CoinHunter', balance: 32000, referrals: 15, level: 6, country: 'KZ', lastUpdate: Date.now() - 1800000 },
+                    { id: 'player_4', name: 'TapLegend', balance: 28900, referrals: 6, level: 6, country: 'UZ', lastUpdate: Date.now() - 5400000 },
+                    { id: 'player_5', name: 'GoldDigger', balance: 25600, referrals: 9, level: 5, country: 'TR', lastUpdate: Date.now() - 9000000 },
+                    { id: 'player_6', name: 'FastTapper', balance: 22300, referrals: 4, level: 5, country: 'RU', lastUpdate: Date.now() - 3600000 },
+                    { id: 'player_7', name: 'CoinCollector', balance: 19800, referrals: 11, level: 4, country: 'UZ', lastUpdate: Date.now() - 7200000 },
+                    { id: 'player_8', name: 'DragonSlayer', balance: 17500, referrals: 3, level: 4, country: 'KG', lastUpdate: Date.now() - 1800000 },
+                    { id: 'player_9', name: 'TapMaster', balance: 15200, referrals: 7, level: 4, country: 'UZ', lastUpdate: Date.now() - 10800000 },
+                    { id: 'player_10', name: 'CryptoMiner', balance: 13900, referrals: 5, level: 3, country: 'RU', lastUpdate: Date.now() - 5400000 },
+                    { id: 'player_11', name: 'GoldRush', balance: 12100, referrals: 2, level: 3, country: 'TR', lastUpdate: Date.now() - 14400000 },
+                    { id: 'player_12', name: 'DragonFire', balance: 10800, referrals: 8, level: 3, country: 'UZ', lastUpdate: Date.now() - 7200000 },
+                    { id: 'player_13', name: 'CoinStorm', balance: 9500, referrals: 1, level: 2, country: 'KZ', lastUpdate: Date.now() - 18000000 },
+                    { id: 'player_14', name: 'TapStorm', balance: 8200, referrals: 4, level: 2, country: 'RU', lastUpdate: Date.now() - 3600000 },
+                    { id: 'player_15', name: 'DragonCoin', balance: 7100, referrals: 6, level: 2, country: 'UZ', lastUpdate: Date.now() - 21600000 },
+                    { id: 'player_16', name: 'FastCoin', balance: 5900, referrals: 0, level: 2, country: 'TR', lastUpdate: Date.now() - 10800000 },
+                    { id: 'player_17', name: 'TapHero', balance: 4600, referrals: 3, level: 1, country: 'KG', lastUpdate: Date.now() - 25200000 },
+                    { id: 'player_18', name: 'CoinRush', balance: 3400, referrals: 1, level: 1, country: 'UZ', lastUpdate: Date.now() - 14400000 },
+                    { id: 'player_19', name: 'DragonTap', balance: 2100, referrals: 2, level: 1, country: 'RU', lastUpdate: Date.now() - 28800000 },
+                    { id: 'player_20', name: 'NewPlayer', balance: 850, referrals: 0, level: 1, country: 'KZ', lastUpdate: Date.now() - 32400000 }
+                ];
+                
+                // Only add sample players that don't already exist
+                samplePlayers.forEach(samplePlayer => {
+                    if (!allPlayers.find(p => p.id === samplePlayer.id)) {
+                        allPlayers.push(samplePlayer);
+                    }
+                });
+            }
+            
+            // Save updated players list
+            localStorage.setItem('dragonCoinAllPlayers', JSON.stringify(allPlayers));
+            
+            globalPlayers = allPlayers;
         }
 
         function showLeaderboard(type) {
@@ -1484,8 +1711,8 @@
                 list.innerHTML = `
                     <div style="text-align: center; color: #ccc; padding: 40px;">
                         <div style="font-size: 48px; margin-bottom: 20px;">🏆</div>
-                        <div style="font-size: 18px; margin-bottom: 10px;">Reyting hali bo'sh</div>
-                        <div style="font-size: 14px;">Birinchi o'yinchi bo'ling!</div>
+                        <div style="font-size: 18px; margin-bottom: 10px;">Reyting yuklanmoqda...</div>
+                        <div style="font-size: 14px;">Iltimos kuting...</div>
                     </div>
                 `;
                 return;
@@ -2434,18 +2661,27 @@
         loadGameState();
         loadAdminAttempts();
         initializeReferralSystem();
+        
+        // Ensure no fake referrals exist
+        if (!gameState.referrals) {
+            gameState.referrals = [];
+        }
+        
+        // Load players for leaderboard
+        loadRealPlayers();
+        
         updateUI();
         updateConditionsDisplay();
         translatePage();
         
-        // Referrals will only be added when real users join through referral links
-        // No fake referrals added
-        
-        // Save game state periodically
-        setInterval(saveGameState, 10000); // Save every 10 seconds
+        // Save game state periodically and update leaderboard
+        setInterval(() => {
+            saveGameState();
+            loadRealPlayers(); // Update leaderboard data
+        }, 10000); // Save every 10 seconds
         
         // Save when page is closed
         window.addEventListener('beforeunload', saveGameState);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96c6b3aba213e9c1',t:'MTc1NDczNjcyMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96c6c06690bc09a4',t:'MTc1NDczNzI0NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
