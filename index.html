@@ -1948,20 +1948,12 @@
                 sortedPlayers = [...playersToShow].sort((a, b) => b.referrals - a.referrals);
             }
             
-            // Show only top 20 players
-            sortedPlayers = sortedPlayers.slice(0, 20);
-            
             // Find current player rank in the full list
             const currentPlayerIndex = sortedPlayers.findIndex(p => p.isCurrentPlayer);
             let currentPlayerRank = currentPlayerIndex + 1;
             
-            // If current player is not in top 20, find their actual rank
             if (currentPlayerIndex === -1) {
-                const allSorted = [...playersToShow].sort((a, b) => 
-                    type === 'coins' ? b.balance - a.balance : b.referrals - a.referrals
-                );
-                const actualRank = allSorted.findIndex(p => p.isCurrentPlayer) + 1;
-                currentPlayerRank = actualRank > 0 ? actualRank : '?';
+                currentPlayerRank = '?';
             }
             
             document.getElementById('playerRank').textContent = '#' + currentPlayerRank;
@@ -1988,13 +1980,14 @@
             const infoDiv = document.createElement('div');
             infoDiv.style.cssText = 'text-align: center; color: #ccc; padding: 10px; margin-bottom: 15px; font-size: 14px; background: rgba(0, 255, 136, 0.1); border-radius: 10px; border: 1px solid rgba(0, 255, 136, 0.3);';
             infoDiv.innerHTML = `
-                📊 Jami o'yinchilar: ${playersToShow.length} | 
+                📊 Jami o'yinchilar: ${sortedPlayers.length} | 
                 🟢 Online: ${onlineCount} | 
                 📱 Telegram: ${telegramCount}<br>
-                <small style="color: #00ff88;">⚡ Real vaqtda yangilanmoqda</small>
+                <small style="color: #00ff88;">⚡ Real vaqtda yangilanmoqda - Barcha o'yinchilar ko'rsatilmoqda</small>
             `;
             list.appendChild(infoDiv);
             
+            // Show ALL players with their rankings
             sortedPlayers.forEach((player, index) => {
                 const div = document.createElement('div');
                 div.className = 'leaderboard-item';
@@ -2051,43 +2044,6 @@
                 `;
                 list.appendChild(div);
             });
-            
-            // If current player is not in top 20, show their position at the bottom
-            if (currentPlayerIndex === -1 && currentPlayerRank !== '?') {
-                const currentPlayer = playersToShow.find(p => p.isCurrentPlayer);
-                if (currentPlayer) {
-                    const separatorDiv = document.createElement('div');
-                    separatorDiv.style.cssText = 'text-align: center; color: #666; padding: 10px; margin: 10px 0;';
-                    separatorDiv.innerHTML = '• • •';
-                    list.appendChild(separatorDiv);
-                    
-                    const div = document.createElement('div');
-                    div.className = 'leaderboard-item';
-                    div.style.border = '2px solid #00ff88';
-                    div.style.background = 'rgba(0, 255, 136, 0.1)';
-                    div.style.boxShadow = '0 0 20px rgba(0, 255, 136, 0.3)';
-                    
-                    const countryFlag = {
-                        'UZ': '🇺🇿', 'RU': '🇷🇺', 'US': '🇺🇸', 'KZ': '🇰🇿', 'TR': '🇹🇷', 'KG': '🇰🇬'
-                    }[currentPlayer.country] || '🌍';
-                    
-                    div.innerHTML = `
-                        <div class="rank-badge rank-other">${currentPlayerRank}</div>
-                        <div class="player-info">
-                            <div class="player-name">
-                                ${countryFlag} ${currentPlayer.name} (Siz)
-                            </div>
-                            <div class="player-stats">
-                                Level ${currentPlayer.level} • ${currentPlayer.referrals} referrals
-                            </div>
-                        </div>
-                        <div class="player-coins">
-                            ${type === 'coins' ? currentPlayer.balance.toLocaleString() + ' DRC' : currentPlayer.referrals + ' refs'}
-                        </div>
-                    `;
-                    list.appendChild(div);
-                }
-            }
         }
 
         // Helper function to show time ago
@@ -3083,5 +3039,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96c6d77cc0542453',t:'MTc1NDczODE5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96c6df4ba4da2453',t:'MTc1NDczODUxMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
