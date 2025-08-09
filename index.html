@@ -1615,6 +1615,9 @@
 
         // Leaderboard functions - show all real players
         function loadRealPlayers() {
+            // Create unique player ID based on browser fingerprint
+            const playerId = getUniquePlayerId();
+            
             // Load all players from localStorage (simulating server data)
             const allPlayersData = localStorage.getItem('dragonCoinAllPlayers');
             let allPlayers = [];
@@ -1624,16 +1627,17 @@
             }
             
             // Update current player data in the global list
-            const currentPlayerIndex = allPlayers.findIndex(p => p.id === 'current_user');
+            const currentPlayerIndex = allPlayers.findIndex(p => p.id === playerId);
             const currentPlayerData = {
-                id: 'current_user',
+                id: playerId,
                 name: gameState.playerName,
                 balance: gameState.balance,
                 referrals: gameState.referrals.length,
                 level: gameState.level,
                 country: gameState.country,
                 isCurrentPlayer: true,
-                lastUpdate: Date.now()
+                lastUpdate: Date.now(),
+                sessionId: Date.now() // Track when this session started
             };
             
             if (currentPlayerIndex >= 0) {
@@ -1642,30 +1646,16 @@
                 allPlayers.push(currentPlayerData);
             }
             
-            // Add some realistic sample players if list is too small
+            // Mark all other players as not current player
+            allPlayers.forEach(player => {
+                if (player.id !== playerId) {
+                    player.isCurrentPlayer = false;
+                }
+            });
+            
+            // Add realistic sample players only if we have less than 20 total
             if (allPlayers.length < 20) {
-                const samplePlayers = [
-                    { id: 'player_1', name: 'CryptoKing', balance: 45000, referrals: 12, level: 8, country: 'UZ', lastUpdate: Date.now() - 3600000 },
-                    { id: 'player_2', name: 'DragonMaster', balance: 38500, referrals: 8, level: 7, country: 'RU', lastUpdate: Date.now() - 7200000 },
-                    { id: 'player_3', name: 'CoinHunter', balance: 32000, referrals: 15, level: 6, country: 'KZ', lastUpdate: Date.now() - 1800000 },
-                    { id: 'player_4', name: 'TapLegend', balance: 28900, referrals: 6, level: 6, country: 'UZ', lastUpdate: Date.now() - 5400000 },
-                    { id: 'player_5', name: 'GoldDigger', balance: 25600, referrals: 9, level: 5, country: 'TR', lastUpdate: Date.now() - 9000000 },
-                    { id: 'player_6', name: 'FastTapper', balance: 22300, referrals: 4, level: 5, country: 'RU', lastUpdate: Date.now() - 3600000 },
-                    { id: 'player_7', name: 'CoinCollector', balance: 19800, referrals: 11, level: 4, country: 'UZ', lastUpdate: Date.now() - 7200000 },
-                    { id: 'player_8', name: 'DragonSlayer', balance: 17500, referrals: 3, level: 4, country: 'KG', lastUpdate: Date.now() - 1800000 },
-                    { id: 'player_9', name: 'TapMaster', balance: 15200, referrals: 7, level: 4, country: 'UZ', lastUpdate: Date.now() - 10800000 },
-                    { id: 'player_10', name: 'CryptoMiner', balance: 13900, referrals: 5, level: 3, country: 'RU', lastUpdate: Date.now() - 5400000 },
-                    { id: 'player_11', name: 'GoldRush', balance: 12100, referrals: 2, level: 3, country: 'TR', lastUpdate: Date.now() - 14400000 },
-                    { id: 'player_12', name: 'DragonFire', balance: 10800, referrals: 8, level: 3, country: 'UZ', lastUpdate: Date.now() - 7200000 },
-                    { id: 'player_13', name: 'CoinStorm', balance: 9500, referrals: 1, level: 2, country: 'KZ', lastUpdate: Date.now() - 18000000 },
-                    { id: 'player_14', name: 'TapStorm', balance: 8200, referrals: 4, level: 2, country: 'RU', lastUpdate: Date.now() - 3600000 },
-                    { id: 'player_15', name: 'DragonCoin', balance: 7100, referrals: 6, level: 2, country: 'UZ', lastUpdate: Date.now() - 21600000 },
-                    { id: 'player_16', name: 'FastCoin', balance: 5900, referrals: 0, level: 2, country: 'TR', lastUpdate: Date.now() - 10800000 },
-                    { id: 'player_17', name: 'TapHero', balance: 4600, referrals: 3, level: 1, country: 'KG', lastUpdate: Date.now() - 25200000 },
-                    { id: 'player_18', name: 'CoinRush', balance: 3400, referrals: 1, level: 1, country: 'UZ', lastUpdate: Date.now() - 14400000 },
-                    { id: 'player_19', name: 'DragonTap', balance: 2100, referrals: 2, level: 1, country: 'RU', lastUpdate: Date.now() - 28800000 },
-                    { id: 'player_20', name: 'NewPlayer', balance: 850, referrals: 0, level: 1, country: 'KZ', lastUpdate: Date.now() - 32400000 }
-                ];
+                const samplePlayers = generateSamplePlayers();
                 
                 // Only add sample players that don't already exist
                 samplePlayers.forEach(samplePlayer => {
@@ -1675,10 +1665,83 @@
                 });
             }
             
+            // Keep only the most recent 50 players to prevent unlimited growth
+            allPlayers = allPlayers
+                .sort((a, b) => b.lastUpdate - a.lastUpdate)
+                .slice(0, 50);
+            
             // Save updated players list
             localStorage.setItem('dragonCoinAllPlayers', JSON.stringify(allPlayers));
             
             globalPlayers = allPlayers;
+        }
+
+        // Generate unique player ID based on browser characteristics
+        function getUniquePlayerId() {
+            let playerId = localStorage.getItem('dragonCoinPlayerId');
+            
+            if (!playerId) {
+                // Create unique ID based on browser fingerprint
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                ctx.textBaseline = 'top';
+                ctx.font = '14px Arial';
+                ctx.fillText('Dragon Coin Player ID', 2, 2);
+                
+                const fingerprint = [
+                    navigator.userAgent,
+                    navigator.language,
+                    screen.width + 'x' + screen.height,
+                    new Date().getTimezoneOffset(),
+                    canvas.toDataURL()
+                ].join('|');
+                
+                // Create hash from fingerprint
+                let hash = 0;
+                for (let i = 0; i < fingerprint.length; i++) {
+                    const char = fingerprint.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash; // Convert to 32-bit integer
+                }
+                
+                playerId = 'player_' + Math.abs(hash).toString(36) + '_' + Date.now();
+                localStorage.setItem('dragonCoinPlayerId', playerId);
+            }
+            
+            return playerId;
+        }
+
+        // Generate sample players with realistic data
+        function generateSamplePlayers() {
+            const names = [
+                'CryptoKing', 'DragonMaster', 'CoinHunter', 'TapLegend', 'GoldDigger',
+                'FastTapper', 'CoinCollector', 'DragonSlayer', 'TapMaster', 'CryptoMiner',
+                'GoldRush', 'DragonFire', 'CoinStorm', 'TapStorm', 'DragonCoin',
+                'FastCoin', 'TapHero', 'CoinRush', 'DragonTap', 'NewPlayer'
+            ];
+            
+            const countries = ['UZ', 'RU', 'KZ', 'TR', 'KG'];
+            const samplePlayers = [];
+            
+            for (let i = 0; i < 20; i++) {
+                const baseBalance = Math.max(100, Math.floor(Math.random() * 50000));
+                const level = Math.max(1, Math.floor(baseBalance / 5000) + Math.floor(Math.random() * 3));
+                const referrals = Math.floor(Math.random() * 15);
+                
+                samplePlayers.push({
+                    id: 'sample_' + i + '_' + Date.now(),
+                    name: names[i] || `Player${i}`,
+                    balance: baseBalance,
+                    referrals: referrals,
+                    level: level,
+                    country: countries[Math.floor(Math.random() * countries.length)],
+                    isCurrentPlayer: false,
+                    lastUpdate: Date.now() - Math.floor(Math.random() * 86400000), // Random time in last 24h
+                    isSample: true
+                });
+            }
+            
+            return samplePlayers;
         }
 
         function showLeaderboard(type) {
@@ -1687,20 +1750,42 @@
             document.getElementById('referralsLeaderboard').classList.remove('active');
             document.getElementById(type + 'Leaderboard').classList.add('active');
             
-            // Load real players only
+            // Load real players
             loadRealPlayers();
+            
+            // Filter out sample players if we have enough real players
+            let playersToShow = globalPlayers;
+            const realPlayers = globalPlayers.filter(p => !p.isSample);
+            
+            // If we have at least 5 real players, show only real players
+            if (realPlayers.length >= 5) {
+                playersToShow = realPlayers;
+            }
             
             // Sort players
             let sortedPlayers;
             if (type === 'coins') {
-                sortedPlayers = [...globalPlayers].sort((a, b) => b.balance - a.balance);
+                sortedPlayers = [...playersToShow].sort((a, b) => b.balance - a.balance);
             } else {
-                sortedPlayers = [...globalPlayers].sort((a, b) => b.referrals - a.referrals);
+                sortedPlayers = [...playersToShow].sort((a, b) => b.referrals - a.referrals);
             }
             
-            // Find current player rank
+            // Show only top 20 players
+            sortedPlayers = sortedPlayers.slice(0, 20);
+            
+            // Find current player rank in the full list
             const currentPlayerIndex = sortedPlayers.findIndex(p => p.isCurrentPlayer);
-            const currentPlayerRank = currentPlayerIndex + 1;
+            let currentPlayerRank = currentPlayerIndex + 1;
+            
+            // If current player is not in top 20, find their actual rank
+            if (currentPlayerIndex === -1) {
+                const allSorted = [...playersToShow].sort((a, b) => 
+                    type === 'coins' ? b.balance - a.balance : b.referrals - a.referrals
+                );
+                const actualRank = allSorted.findIndex(p => p.isCurrentPlayer) + 1;
+                currentPlayerRank = actualRank > 0 ? actualRank : '?';
+            }
+            
             document.getElementById('playerRank').textContent = '#' + currentPlayerRank;
             
             // Display leaderboard
@@ -1718,32 +1803,56 @@
                 return;
             }
             
+            // Add info about player count
+            const infoDiv = document.createElement('div');
+            infoDiv.style.cssText = 'text-align: center; color: #ccc; padding: 10px; margin-bottom: 15px; font-size: 14px;';
+            infoDiv.innerHTML = `
+                📊 Jami o'yinchilar: ${playersToShow.length} | 
+                ${realPlayers.length >= 5 ? 'Faqat haqiqiy o\'yinchilar' : 'Haqiqiy va namuna o\'yinchilar'}
+            `;
+            list.appendChild(infoDiv);
+            
             sortedPlayers.forEach((player, index) => {
                 const div = document.createElement('div');
                 div.className = 'leaderboard-item';
                 if (player.isCurrentPlayer) {
                     div.style.border = '2px solid #00ff88';
                     div.style.background = 'rgba(0, 255, 136, 0.1)';
+                    div.style.boxShadow = '0 0 20px rgba(0, 255, 136, 0.3)';
                 }
                 
                 const rank = index + 1;
                 let rankClass = 'rank-other';
-                if (rank === 1) rankClass = 'rank-1';
-                else if (rank === 2) rankClass = 'rank-2';
-                else if (rank === 3) rankClass = 'rank-3';
+                let rankIcon = '';
+                if (rank === 1) {
+                    rankClass = 'rank-1';
+                    rankIcon = '👑';
+                } else if (rank === 2) {
+                    rankClass = 'rank-2';
+                    rankIcon = '🥈';
+                } else if (rank === 3) {
+                    rankClass = 'rank-3';
+                    rankIcon = '🥉';
+                }
                 
                 const countryFlag = {
-                    'UZ': '🇺🇿', 'RU': '🇷🇺', 'US': '🇺🇸', 'KZ': '🇰🇿', 'TR': '🇹🇷'
+                    'UZ': '🇺🇿', 'RU': '🇷🇺', 'US': '🇺🇸', 'KZ': '🇰🇿', 'TR': '🇹🇷', 'KG': '🇰🇬'
                 }[player.country] || '🌍';
                 
+                const playerType = player.isSample ? ' 🤖' : '';
+                const isCurrentText = player.isCurrentPlayer ? ' (Siz)' : '';
+                
                 div.innerHTML = `
-                    <div class="rank-badge ${rankClass}">${rank}</div>
+                    <div class="rank-badge ${rankClass}">
+                        ${rankIcon || rank}
+                    </div>
                     <div class="player-info">
                         <div class="player-name">
-                            ${countryFlag} ${player.name} ${player.isCurrentPlayer ? '(Siz)' : ''}
+                            ${countryFlag} ${player.name}${isCurrentText}${playerType}
                         </div>
                         <div class="player-stats">
                             Level ${player.level} • ${player.referrals} referrals
+                            ${player.lastUpdate ? ' • ' + getTimeAgo(player.lastUpdate) : ''}
                         </div>
                     </div>
                     <div class="player-coins">
@@ -1752,6 +1861,57 @@
                 `;
                 list.appendChild(div);
             });
+            
+            // If current player is not in top 20, show their position at the bottom
+            if (currentPlayerIndex === -1 && currentPlayerRank !== '?') {
+                const currentPlayer = playersToShow.find(p => p.isCurrentPlayer);
+                if (currentPlayer) {
+                    const separatorDiv = document.createElement('div');
+                    separatorDiv.style.cssText = 'text-align: center; color: #666; padding: 10px; margin: 10px 0;';
+                    separatorDiv.innerHTML = '• • •';
+                    list.appendChild(separatorDiv);
+                    
+                    const div = document.createElement('div');
+                    div.className = 'leaderboard-item';
+                    div.style.border = '2px solid #00ff88';
+                    div.style.background = 'rgba(0, 255, 136, 0.1)';
+                    div.style.boxShadow = '0 0 20px rgba(0, 255, 136, 0.3)';
+                    
+                    const countryFlag = {
+                        'UZ': '🇺🇿', 'RU': '🇷🇺', 'US': '🇺🇸', 'KZ': '🇰🇿', 'TR': '🇹🇷', 'KG': '🇰🇬'
+                    }[currentPlayer.country] || '🌍';
+                    
+                    div.innerHTML = `
+                        <div class="rank-badge rank-other">${currentPlayerRank}</div>
+                        <div class="player-info">
+                            <div class="player-name">
+                                ${countryFlag} ${currentPlayer.name} (Siz)
+                            </div>
+                            <div class="player-stats">
+                                Level ${currentPlayer.level} • ${currentPlayer.referrals} referrals
+                            </div>
+                        </div>
+                        <div class="player-coins">
+                            ${type === 'coins' ? currentPlayer.balance.toLocaleString() + ' DRC' : currentPlayer.referrals + ' refs'}
+                        </div>
+                    `;
+                    list.appendChild(div);
+                }
+            }
+        }
+
+        // Helper function to show time ago
+        function getTimeAgo(timestamp) {
+            const now = Date.now();
+            const diff = now - timestamp;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+            
+            if (days > 0) return days + 'd ago';
+            if (hours > 0) return hours + 'h ago';
+            if (minutes > 0) return minutes + 'm ago';
+            return 'just now';
         }
 
         // Load game state from localStorage
@@ -2683,5 +2843,5 @@
         // Save when page is closed
         window.addEventListener('beforeunload', saveGameState);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96c6c06690bc09a4',t:'MTc1NDczNzI0NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96c6c97340ee09a4',t:'MTc1NDczNzYxNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
