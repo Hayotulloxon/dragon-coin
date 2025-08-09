@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dragon Coin - Tap to Earn</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * {
             margin: 0;
@@ -1613,21 +1614,19 @@
             return earnings;
         }
 
-        // Leaderboard functions - show all real players
+        // Real-time player synchronization system
         function loadRealPlayers() {
-            // Create unique player ID based on browser fingerprint
             const playerId = getUniquePlayerId();
             
-            // Load all players from localStorage (simulating server data)
-            const allPlayersData = localStorage.getItem('dragonCoinAllPlayers');
+            // Load all players from shared storage (simulating real-time server)
+            const allPlayersData = localStorage.getItem(realTimePlayersDB);
             let allPlayers = [];
             
             if (allPlayersData) {
                 allPlayers = JSON.parse(allPlayersData);
             }
             
-            // Update current player data in the global list
-            const currentPlayerIndex = allPlayers.findIndex(p => p.id === playerId);
+            // Create current player data with Telegram info
             const currentPlayerData = {
                 id: playerId,
                 name: gameState.playerName,
@@ -1637,27 +1636,49 @@
                 country: gameState.country,
                 isCurrentPlayer: true,
                 lastUpdate: Date.now(),
-                sessionId: Date.now() // Track when this session started
+                sessionId: Date.now(),
+                telegramId: gameState.telegramId || null,
+                firstName: gameState.firstName || '',
+                lastName: gameState.lastName || '',
+                isPremium: gameState.isPremium || false,
+                photoUrl: gameState.photoUrl || null,
+                isOnline: true,
+                totalTaps: gameState.totalTaps
             };
             
+            // Update or add current player
+            const currentPlayerIndex = allPlayers.findIndex(p => p.id === playerId);
             if (currentPlayerIndex >= 0) {
+                // Keep some persistent data from previous sessions
+                const oldData = allPlayers[currentPlayerIndex];
+                currentPlayerData.joinDate = oldData.joinDate || Date.now();
+                currentPlayerData.totalSessionTime = (oldData.totalSessionTime || 0) + (Date.now() - (oldData.sessionStartTime || Date.now()));
                 allPlayers[currentPlayerIndex] = currentPlayerData;
             } else {
+                currentPlayerData.joinDate = Date.now();
+                currentPlayerData.totalSessionTime = 0;
                 allPlayers.push(currentPlayerData);
             }
             
-            // Mark all other players as not current player
+            // Mark all other players as not current player and update online status
+            const now = Date.now();
             allPlayers.forEach(player => {
                 if (player.id !== playerId) {
                     player.isCurrentPlayer = false;
+                    // Mark as offline if last update was more than 2 minutes ago
+                    player.isOnline = (now - player.lastUpdate) < 120000;
                 }
             });
             
-            // Add realistic sample players only if we have less than 20 total
-            if (allPlayers.length < 20) {
+            // Remove players who haven't been active for more than 24 hours
+            allPlayers = allPlayers.filter(player => {
+                return (now - player.lastUpdate) < 86400000; // 24 hours
+            });
+            
+            // Add sample players only if we have less than 10 real players
+            const realPlayers = allPlayers.filter(p => !p.isSample);
+            if (realPlayers.length < 10) {
                 const samplePlayers = generateSamplePlayers();
-                
-                // Only add sample players that don't already exist
                 samplePlayers.forEach(samplePlayer => {
                     if (!allPlayers.find(p => p.id === samplePlayer.id)) {
                         allPlayers.push(samplePlayer);
@@ -1665,19 +1686,176 @@
                 });
             }
             
-            // Keep only the most recent 50 players to prevent unlimited growth
+            // Keep only the most recent 100 players to prevent unlimited growth
             allPlayers = allPlayers
                 .sort((a, b) => b.lastUpdate - a.lastUpdate)
-                .slice(0, 50);
+                .slice(0, 100);
             
-            // Save updated players list
-            localStorage.setItem('dragonCoinAllPlayers', JSON.stringify(allPlayers));
+            // Save updated players list to shared storage
+            localStorage.setItem(realTimePlayersDB, JSON.stringify(allPlayers));
             
             globalPlayers = allPlayers;
+            
+            // Broadcast player update to other tabs/windows
+            broadcastPlayerUpdate(currentPlayerData);
         }
 
-        // Generate unique player ID based on browser characteristics
+        // Broadcast system for real-time updates across tabs
+        function broadcastPlayerUpdate(playerData) {
+            // Use localStorage events to sync across tabs
+            const updateEvent = {
+                type: 'playerUpdate',
+                data: playerData,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('dragonCoinPlayerUpdate', JSON.stringify(updateEvent));
+            
+            // Remove the event after a short delay to trigger storage event
+            setTimeout(() => {
+                localStorage.removeItem('dragonCoinPlayerUpdate');
+            }, 100);
+        }
+
+        // Listen for player updates from other tabs
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'dragonCoinPlayerUpdate' && e.newValue) {
+                try {
+                    const updateEvent = JSON.parse(e.newValue);
+                    if (updateEvent.type === 'playerUpdate') {
+                        // Refresh leaderboard if it's currently visible
+                        const leaderboardSection = document.getElementById('leaderboardSection');
+                        if (leaderboardSection.style.display !== 'none') {
+                            loadRealPlayers();
+                            // Refresh current leaderboard view
+                            const activeTab = document.querySelector('.nav-tab.active[id*="Leaderboard"]');
+                            if (activeTab) {
+                                const type = activeTab.id.includes('coins') ? 'coins' : 'referrals';
+                                showLeaderboard(type);
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.log('Error parsing player update:', e);
+                }
+            }
+        });
+
+        // Start real-time player updates
+        function startRealTimeUpdates() {
+            // Update player data every 10 seconds
+            playerUpdateInterval = setInterval(() => {
+                loadRealPlayers();
+            }, 10000);
+            
+            // Update immediately when game state changes
+            const originalSaveGameState = saveGameState;
+            saveGameState = function() {
+                originalSaveGameState();
+                loadRealPlayers();
+            };
+        }
+
+        // Stop real-time updates
+        function stopRealTimeUpdates() {
+            if (playerUpdateInterval) {
+                clearInterval(playerUpdateInterval);
+                playerUpdateInterval = null;
+            }
+        }
+
+        // Real-time player management system
+        let realTimePlayersDB = 'dragonCoinRealPlayers';
+        let playerUpdateInterval = null;
+        
+        // Get Telegram user data if available
+        function getTelegramUserData() {
+            // Check if running in Telegram WebApp
+            if (window.Telegram && window.Telegram.WebApp) {
+                const user = window.Telegram.WebApp.initDataUnsafe?.user;
+                if (user) {
+                    return {
+                        id: 'tg_' + user.id,
+                        username: user.username || user.first_name || 'Telegram User',
+                        firstName: user.first_name || '',
+                        lastName: user.last_name || '',
+                        languageCode: user.language_code || 'uz',
+                        isPremium: user.is_premium || false,
+                        photoUrl: user.photo_url || null
+                    };
+                }
+            }
+            
+            // Fallback: try to get from URL parameters (for testing)
+            const urlParams = new URLSearchParams(window.location.search);
+            const tgUser = urlParams.get('tguser');
+            const testUser = urlParams.get('testuser'); // For easy testing
+            
+            if (testUser) {
+                // Simple test user format: ?testuser=username
+                return {
+                    id: 'tg_test_' + Date.now(),
+                    username: testUser,
+                    firstName: testUser,
+                    lastName: '',
+                    languageCode: 'uz',
+                    isPremium: Math.random() > 0.7, // 30% chance of premium
+                    photoUrl: null
+                };
+            }
+            
+            if (tgUser) {
+                try {
+                    const userData = JSON.parse(decodeURIComponent(tgUser));
+                    return {
+                        id: 'tg_' + userData.id,
+                        username: userData.username || userData.first_name || 'Telegram User',
+                        firstName: userData.first_name || '',
+                        lastName: userData.last_name || '',
+                        languageCode: userData.language_code || 'uz',
+                        isPremium: userData.is_premium || false,
+                        photoUrl: userData.photo_url || null
+                    };
+                } catch (e) {
+                    console.log('Error parsing Telegram user data:', e);
+                }
+            }
+            
+            return null;
+        }
+
+        // Generate unique player ID with Telegram integration
         function getUniquePlayerId() {
+            // First try to get Telegram user data
+            const tgData = getTelegramUserData();
+            if (tgData) {
+                // Update game state with Telegram data
+                gameState.playerName = tgData.username;
+                gameState.telegramId = tgData.id;
+                gameState.firstName = tgData.firstName;
+                gameState.lastName = tgData.lastName;
+                gameState.isPremium = tgData.isPremium;
+                gameState.photoUrl = tgData.photoUrl;
+                
+                // Set language based on Telegram user
+                if (tgData.languageCode) {
+                    if (tgData.languageCode.includes('ru')) {
+                        currentLanguage = 'ru';
+                        gameState.country = 'RU';
+                    } else if (tgData.languageCode.includes('en')) {
+                        currentLanguage = 'en';
+                        gameState.country = 'US';
+                    } else {
+                        currentLanguage = 'uz';
+                        gameState.country = 'UZ';
+                    }
+                    updateLanguageDisplay();
+                    translatePage();
+                }
+                
+                return tgData.id;
+            }
+            
+            // Fallback to browser fingerprint
             let playerId = localStorage.getItem('dragonCoinPlayerId');
             
             if (!playerId) {
@@ -1704,7 +1882,7 @@
                     hash = hash & hash; // Convert to 32-bit integer
                 }
                 
-                playerId = 'player_' + Math.abs(hash).toString(36) + '_' + Date.now();
+                playerId = 'browser_' + Math.abs(hash).toString(36) + '_' + Date.now();
                 localStorage.setItem('dragonCoinPlayerId', playerId);
             }
             
@@ -1803,12 +1981,17 @@
                 return;
             }
             
-            // Add info about player count
+            // Add info about player count and real-time status
+            const onlineCount = playersToShow.filter(p => p.isOnline && !p.isSample).length;
+            const telegramCount = playersToShow.filter(p => p.telegramId && !p.isSample).length;
+            
             const infoDiv = document.createElement('div');
-            infoDiv.style.cssText = 'text-align: center; color: #ccc; padding: 10px; margin-bottom: 15px; font-size: 14px;';
+            infoDiv.style.cssText = 'text-align: center; color: #ccc; padding: 10px; margin-bottom: 15px; font-size: 14px; background: rgba(0, 255, 136, 0.1); border-radius: 10px; border: 1px solid rgba(0, 255, 136, 0.3);';
             infoDiv.innerHTML = `
                 📊 Jami o'yinchilar: ${playersToShow.length} | 
-                ${realPlayers.length >= 5 ? 'Faqat haqiqiy o\'yinchilar' : 'Haqiqiy va namuna o\'yinchilar'}
+                🟢 Online: ${onlineCount} | 
+                📱 Telegram: ${telegramCount}<br>
+                <small style="color: #00ff88;">⚡ Real vaqtda yangilanmoqda</small>
             `;
             list.appendChild(infoDiv);
             
@@ -1841,6 +2024,13 @@
                 
                 const playerType = player.isSample ? ' 🤖' : '';
                 const isCurrentText = player.isCurrentPlayer ? ' (Siz)' : '';
+                const onlineStatus = player.isOnline ? '🟢' : '🔴';
+                const premiumBadge = player.isPremium ? ' ⭐' : '';
+                
+                // Show Telegram username if available, otherwise show regular name
+                const displayName = player.telegramId ? 
+                    (player.name.startsWith('@') ? player.name : '@' + player.name) : 
+                    player.name;
                 
                 div.innerHTML = `
                     <div class="rank-badge ${rankClass}">
@@ -1848,10 +2038,10 @@
                     </div>
                     <div class="player-info">
                         <div class="player-name">
-                            ${countryFlag} ${player.name}${isCurrentText}${playerType}
+                            ${countryFlag} ${displayName}${premiumBadge}${isCurrentText}${playerType}
                         </div>
                         <div class="player-stats">
-                            Level ${player.level} • ${player.referrals} referrals
+                            ${onlineStatus} Level ${player.level} • ${player.referrals} referrals • ${player.totalTaps || 0} taps
                             ${player.lastUpdate ? ' • ' + getTimeAgo(player.lastUpdate) : ''}
                         </div>
                     </div>
@@ -2816,32 +3006,82 @@
             }
         }
 
+        // Initialize Telegram WebApp
+        function initializeTelegramWebApp() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                const tg = window.Telegram.WebApp;
+                
+                // Initialize the WebApp
+                tg.ready();
+                
+                // Set theme colors
+                tg.setHeaderColor('#0a0a0f');
+                tg.setBackgroundColor('#0a0a0f');
+                
+                // Enable closing confirmation
+                tg.enableClosingConfirmation();
+                
+                // Show main button for sharing
+                tg.MainButton.setText('Do\'stlaringizni taklif qiling! 🎁');
+                tg.MainButton.color = '#00ff88';
+                tg.MainButton.textColor = '#000000';
+                tg.MainButton.show();
+                
+                // Handle main button click
+                tg.MainButton.onClick(() => {
+                    const referralLink = `https://t.me/Dragon_coin_money_bot?start=ref_${gameState.referralCode}`;
+                    const shareText = `🐉 Dragon Coin o'yiniga qo'shiling!\n\n💰 Tap qilib coin yig'ing\n🎁 Har bir referral uchun bonus oling\n🏆 Reytingda birinchi bo'ling!\n\n${referralLink}`;
+                    
+                    tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(shareText)}`);
+                });
+                
+                // Handle back button
+                tg.BackButton.onClick(() => {
+                    showSection('tap');
+                });
+                
+                console.log('Telegram WebApp initialized successfully');
+                console.log('User data:', tg.initDataUnsafe?.user);
+            } else {
+                console.log('Not running in Telegram WebApp environment');
+            }
+        }
+
         // Initialize game
         detectCountryAndLanguage();
         loadGameState();
         loadAdminAttempts();
         initializeReferralSystem();
+        initializeTelegramWebApp();
         
         // Ensure no fake referrals exist
         if (!gameState.referrals) {
             gameState.referrals = [];
         }
         
-        // Load players for leaderboard
+        // Load players for leaderboard and start real-time updates
         loadRealPlayers();
+        startRealTimeUpdates();
         
         updateUI();
         updateConditionsDisplay();
         translatePage();
         
-        // Save game state periodically and update leaderboard
-        setInterval(() => {
-            saveGameState();
-            loadRealPlayers(); // Update leaderboard data
-        }, 10000); // Save every 10 seconds
-        
         // Save when page is closed
-        window.addEventListener('beforeunload', saveGameState);
+        window.addEventListener('beforeunload', () => {
+            saveGameState();
+            stopRealTimeUpdates();
+        });
+        
+        // Handle visibility change to pause/resume updates
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopRealTimeUpdates();
+            } else {
+                startRealTimeUpdates();
+                loadRealPlayers();
+            }
+        });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96c6c97340ee09a4',t:'MTc1NDczNzYxNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96c6d77cc0542453',t:'MTc1NDczODE5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
