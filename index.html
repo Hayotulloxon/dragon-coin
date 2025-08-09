@@ -1439,29 +1439,11 @@
             return earnings;
         }
 
-        // Leaderboard functions
-        function generateMockPlayers() {
-            // In real implementation, this would come from server
-            const names = [
-                'DragonMaster', 'CoinHunter', 'TapKing', 'EnergyBeast', 'CryptoNinja',
-                'DigitalMiner', 'BlockchainPro', 'CoinCollector', 'TapMachine', 'DragonSlayer',
-                'CoinWizard', 'TapGuru', 'EnergyMaster', 'CryptoLord', 'DigitalKing'
-            ];
-            
-            globalPlayers = [];
-            for (let i = 0; i < 50; i++) {
-                globalPlayers.push({
-                    id: i + 1,
-                    name: names[Math.floor(Math.random() * names.length)] + (i + 1),
-                    balance: Math.floor(Math.random() * 100000) + 1000,
-                    referrals: Math.floor(Math.random() * 20),
-                    level: Math.floor(Math.random() * 10) + 1,
-                    country: ['UZ', 'RU', 'US', 'KZ', 'TR'][Math.floor(Math.random() * 5)]
-                });
-            }
-            
-            // Add current player
-            globalPlayers.push({
+        // Leaderboard functions - only real players
+        function loadRealPlayers() {
+            // In real implementation, this would load from server
+            // For now, only show current player
+            globalPlayers = [{
                 id: 'current',
                 name: gameState.playerName,
                 balance: gameState.balance,
@@ -1469,7 +1451,7 @@
                 level: gameState.level,
                 country: gameState.country,
                 isCurrentPlayer: true
-            });
+            }];
         }
 
         function showLeaderboard(type) {
@@ -1477,6 +1459,9 @@
             document.getElementById('coinsLeaderboard').classList.remove('active');
             document.getElementById('referralsLeaderboard').classList.remove('active');
             document.getElementById(type + 'Leaderboard').classList.add('active');
+            
+            // Load real players only
+            loadRealPlayers();
             
             // Sort players
             let sortedPlayers;
@@ -1495,7 +1480,18 @@
             const list = document.getElementById('leaderboardList');
             list.innerHTML = '';
             
-            sortedPlayers.slice(0, 20).forEach((player, index) => {
+            if (sortedPlayers.length === 0) {
+                list.innerHTML = `
+                    <div style="text-align: center; color: #ccc; padding: 40px;">
+                        <div style="font-size: 48px; margin-bottom: 20px;">🏆</div>
+                        <div style="font-size: 18px; margin-bottom: 10px;">Reyting hali bo'sh</div>
+                        <div style="font-size: 14px;">Birinchi o'yinchi bo'ling!</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            sortedPlayers.forEach((player, index) => {
                 const div = document.createElement('div');
                 div.className = 'leaderboard-item';
                 if (player.isCurrentPlayer) {
@@ -2425,8 +2421,7 @@
             } else if (sectionName === 'leaderboard') {
                 document.getElementById('leaderboardSection').style.display = 'block';
                 document.getElementById('leaderboardTab').classList.add('active');
-                // Initialize leaderboard
-                generateMockPlayers();
+                // Initialize leaderboard with real players only
                 showLeaderboard('coins');
             } else if (sectionName === 'boost') {
                 document.getElementById('boostSection').style.display = 'block';
@@ -2443,31 +2438,8 @@
         updateConditionsDisplay();
         translatePage();
         
-        // Add some demo referrals for testing
-        if (gameState.referrals.length === 0) {
-            // This would normally come from server
-            gameState.referrals = [
-                {
-                    id: 1,
-                    name: 'CryptoFriend',
-                    joinDate: Date.now() - 86400000,
-                    totalCoins: 5000,
-                    level: 3,
-                    isActive: true,
-                    lastActivity: Date.now() - 3600000
-                },
-                {
-                    id: 2,
-                    name: 'DragonHunter',
-                    joinDate: Date.now() - 172800000,
-                    totalCoins: 12000,
-                    level: 6,
-                    isActive: true,
-                    lastActivity: Date.now() - 7200000
-                }
-            ];
-            gameState.referralEarnings = 1400; // 500 + 200 + 500 + 200
-        }
+        // Referrals will only be added when real users join through referral links
+        // No fake referrals added
         
         // Save game state periodically
         setInterval(saveGameState, 10000); // Save every 10 seconds
@@ -2475,5 +2447,5 @@
         // Save when page is closed
         window.addEventListener('beforeunload', saveGameState);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96c6ace5162ae9c1',t:'MTc1NDczNjQ0Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96c6b3aba213e9c1',t:'MTc1NDczNjcyMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
