@@ -1675,13 +1675,19 @@
                 return (now - player.lastUpdate) < 86400000; // 24 hours
             });
             
-            // Add sample players only if we have less than 10 real players
+            // Add exactly 10 sample players only if we have less than 5 real players
             const realPlayers = allPlayers.filter(p => !p.isSample);
-            if (realPlayers.length < 10) {
+            if (realPlayers.length < 5) {
                 const samplePlayers = generateSamplePlayers();
                 samplePlayers.forEach(samplePlayer => {
-                    if (!allPlayers.find(p => p.id === samplePlayer.id)) {
+                    const existingPlayer = allPlayers.find(p => p.id === samplePlayer.id);
+                    if (!existingPlayer) {
                         allPlayers.push(samplePlayer);
+                    } else if (existingPlayer.isFixed) {
+                        // Keep fixed sample players unchanged
+                        existingPlayer.balance = samplePlayer.balance;
+                        existingPlayer.referrals = samplePlayer.referrals;
+                        existingPlayer.level = samplePlayer.level;
                     }
                 });
             }
@@ -1889,33 +1895,35 @@
             return playerId;
         }
 
-        // Generate sample players with realistic data
+        // Generate sample players with realistic data (limited to 10)
         function generateSamplePlayers() {
             const names = [
                 'CryptoKing', 'DragonMaster', 'CoinHunter', 'TapLegend', 'GoldDigger',
-                'FastTapper', 'CoinCollector', 'DragonSlayer', 'TapMaster', 'CryptoMiner',
-                'GoldRush', 'DragonFire', 'CoinStorm', 'TapStorm', 'DragonCoin',
-                'FastCoin', 'TapHero', 'CoinRush', 'DragonTap', 'NewPlayer'
+                'FastTapper', 'CoinCollector', 'DragonSlayer', 'TapMaster', 'CryptoMiner'
             ];
             
             const countries = ['UZ', 'RU', 'KZ', 'TR', 'KG'];
             const samplePlayers = [];
             
-            for (let i = 0; i < 20; i++) {
-                const baseBalance = Math.max(100, Math.floor(Math.random() * 50000));
-                const level = Math.max(1, Math.floor(baseBalance / 5000) + Math.floor(Math.random() * 3));
-                const referrals = Math.floor(Math.random() * 15);
+            // Fixed balances for sample players to prevent automatic growth
+            const fixedBalances = [45000, 38000, 32000, 28000, 25000, 22000, 18000, 15000, 12000, 8000];
+            
+            for (let i = 0; i < 10; i++) {
+                const baseBalance = fixedBalances[i];
+                const level = Math.max(1, Math.floor(baseBalance / 5000));
+                const referrals = Math.floor(baseBalance / 3000); // Proportional referrals
                 
                 samplePlayers.push({
-                    id: 'sample_' + i + '_' + Date.now(),
-                    name: names[i] || `Player${i}`,
+                    id: 'sample_' + i + '_fixed',
+                    name: names[i],
                     balance: baseBalance,
                     referrals: referrals,
                     level: level,
                     country: countries[Math.floor(Math.random() * countries.length)],
                     isCurrentPlayer: false,
-                    lastUpdate: Date.now() - Math.floor(Math.random() * 86400000), // Random time in last 24h
-                    isSample: true
+                    lastUpdate: Date.now() - Math.floor(Math.random() * 3600000), // Random time in last hour
+                    isSample: true,
+                    isFixed: true // Mark as fixed to prevent updates
                 });
             }
             
@@ -1931,14 +1939,13 @@
             // Load real players
             loadRealPlayers();
             
-            // Filter out sample players if we have enough real players
+            // Always show all players (real + sample), but limit sample players to 10
             let playersToShow = globalPlayers;
             const realPlayers = globalPlayers.filter(p => !p.isSample);
+            const samplePlayers = globalPlayers.filter(p => p.isSample).slice(0, 10); // Limit to 10 sample players
             
-            // If we have at least 5 real players, show only real players
-            if (realPlayers.length >= 5) {
-                playersToShow = realPlayers;
-            }
+            // Combine real players with limited sample players
+            playersToShow = [...realPlayers, ...samplePlayers];
             
             // Sort players
             let sortedPlayers;
@@ -3039,5 +3046,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96c6df4ba4da2453',t:'MTc1NDczODUxMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96c6e71b11b32453',t:'MTc1NDczODgzMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
