@@ -1315,58 +1315,90 @@
     </div>
 
     <!-- Firebase JavaScript SDK -->
-    <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+  import { getDatabase, ref, set, onValue, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
 
-        // Your web app's Firebase configuration
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-        const firebaseConfig = {
-            apiKey: "AIzaSyDShZAo9lg-SxpQViCT27uXVni1UK7TGYU",
-            authDomain: "dragon-92897.firebaseapp.com",
-            databaseURL: "https://dragon-92897-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "dragon-92897",
-            storageBucket: "dragon-92897.firebasestorage.app",
-            messagingSenderId: "40351345340",
-            appId: "1:40351345340:web:632388a9b45d3c7905feb9",
-            measurementId: "G-FXT1F3NPCD"
-        };
+  const firebaseConfig = {
+    apiKey: "AIzaSyDShZAo9lg-SxpQViCT27uXVni1UK7TGYU",
+    authDomain: "dragon-92897.firebaseapp.com",
+    databaseURL: "https://dragon-92897-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "dragon-92897",
+    storageBucket: "dragon-92897.firebasestorage.app",
+    messagingSenderId: "40351345340",
+    appId: "1:40351345340:web:632388a9b45d3c7905feb9",
+    measurementId: "G-FXT1F3NPCD"
+  };
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-        const analytics = getAnalytics(app);
+  const app = initializeApp(firebaseConfig);
+  const database = getDatabase(app);
 
-        // Make Firebase functions available globally
-        window.firebaseDB = database;
-        window.firebaseRef = ref;
-        window.firebaseSet = set;
-        window.firebaseOnValue = onValue;
-        window.firebaseOnDisconnect = onDisconnect;
-        window.firebaseServerTimestamp = serverTimestamp;
+  // analytics — ba'zi muhitlarda xato berishi mumkin, shuning uchun try/catch bilan o'rab qo'yamiz
+  let analytics = null;
+  try {
+    analytics = getAnalytics(app);
+  } catch (e) {
+    console.warn('Analyticsni ishga tushurib bo‘lmadi:', e);
+  }
 
-        // Initialize Firebase connection after DOM loads
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('📱 DOM yuklandi, Firebase ulanishi kutilmoqda...');
-            updateFirebaseStatus(false); // Boshlang'ich holat
-            
-            // Firebase SDK yuklanishini kutish
-            setTimeout(() => {
-                console.log('🚀 Firebase ulanishni boshlash...');
-                initializeFirebaseConnection();
-            }, 2000);
-            
-            // Agar 10 soniyadan keyin ham ulanmasa, qayta urinish
-            setTimeout(() => {
-                if (!firebaseConnected) {
-                    console.log('⏰ 10 soniya o\'tdi, qayta urinish...');
-                    initializeFirebaseConnection();
-                }
-            }, 10000);
-        });
-    </script>
+  // GLOBALS (agar kerak bo'lsa)
+  window.firebaseDB = database;
+  window.firebaseRef = ref;
+  window.firebaseSet = set;
+  window.firebaseOnValue = onValue;
+  window.firebaseOnDisconnect = onDisconnect;
+  window.firebaseServerTimestamp = serverTimestamp;
+
+  // --- Missing definitions added ---
+  let firebaseConnected = false;
+
+  function updateFirebaseStatus(connected) {
+    firebaseConnected = connected;
+    console.log('Firebase connected:', connected);
+    // UIni yangilash yoki kerakli ishlar shu yerda bo'ladi
+  }
+
+  function initializeFirebaseConnection() {
+    // .info/connected orqali Realtime DB connection monitoring
+    const connectedRef = ref(database, '.info/connected');
+    onValue(connectedRef, (snap) => {
+      const isConnected = !!snap.val();
+      updateFirebaseStatus(isConnected);
+
+      if (isConnected) {
+        console.log('✅ Firebase bilan bog‘landi.');
+
+        // example: presence yozish (o'zingizning userId bilan almashtiring)
+        const myUserId = 'anon-user-123'; // real loyihada auth.uid ishlating
+        const presenceRef = ref(database, presence/${myUserId});
+        set(presenceRef, { online: true, lastSeen: serverTimestamp() })
+          .catch(err => console.error('Presence set xatosi:', err));
+        onDisconnect(presenceRef).set({ online: false, lastSeen: serverTimestamp() })
+          .catch(err => console.error('onDisconnect xatosi:', err));
+      } else {
+        console.log('❌ Firebase bilan bog‘lanmadi.');
+      }
+    }, (err) => {
+      console.error('.info/connected onValue xatosi:', err);
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('📱 DOM yuklandi, Firebase ulanishi kutilmoqda...');
+    updateFirebaseStatus(false);
+    // to'g'ridan-to'g'ri initialize qilish yetarli (imports top-level bo'lgani uchun SDK allaqachon yuklangan)
+    initializeFirebaseConnection();
+
+    // ehtiyot chorasi sifatida — 10 soniyadan keyin yana tekshirish (majburiy emas)
+    setTimeout(() => {
+      if (!firebaseConnected) {
+        console.log('⏰ 10 soniya o‘tdi, qayta urinish...');
+        initializeFirebaseConnection();
+      }
+    }, 10000);
+  });
+</script>
 
     <script>
         // Multi-language support
