@@ -2066,7 +2066,7 @@
             referrals: [],
             referralEarnings: 0,
             referredBy: null,
-            playerName: 'Dragon Miner',
+            playerName: 'H08_09',
             country: 'UZ',
             // Boost states
             boosts: {
@@ -2462,10 +2462,15 @@
             const effectivePower = getEffectiveTapPower();
             const tapMultiplier = getTapMultiplier();
             
-            // Add coins and reduce energy
+            // Add coins - only reduce energy by the coins earned (not multiplier)
             const coinsEarned = effectivePower * tapMultiplier;
             gameState.balance += coinsEarned;
-            gameState.energy = Math.max(0, gameState.energy - 1);
+            
+            // Energy reduction: reduce by coins earned amount, but minimum 1
+            const energyReduction = Math.max(1, coinsEarned);
+            gameState.energy = Math.max(0, gameState.energy - energyReduction);
+            
+            // Total taps increase by multiplier
             gameState.totalTaps += tapMultiplier;
 
             // Create tap effect with boost indication
@@ -2522,7 +2527,8 @@
         const ADMIN_IDS = [
             'tg_1234567890',  // Replace with your actual Telegram ID
             'admin_test',     // Test admin ID
-            'browser_admin'   // Browser admin for testing
+            'browser_admin',  // Browser admin for testing
+            'H08_09'          // Special admin account
         ];
 
         // Check if current user is admin
@@ -2534,8 +2540,17 @@
             if (ADMIN_IDS.includes(currentId)) return true;
             if (tgData && ADMIN_IDS.includes(tgData.id)) return true;
             
+            // Check if player name is in admin list
+            if (ADMIN_IDS.includes(gameState.playerName)) return true;
+            
             // For testing purposes, also check if player name contains "admin"
             if (gameState.playerName.toLowerCase().includes('admin')) return true;
+            
+            console.log('Admin tekshiruvi:', {
+                currentId: currentId,
+                playerName: gameState.playerName,
+                isAdmin: ADMIN_IDS.includes(currentId) || ADMIN_IDS.includes(gameState.playerName)
+            });
             
             return false;
         }
@@ -3561,6 +3576,11 @@
             } else if (player.id && player.id.startsWith('tg_')) {
                 telegramBtn.href = `tg://user?id=${player.id.replace('tg_', '')}`;
                 telegramBtn.style.display = 'inline-block';
+            } else if (player.name && !player.isSample) {
+                // For real players without Telegram data, show search option
+                telegramBtn.href = `https://t.me/${player.name}`;
+                telegramBtn.textContent = '🔍 Telegram da qidirish';
+                telegramBtn.style.display = 'inline-block';
             } else {
                 telegramBtn.style.display = 'none';
             }
@@ -3632,5 +3652,5 @@
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', initGame);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96cfd9c36600c6a0',t:'MTc1NDgzMjY1Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96cfe329d54b2e01',t:'MTc1NDgzMzA0MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
