@@ -1315,90 +1315,58 @@
     </div>
 
     <!-- Firebase JavaScript SDK -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-  import { getDatabase, ref, set, onValue, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDShZAo9lg-SxpQViCT27uXVni1UK7TGYU",
-    authDomain: "dragon-92897.firebaseapp.com",
-    databaseURL: "https://dragon-92897-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "dragon-92897",
-    storageBucket: "dragon-92897.firebasestorage.app",
-    messagingSenderId: "40351345340",
-    appId: "1:40351345340:web:632388a9b45d3c7905feb9",
-    measurementId: "G-FXT1F3NPCD"
-  };
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+            apiKey: "AIzaSyDShZAo9lg-SxpQViCT27uXVni1UK7TGYU",
+            authDomain: "dragon-92897.firebaseapp.com",
+            databaseURL: "https://dragon-92897-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "dragon-92897",
+            storageBucket: "dragon-92897.firebasestorage.app",
+            messagingSenderId: "40351345340",
+            appId: "1:40351345340:web:632388a9b45d3c7905feb9",
+            measurementId: "G-FXT1F3NPCD"
+        };
 
-  const app = initializeApp(firebaseConfig);
-  const database = getDatabase(app);
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const analytics = getAnalytics(app);
 
-  // analytics — ba'zi muhitlarda xato berishi mumkin, shuning uchun try/catch bilan o'rab qo'yamiz
-  let analytics = null;
-  try {
-    analytics = getAnalytics(app);
-  } catch (e) {
-    console.warn('Analyticsni ishga tushurib bo‘lmadi:', e);
-  }
+        // Make Firebase functions available globally
+        window.firebaseDB = database;
+        window.firebaseRef = ref;
+        window.firebaseSet = set;
+        window.firebaseOnValue = onValue;
+        window.firebaseOnDisconnect = onDisconnect;
+        window.firebaseServerTimestamp = serverTimestamp;
 
-  // GLOBALS (agar kerak bo'lsa)
-  window.firebaseDB = database;
-  window.firebaseRef = ref;
-  window.firebaseSet = set;
-  window.firebaseOnValue = onValue;
-  window.firebaseOnDisconnect = onDisconnect;
-  window.firebaseServerTimestamp = serverTimestamp;
-
-  // --- Missing definitions added ---
-  let firebaseConnected = false;
-
-  function updateFirebaseStatus(connected) {
-    firebaseConnected = connected;
-    console.log('Firebase connected:', connected);
-    // UIni yangilash yoki kerakli ishlar shu yerda bo'ladi
-  }
-
-  function initializeFirebaseConnection() {
-    // .info/connected orqali Realtime DB connection monitoring
-    const connectedRef = ref(database, '.info/connected');
-    onValue(connectedRef, (snap) => {
-      const isConnected = !!snap.val();
-      updateFirebaseStatus(isConnected);
-
-      if (isConnected) {
-        console.log('✅ Firebase bilan bog‘landi.');
-
-        // example: presence yozish (o'zingizning userId bilan almashtiring)
-        const myUserId = 'anon-user-123'; // real loyihada auth.uid ishlating
-        const presenceRef = ref(database, presence/${myUserId});
-        set(presenceRef, { online: true, lastSeen: serverTimestamp() })
-          .catch(err => console.error('Presence set xatosi:', err));
-        onDisconnect(presenceRef).set({ online: false, lastSeen: serverTimestamp() })
-          .catch(err => console.error('onDisconnect xatosi:', err));
-      } else {
-        console.log('❌ Firebase bilan bog‘lanmadi.');
-      }
-    }, (err) => {
-      console.error('.info/connected onValue xatosi:', err);
-    });
-  }
-
-  document.addEventListener('DOMContentLoaded', function() {
-    console.log('📱 DOM yuklandi, Firebase ulanishi kutilmoqda...');
-    updateFirebaseStatus(false);
-    // to'g'ridan-to'g'ri initialize qilish yetarli (imports top-level bo'lgani uchun SDK allaqachon yuklangan)
-    initializeFirebaseConnection();
-
-    // ehtiyot chorasi sifatida — 10 soniyadan keyin yana tekshirish (majburiy emas)
-    setTimeout(() => {
-      if (!firebaseConnected) {
-        console.log('⏰ 10 soniya o‘tdi, qayta urinish...');
-        initializeFirebaseConnection();
-      }
-    }, 10000);
-  });
-</script>
+        // Initialize Firebase connection after DOM loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📱 DOM yuklandi, Firebase ulanishi kutilmoqda...');
+            updateFirebaseStatus(false); // Boshlang'ich holat
+            
+            // Firebase SDK yuklanishini kutish
+            setTimeout(() => {
+                console.log('🚀 Firebase ulanishni boshlash...');
+                initializeFirebaseConnection();
+            }, 2000);
+            
+            // Agar 10 soniyadan keyin ham ulanmasa, qayta urinish
+            setTimeout(() => {
+                if (!window.firebaseConnected) {
+                    console.log('⏰ 10 soniya o\'tdi, qayta urinish...');
+                    initializeFirebaseConnection();
+                }
+            }, 10000);
+        });
+    </script>
 
     <script>
         // Multi-language support
@@ -2806,4 +2774,166 @@
                     if (gameState.balance >= cost) {
                         gameState.balance -= cost;
                         gameState.autoTapEndTime = Date.now() + (4 * 60 * 60 * 1000);
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96cc88ca026c0d38',t:'MTc1NDc5Nzg4Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+                        startAutoTap();
+                        message = 'Auto tap 4 soatga faollashtirildi!';
+                        canBuy = true;
+                    }
+                    break;
+                case 'energyRegen':
+                    cost = 1500;
+                    if (gameState.balance >= cost) {
+                        gameState.balance -= cost;
+                        message = 'Energy 2x tez tiklanadi!';
+                        canBuy = true;
+                    }
+                    break;
+                case 'coinMultiplier':
+                    cost = 3000;
+                    if (gameState.balance >= cost) {
+                        gameState.balance -= cost;
+                        coinMultiplierActive = true;
+                        coinMultiplierEndTime = Date.now() + (30 * 60 * 1000);
+                        message = '30 daqiqa 2x coin faol!';
+                        canBuy = true;
+                        setTimeout(() => {
+                            coinMultiplierActive = false;
+                            alert('⏰ 2x coin multiplier tugadi!');
+                        }, 30 * 60 * 1000);
+                    }
+                    break;
+            }
+
+            if (canBuy) {
+                updateUI();
+                saveGameState();
+                alert('✅ ' + message);
+            } else {
+                alert('❌ Yetarli coin yo\'q!');
+            }
+        }
+
+        function startAutoTap() {
+            const autoTapInterval = setInterval(() => {
+                if (Date.now() >= gameState.autoTapEndTime) {
+                    clearInterval(autoTapInterval);
+                    return;
+                }
+                
+                if (gameState.energy > 0) {
+                    gameState.energy -= 1;
+                    gameState.balance += gameState.tapPower;
+                    gameState.totalTaps += 1;
+                    gameState.autoTapCoins += gameState.tapPower;
+                    
+                    checkLevelUp();
+                    checkConditions();
+                }
+            }, 1000);
+        }
+
+        // Navigation functions
+        function showSection(sectionName) {
+            const sections = ['tap', 'tasks', 'referral', 'leaderboard', 'boost'];
+            const tabs = ['tapTab', 'tasksTab', 'referralTab', 'leaderboardTab', 'boostTab'];
+            
+            sections.forEach(section => {
+                document.getElementById(section + 'Section').style.display = 'none';
+            });
+            
+            tabs.forEach(tab => {
+                document.getElementById(tab).classList.remove('active');
+            });
+            
+            document.getElementById(sectionName + 'Section').style.display = 'block';
+            document.getElementById(sectionName + 'Tab').classList.add('active');
+            
+            if (sectionName === 'referral') {
+                updateReferralStats();
+                updateReferralList();
+            } else if (sectionName === 'leaderboard') {
+                showLeaderboard('coins');
+            } else if (sectionName === 'tasks') {
+                updateConditionsDisplay();
+            }
+            
+            if (sectionName === 'boost' && isAdmin) {
+                document.getElementById('adminPanel').style.display = 'block';
+            } else if (isAdmin && sectionName !== 'boost') {
+                document.getElementById('adminPanel').style.display = 'none';
+            }
+        }
+
+        // Update UI function
+        function updateUI() {
+            document.getElementById('balance').textContent = gameState.balance.toLocaleString();
+            document.getElementById('tapPower').textContent = gameState.tapPower;
+            document.getElementById('totalTaps').textContent = gameState.totalTaps.toLocaleString();
+            document.getElementById('level').textContent = gameState.level;
+            document.getElementById('levelBadge').textContent = `Level ${gameState.level}`;
+            document.getElementById('playerName').textContent = gameState.playerName;
+            
+            const energyPercent = (gameState.energy / gameState.maxEnergy) * 100;
+            document.getElementById('energyProgress').style.width = energyPercent + '%';
+            document.getElementById('energyText').textContent = `${gameState.energy}/${gameState.maxEnergy}`;
+            
+            document.getElementById('tapProgress').textContent = Math.min(gameState.totalTaps, 500);
+            document.getElementById('currentLevel').textContent = gameState.level;
+            document.getElementById('coinProgress').textContent = Math.min(gameState.balance, 10000);
+        }
+
+        // Initialize game
+        function initGame() {
+            detectCountryAndLanguage();
+            loadAdminAttempts();
+            loadGameState();
+            initializeReferralSystem();
+            updateUI();
+            updateConditionsDisplay();
+            updateReferralStats();
+            
+            // Add keyboard event listeners
+            document.addEventListener('keydown', function(event) {
+                if (event.code === 'Space' || event.code === 'Enter') {
+                    event.preventDefault();
+                    tapCoin();
+                }
+                
+                if (event.key === 'Escape') {
+                    closeLoginModal();
+                }
+            });
+            
+            // Add password input enter key listener
+            document.getElementById('passwordInput').addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    attemptLogin();
+                }
+            });
+        }
+
+        // Make functions globally available
+        window.showSection = showSection;
+        window.tapCoin = tapCoin;
+        window.claimTask = claimTask;
+        window.buyBoost = buyBoost;
+        window.copyReferralLink = copyReferralLink;
+        window.showLeaderboard = showLeaderboard;
+        window.toggleLanguage = toggleLanguage;
+        window.showAdminLogin = showAdminLogin;
+        window.closeLoginModal = closeLoginModal;
+        window.attemptLogin = attemptLogin;
+        window.addCondition = addCondition;
+        window.removeCondition = removeCondition;
+        window.showSecurityLog = showSecurityLog;
+        window.clearSecurityLog = clearSecurityLog;
+        window.openLink = openLink;
+        window.verifySubscription = verifySubscription;
+        window.enterVideoCode = enterVideoCode;
+        window.updateFirebaseStatus = updateFirebaseStatus;
+        window.initializeFirebaseConnection = initializeFirebaseConnection;
+
+        // Start the game when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initGame);
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96cf48d53729b27a',t:'MTc1NDgyNjcxOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
