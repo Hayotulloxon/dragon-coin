@@ -5,49 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dragon Coin - Tap to Earn</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Firebase SDK -->
-    <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, get, onValue, push, serverTimestamp, onDisconnect } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyC4B6FbCQSFCP9HH9KxagkgBseQJwmAf14",
-            authDomain: "dragon-2fd48.firebaseapp.com",
-            databaseURL: "https://dragon-2fd48-default-rtdb.firebaseio.com",
-            projectId: "dragon-2fd48",
-            storageBucket: "dragon-2fd48.appspot.com",
-            messagingSenderId: "856405247034",
-            appId: "1:856405247034:web:8a497ebbca9a8b6576a103",
-            measurementId: "G-XQQFEG45CZ"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-        const analytics = getAnalytics(app);
-
-        // Make Firebase available globally
-        window.firebaseDB = database;
-        window.firebaseRef = ref;
-        window.firebaseSet = set;
-        window.firebaseGet = get;
-        window.firebaseOnValue = onValue;
-        window.firebasePush = push;
-        window.firebaseServerTimestamp = serverTimestamp;
-        window.firebaseOnDisconnect = onDisconnect;
-
-        console.log("🔥 Firebase initialized successfully!");
-        
-        // Initialize Firebase connection status
-        window.addEventListener('load', () => {
-            if (window.initializeFirebaseConnection) {
-                window.initializeFirebaseConnection();
-            }
-        });
-    </script>
     <style>
         * {
             margin: 0;
@@ -1357,6 +1314,60 @@
         </div>
     </div>
 
+    <!-- Firebase JavaScript SDK -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
+
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+            apiKey: "AIzaSyDShZAo9lg-SxpQViCT27uXVni1UK7TGYU",
+            authDomain: "dragon-92897.firebaseapp.com",
+            databaseURL: "https://dragon-92897-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "dragon-92897",
+            storageBucket: "dragon-92897.firebasestorage.app",
+            messagingSenderId: "40351345340",
+            appId: "1:40351345340:web:632388a9b45d3c7905feb9",
+            measurementId: "G-FXT1F3NPCD"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const analytics = getAnalytics(app);
+
+        // Make Firebase functions available globally
+        window.firebaseDB = database;
+        window.firebaseRef = ref;
+        window.firebaseSet = set;
+        window.firebaseOnValue = onValue;
+        window.firebaseOnDisconnect = onDisconnect;
+        window.firebaseServerTimestamp = serverTimestamp;
+
+        // Initialize Firebase connection after DOM loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📱 DOM yuklandi, Firebase ulanishi kutilmoqda...');
+            updateFirebaseStatus(false); // Boshlang'ich holat
+            
+            // Firebase SDK yuklanishini kutish
+            setTimeout(() => {
+                console.log('🚀 Firebase ulanishni boshlash...');
+                initializeFirebaseConnection();
+            }, 2000);
+            
+            // Agar 10 soniyadan keyin ham ulanmasa, qayta urinish
+            setTimeout(() => {
+                if (!firebaseConnected) {
+                    console.log('⏰ 10 soniya o\'tdi, qayta urinish...');
+                    initializeFirebaseConnection();
+                }
+            }, 10000);
+        });
+    </script>
+
     <script>
         // Multi-language support
         const translations = {
@@ -1527,13 +1538,18 @@
 
         // Firebase connection and real-time sync
         function initializeFirebaseConnection() {
+            console.log('🔄 Firebase ulanishni boshlash...');
+            
             if (!window.firebaseDB) {
-                console.log('Firebase not available, using local storage');
+                console.log('❌ Firebase SDK yuklanmagan');
                 updateFirebaseStatus(false);
+                setTimeout(initializeFirebaseConnection, 2000); // Qayta urinish
                 return;
             }
 
             try {
+                console.log('✅ Firebase SDK topildi, ulanish tekshirilmoqda...');
+                
                 // Test Firebase connection
                 const connectedRef = window.firebaseRef(window.firebaseDB, '.info/connected');
                 window.firebaseOnValue(connectedRef, (snapshot) => {
@@ -1541,29 +1557,45 @@
                     updateFirebaseStatus(firebaseConnected);
                     
                     if (firebaseConnected) {
-                        console.log('🔥 Firebase connected successfully!');
+                        console.log('🔥 Firebase muvaffaqiyatli ulandi!');
+                        console.log('📊 Ma\'lumotlar sinxronizatsiyasi boshlandi');
                         syncPlayerToFirebase();
                         startFirebaseSync();
                     } else {
-                        console.log('🔥 Firebase disconnected, using local storage');
+                        console.log('⚠️ Firebase uzildi, mahalliy saqlash ishlatilmoqda');
                         stopFirebaseSync();
                     }
                 });
 
+                // Test database write
+                const testRef = window.firebaseRef(window.firebaseDB, 'test');
+                window.firebaseSet(testRef, {
+                    timestamp: Date.now(),
+                    message: 'Firebase test connection'
+                }).then(() => {
+                    console.log('✅ Firebase yozish testi muvaffaqiyatli');
+                }).catch((error) => {
+                    console.error('❌ Firebase yozish xatosi:', error);
+                });
+
             } catch (error) {
-                console.error('Firebase initialization error:', error);
+                console.error('❌ Firebase ulanish xatosi:', error);
                 updateFirebaseStatus(false);
+                // 5 soniyadan keyin qayta urinish
+                setTimeout(initializeFirebaseConnection, 5000);
             }
         }
 
         function updateFirebaseStatus(connected) {
             const statusElement = document.getElementById('firebaseStatus');
             if (connected) {
-                statusElement.textContent = '🔥 Firebase Connected - Real-time sync';
+                statusElement.textContent = '🔥 Firebase Ulandi - Real-time sinxronizatsiya';
                 statusElement.className = 'firebase-status firebase-connected';
+                console.log('✅ Status yangilandi: Ulandi');
             } else {
-                statusElement.textContent = '📱 Local Mode - Limited sync';
+                statusElement.textContent = '🔄 Firebase ulanmoqda... Iltimos kuting';
                 statusElement.className = 'firebase-status firebase-disconnected';
+                console.log('⚠️ Status yangilandi: Ulanmagan');
             }
         }
 
@@ -2688,4 +2720,58 @@
         }
 
         function showEnergyWarning() {
-            document.getElementById('energ<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96c71af361bb2d86',t:'MTc1NDc0MDk1NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+            document.getElementById('energyWarning').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('energyWarning').style.display = 'none';
+            }, 3000);
+        }
+
+        // Boost system
+        let coinMultiplierActive = false;
+        let coinMultiplierEndTime = 0;
+
+        function buyBoost(type) {
+            let cost = 0;
+            let message = '';
+            let canBuy = false;
+
+            switch(type) {
+                case 'energy':
+                    cost = 100;
+                    if (gameState.balance >= cost) {
+                        gameState.balance -= cost;
+                        gameState.energy = gameState.maxEnergy;
+                        message = 'Energy to\'liq tiklandi!';
+                        canBuy = true;
+                    }
+                    break;
+                case 'power':
+                    cost = 500 * gameState.tapPower;
+                    if (gameState.balance >= cost) {
+                        gameState.balance -= cost;
+                        gameState.tapPower += 1;
+                        message = `Tap power ${gameState.tapPower} ga oshirildi!`;
+                        canBuy = true;
+                        document.getElementById('powerBoost').querySelector('.boost-cost').textContent = (500 * gameState.tapPower) + ' DRC';
+                    }
+                    break;
+                case 'maxEnergy':
+                    cost = 1000;
+                    if (gameState.balance >= cost) {
+                        gameState.balance -= cost;
+                        gameState.maxEnergy += 500;
+                        gameState.energy = gameState.maxEnergy;
+                        message = 'Maksimal energy 500 ga oshirildi!';
+                        canBuy = true;
+                    }
+                    break;
+                case 'autoTap':
+                    cost = 5000;
+                    if (gameState.autoTapEndTime > Date.now()) {
+                        alert('❌ Auto tap hali faol! Tugashini kuting.');
+                        return;
+                    }
+                    if (gameState.balance >= cost) {
+                        gameState.balance -= cost;
+                        gameState.autoTapEndTime = Date.now() + (4 * 60 * 60 * 1000);
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96cc88ca026c0d38',t:'MTc1NDc5Nzg4Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
