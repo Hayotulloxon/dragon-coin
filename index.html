@@ -5,6 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dragon Coin - Tap to Earn</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
+        import { getDatabase, ref, set, get, onValue, push, update } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDShZAo9lg-SxpQViCT27uXVni1UK7TGYU",
+            authDomain: "dragon-92897.firebaseapp.com",
+            databaseURL: "https://dragon-92897-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "dragon-92897",
+            storageBucket: "dragon-92897.firebasestorage.app",
+            messagingSenderId: "40351345340",
+            appId: "1:40351345340:web:632388a9b45d3c7905feb9",
+            measurementId: "G-FXT1F3NPCD"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const database = getDatabase(app);
+
+        // Make Firebase available globally
+        window.firebaseApp = app;
+        window.firebaseDatabase = database;
+        window.firebaseRef = ref;
+        window.firebaseSet = set;
+        window.firebaseGet = get;
+        window.firebaseOnValue = onValue;
+        window.firebasePush = push;
+        window.firebaseUpdate = update;
+    </script>
     <style>
         * {
             margin: 0;
@@ -69,28 +102,28 @@
         }
 
         .firebase-status {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: #fff;
-            padding: 5px 15px;
+            position: fixed;
+            top: 70px;
+            left: 20px;
+            padding: 8px 15px;
             border-radius: 20px;
             font-size: 12px;
-            z-index: 1000;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
+            font-weight: bold;
+            z-index: 100;
+            transition: all 0.5s ease;
+            opacity: 1;
         }
 
         .firebase-connected {
-            border-color: #00ff88;
+            background: rgba(0, 255, 136, 0.2);
             color: #00ff88;
+            border: 1px solid #00ff88;
         }
 
         .firebase-disconnected {
-            border-color: #ff6b35;
+            background: rgba(255, 107, 53, 0.2);
             color: #ff6b35;
+            border: 1px solid #ff6b35;
         }
 
         .user-info {
@@ -226,33 +259,30 @@
         .coin-container {
             position: relative;
             margin: 40px auto;
-            width: 250px;
-            height: 250px;
+            width: 280px;
+            height: 280px;
+            perspective: 1000px;
         }
 
         .main-coin {
-            width: 250px;
-            height: 250px;
-            background: 
-                radial-gradient(ellipse at 30% 20%, rgba(255, 255, 255, 0.9) 0%, transparent 25%),
-                radial-gradient(ellipse at 70% 80%, rgba(255, 215, 0, 0.4) 0%, transparent 40%),
-                linear-gradient(145deg, #FFD700 0%, #FFA500 30%, #FF8C00 60%, #FFD700 100%);
+            width: 280px;
+            height: 280px;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 25%, #FFD700 50%, #FFED4E 75%, #FFD700 100%);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 100px;
+            font-size: 120px;
             cursor: pointer;
             transition: all 0.2s ease;
             position: relative;
             overflow: hidden;
-            border: 4px solid #FFD700;
+            border: 8px solid #FFA500;
             box-shadow: 
-                0 15px 35px rgba(255, 215, 0, 0.4),
-                0 5px 15px rgba(0, 0, 0, 0.3),
-                inset 0 5px 20px rgba(255, 255, 255, 0.4),
-                inset 0 -5px 20px rgba(255, 140, 0, 0.3);
-            transform: perspective(1000px) rotateX(10deg);
+                0 20px 40px rgba(255, 165, 0, 0.4),
+                0 10px 20px rgba(0, 0, 0, 0.2),
+                inset 0 4px 8px rgba(255, 255, 255, 0.3),
+                inset 0 -4px 8px rgba(255, 140, 0, 0.3);
             user-select: none;
             -webkit-user-select: none;
             -moz-user-select: none;
@@ -262,84 +292,52 @@
             touch-action: manipulation;
         }
 
-        @keyframes coinGlow {
-            0% {
-                box-shadow: 
-                    0 15px 35px rgba(255, 215, 0, 0.4),
-                    0 5px 15px rgba(0, 0, 0, 0.3),
-                    inset 0 5px 20px rgba(255, 255, 255, 0.4),
-                    inset 0 -5px 20px rgba(255, 140, 0, 0.3);
-            }
-            100% {
-                box-shadow: 
-                    0 20px 45px rgba(255, 215, 0, 0.6),
-                    0 8px 25px rgba(0, 0, 0, 0.4),
-                    inset 0 8px 30px rgba(255, 255, 255, 0.6),
-                    inset 0 -8px 30px rgba(255, 140, 0, 0.5);
-            }
-        }
-
-        .main-coin:hover {
-            transform: perspective(1000px) rotateX(5deg) scale(1.05);
-            box-shadow: 
-                0 25px 50px rgba(255, 215, 0, 0.8),
-                0 10px 30px rgba(0, 0, 0, 0.5),
-                inset 0 10px 40px rgba(255, 255, 255, 0.7),
-                inset 0 -10px 40px rgba(255, 140, 0, 0.6);
-        }
-
-        .main-coin:active {
-            transform: perspective(1000px) rotateX(15deg) scale(0.95);
-            box-shadow: 
-                0 10px 25px rgba(255, 215, 0, 0.6),
-                0 3px 10px rgba(0, 0, 0, 0.4),
-                inset 0 3px 15px rgba(255, 255, 255, 0.5),
-                inset 0 -3px 15px rgba(255, 140, 0, 0.4);
-        }
-
         .main-coin::before {
             content: '';
             position: absolute;
-            top: 10%;
-            left: 10%;
-            width: 80%;
-            height: 80%;
-            background: 
-                radial-gradient(ellipse at 40% 30%, rgba(255, 255, 255, 0.8) 0%, transparent 50%);
+            top: 15%;
+            left: 15%;
+            width: 30%;
+            height: 30%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, transparent 70%);
             border-radius: 50%;
-            animation: coinGlow 3s ease-in-out infinite alternate;
+            z-index: 1;
         }
 
-        .main-coin::after {
-            content: '🐉';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 100px;
-            text-shadow: 
-                2px 2px 4px rgba(0, 0, 0, 0.3),
-                0 0 20px rgba(255, 215, 0, 0.5);
-            z-index: 2;
+        .main-coin:hover {
+            transform: scale(1.05);
+            box-shadow: 
+                0 25px 50px rgba(255, 165, 0, 0.5),
+                0 15px 30px rgba(0, 0, 0, 0.3),
+                inset 0 4px 8px rgba(255, 255, 255, 0.4),
+                inset 0 -4px 8px rgba(255, 140, 0, 0.4);
+            filter: brightness(1.1);
         }
 
-        @keyframes shine {
-            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        .main-coin:active {
+            transform: scale(0.95) !important;
+            box-shadow: 
+                0 10px 20px rgba(255, 165, 0, 0.6),
+                0 5px 10px rgba(0, 0, 0, 0.4),
+                inset 0 2px 4px rgba(255, 255, 255, 0.3),
+                inset 0 -2px 4px rgba(255, 140, 0, 0.5) !important;
+            filter: brightness(1.2);
         }
+
+
 
         .tap-effect {
             position: absolute;
             color: #00ff88;
-            font-size: 24px;
+            font-size: 28px;
             font-weight: bold;
             pointer-events: none;
             text-shadow: 
-                0 0 10px #00ff88,
-                0 0 20px #00ff88,
+                0 0 15px #00ff88,
                 0 0 30px #00ff88,
-                0 0 40px #00ff88;
-            animation: neonFloatUp 1s ease-out forwards;
+                0 0 45px #00ff88,
+                0 0 60px #00ff88;
+            animation: neonFloatUp 1.2s ease-out forwards;
             z-index: 10;
             user-select: none;
             -webkit-user-select: none;
@@ -348,24 +346,28 @@
         @keyframes neonFloatUp {
             0% {
                 opacity: 1;
-                transform: translateY(0) scale(1);
-                text-shadow: 
-                    0 0 10px #00ff88,
-                    0 0 20px #00ff88,
-                    0 0 30px #00ff88,
-                    0 0 40px #00ff88;
-            }
-            50% {
-                transform: translateY(-50px) scale(1.2);
+                transform: translateY(0) scale(1) rotate(0deg);
                 text-shadow: 
                     0 0 15px #00ff88,
                     0 0 30px #00ff88,
                     0 0 45px #00ff88,
                     0 0 60px #00ff88;
             }
+            30% {
+                transform: translateY(-30px) scale(1.3) rotate(5deg);
+                text-shadow: 
+                    0 0 20px #00ff88,
+                    0 0 40px #00ff88,
+                    0 0 60px #00ff88,
+                    0 0 80px #00ff88;
+            }
+            70% {
+                transform: translateY(-80px) scale(1.1) rotate(-3deg);
+                opacity: 0.8;
+            }
             100% {
                 opacity: 0;
-                transform: translateY(-100px) scale(0.8);
+                transform: translateY(-120px) scale(0.8) rotate(0deg);
                 text-shadow: 
                     0 0 5px #00ff88,
                     0 0 10px #00ff88,
@@ -581,113 +583,6 @@
             transition: width 0.3s ease;
         }
 
-        .login-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .login-form {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            border: 2px solid rgba(255, 107, 53, 0.3);
-            border-radius: 20px;
-            padding: 40px;
-            width: 90%;
-            max-width: 400px;
-            text-align: center;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-        }
-
-        .login-title {
-            color: #ff6b35;
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .login-input {
-            width: 100%;
-            padding: 15px;
-            margin: 10px 0;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 16px;
-            transition: all 0.3s ease;
-        }
-
-        .login-input:focus {
-            outline: none;
-            border-color: #ff6b35;
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-        .login-input::placeholder {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        .login-buttons {
-            display: flex;
-            gap: 15px;
-            margin-top: 25px;
-        }
-
-        .login-btn {
-            flex: 1;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .login-btn.primary {
-            background: linear-gradient(45deg, #ff6b35, #f7931e);
-            color: white;
-        }
-
-        .login-btn.primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.4);
-        }
-
-        .login-btn.secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .login-btn.secondary:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .login-error {
-            background: rgba(255, 85, 85, 0.2);
-            border: 1px solid #ff5555;
-            border-radius: 8px;
-            padding: 10px;
-            margin: 15px 0;
-            color: #ff5555;
-            font-size: 14px;
-            display: none;
-        }
-
-        /* Referral System Styles */
         .referral-section {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 15px;
@@ -754,7 +649,6 @@
             align-items: center;
         }
 
-        /* Leaderboard Styles */
         .leaderboard-item {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 10px;
@@ -765,11 +659,13 @@
             gap: 15px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             transition: all 0.3s ease;
+            cursor: pointer;
         }
 
         .leaderboard-item:hover {
             background: rgba(255, 255, 255, 0.1);
             border-color: rgba(0, 255, 136, 0.3);
+            transform: translateY(-2px);
         }
 
         .rank-badge {
@@ -808,7 +704,6 @@
             color: #00ff88;
         }
 
-        /* Language Selector */
         .language-selector {
             position: absolute;
             top: 20px;
@@ -827,6 +722,138 @@
         .country-flag {
             font-size: 20px;
             margin-right: 8px;
+        }
+
+        .level-trophy {
+            font-size: 32px;
+            padding: 8px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.3) 0%, transparent 70%);
+            border: 2px solid rgba(255, 215, 0, 0.5);
+            animation: trophyGlow 3s ease-in-out infinite alternate;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .level-trophy:hover {
+            transform: scale(1.1);
+            filter: brightness(1.2);
+        }
+
+        @keyframes trophyGlow {
+            0% {
+                box-shadow: 0 0 10px var(--trophy-color, rgba(255, 215, 0, 0.3));
+                filter: brightness(1);
+            }
+            100% {
+                box-shadow: 0 0 20px var(--trophy-color, rgba(255, 215, 0, 0.6));
+                filter: brightness(1.2);
+            }
+        }
+
+        .player-profile-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .player-profile-content {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.9) 0%, rgba(26, 10, 26, 0.9) 50%, rgba(15, 10, 26, 0.9) 100%);
+            border: 2px solid rgba(0, 255, 136, 0.5);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 
+                0 0 50px rgba(0, 255, 136, 0.3),
+                inset 0 0 30px rgba(255, 255, 255, 0.05);
+            position: relative;
+        }
+
+        .profile-close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .profile-close-btn:hover {
+            color: #ff6b35;
+            transform: scale(1.2);
+        }
+
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            margin: 0 auto 20px;
+            border: 3px solid rgba(0, 255, 136, 0.5);
+        }
+
+        .profile-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .profile-stat {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .profile-stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #00ff88;
+        }
+
+        .profile-stat-label {
+            font-size: 12px;
+            color: #ccc;
+            margin-top: 5px;
+        }
+
+        .telegram-contact-btn {
+            background: linear-gradient(45deg, #0088cc, #0066aa);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .telegram-contact-btn:hover {
+            background: linear-gradient(45deg, #0066aa, #004488);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 136, 204, 0.4);
         }
 
         @media (max-width: 768px) {
@@ -860,14 +887,14 @@
             }
 
             .main-coin {
-                width: 180px;
-                height: 180px;
-                font-size: 70px;
+                width: 220px;
+                height: 220px;
+                font-size: 90px;
             }
             
             .coin-container {
-                width: 180px;
-                height: 180px;
+                width: 220px;
+                height: 220px;
                 margin: 30px auto;
             }
             
@@ -891,12 +918,6 @@
 
             .stat-value {
                 font-size: 20px;
-            }
-
-            .login-form {
-                padding: 25px 15px;
-                margin: 15px;
-                width: 95%;
             }
 
             .navigation-tabs {
@@ -986,18 +1007,25 @@
                 font-size: 16px;
                 margin-right: 6px;
             }
+
+            .firebase-status {
+                top: 60px;
+                left: 15px;
+                padding: 6px 12px;
+                font-size: 11px;
+            }
         }
 
         @media (max-width: 480px) {
             .main-coin {
-                width: 160px;
-                height: 160px;
-                font-size: 60px;
+                width: 180px;
+                height: 180px;
+                font-size: 70px;
             }
             
             .coin-container {
-                width: 160px;
-                height: 160px;
+                width: 180px;
+                height: 180px;
             }
             
             .balance-amount {
@@ -1035,8 +1063,9 @@
     </style>
 </head>
 <body>
-    <!-- Firebase Connection Status -->
-    <div class="firebase-status" id="firebaseStatus">
+
+    <!-- Firebase Status Indicator -->
+    <div class="firebase-status firebase-disconnected" id="firebaseStatus">
         🔄 Firebase ulanmoqda...
     </div>
 
@@ -1055,7 +1084,9 @@
             </div>
         </div>
         <div style="display: flex; align-items: center; gap: 15px;">
-            <button onclick="showAdminLogin()" style="background: #ff6b35; color: white; border: none; padding: 8px 15px; border-radius: 20px; font-size: 12px; cursor: pointer;">👑 Admin</button>
+            <div class="level-trophy" id="levelTrophy">
+                🏆
+            </div>
             <div class="energy-bar">
                 <span>⚡</span>
                 <div class="energy-fill">
@@ -1082,8 +1113,13 @@
 
         <div class="section" id="tapSection">
             <div class="coin-container">
-                <div class="main-coin" id="mainCoin" onclick="tapCoin(event)" ontouchstart="tapCoin(event)" ontouchend="event.preventDefault()">
-                    🐉
+                <div class="main-coin" id="mainCoin" onclick="tapCoin(event)">
+                    <span style="
+                        font-size: 120px; 
+                        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+                        z-index: 2;
+                        position: relative;
+                    ">🐉</span>
                 </div>
             </div>
 
@@ -1099,10 +1135,26 @@
                 <div class="stat-card">
                     <div class="stat-value" id="level">1</div>
                     <div class="stat-label" data-translate="level">Level</div>
+                    <div class="stat-label" id="levelName" style="color: #00ff88; font-size: 10px; margin-top: 2px;">Wood</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-value" id="referralCount">0</div>
                     <div class="stat-label" data-translate="referrals">Referrals</div>
+                </div>
+            </div>
+
+            <!-- Level Progress Bar -->
+            <div style="background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 20px; margin: 20px 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div style="font-size: 16px; font-weight: bold;" id="currentLevelDisplay">Level 1 - Wood</div>
+                    <div style="font-size: 14px; color: #ccc;" id="nextLevelDisplay">Next: Level 2 - Bronze</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="levelProgressBar" style="width: 0%;"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: #ccc; margin-top: 5px;">
+                    <span id="currentTapsDisplay">0 taps</span>
+                    <span id="requiredTapsDisplay">500 taps kerak</span>
                 </div>
             </div>
 
@@ -1205,7 +1257,7 @@
                 <h3 style="margin-bottom: 15px; color: #ff6b35;">🏆 <span data-translate="leaderboard">Reyting Jadvali</span></h3>
                 
                 <div style="display: flex; gap: 10px; margin-bottom: 20px; justify-content: center;">
-                    <button class="nav-tab" id="coinsLeaderboard" onclick="showLeaderboard('coins')" style="padding: 8px 16px;">
+                    <button class="nav-tab active" id="coinsLeaderboard" onclick="showLeaderboard('coins')" style="padding: 8px 16px;">
                         💰 <span data-translate="byCoins">Coinlar bo'yicha</span>
                     </button>
                     <button class="nav-tab" id="referralsLeaderboard" onclick="showLeaderboard('referrals')" style="padding: 8px 16px;">
@@ -1221,35 +1273,6 @@
                 <div id="leaderboardList">
                     <!-- Leaderboard items will be populated here -->
                 </div>
-            </div>
-        </div>
-
-        <div class="admin-panel" id="adminPanel" style="display: none;">
-            <h3 style="margin-bottom: 15px; color: #ff6b35;">👑 Admin Panel</h3>
-            <div style="background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
-                <h4 style="margin-bottom: 15px;">Yangi shart qo'shish</h4>
-                <input type="text" id="conditionText" placeholder="Shart matni" style="width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: none; background: rgba(255,255,255,0.1); color: white;">
-                <input type="number" id="conditionTarget" placeholder="Maqsad (masalan: 500)" style="width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: none; background: rgba(255,255,255,0.1); color: white;">
-                <input type="number" id="conditionReward" placeholder="Mukofot (DRC)" style="width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: none; background: rgba(255,255,255,0.1); color: white;">
-                <select id="conditionType" style="width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: none; background: rgba(255,255,255,0.1); color: white;">
-                    <option value="taps">Tap soni</option>
-                    <option value="balance">Balans</option>
-                    <option value="level">Level</option>
-                    <option value="telegram">Telegram obuna</option>
-                    <option value="youtube">YouTube obuna</option>
-                    <option value="video_code">Video kod</option>
-                </select>
-                <input type="text" id="conditionLink" placeholder="Link (Telegram/YouTube uchun)" style="width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: none; background: rgba(255,255,255,0.1); color: white; display: none;">
-                <input type="text" id="conditionCode" placeholder="Video kodi" style="width: 100%; padding: 10px; margin: 5px 0; border-radius: 5px; border: none; background: rgba(255,255,255,0.1); color: white; display: none;">
-                <button onclick="addCondition()" style="width: 100%; padding: 10px; margin: 10px 0; background: #00ff88; color: black; border: none; border-radius: 5px; font-weight: bold;">Shart qo'shish</button>
-            </div>
-            <div id="adminConditionsList"></div>
-            
-            <div style="background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 20px; margin-top: 20px;">
-                <h4 style="margin-bottom: 15px; color: #ff6b35;">🔒 Xavfsizlik Logi</h4>
-                <button onclick="showSecurityLog()" style="background: #ff6b35; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-bottom: 10px;">📊 Login urinishlarini ko'rish</button>
-                <button onclick="clearSecurityLog()" style="background: #ff5555; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-bottom: 10px; margin-left: 10px;">🗑️ Logni tozalash</button>
-                <div id="securityLogDisplay" style="max-height: 200px; overflow-y: auto; margin-top: 10px;"></div>
             </div>
         </div>
 
@@ -1281,92 +1304,54 @@
                         <div class="boost-cost">5000 DRC</div>
                         <div class="boost-description" data-translate="autoTapDesc">4 soat avtomatik tap qiladi</div>
                     </div>
-                    <div class="boost-card" onclick="buyBoost('energyRegen')" id="energyRegenBoost">
-                        <div class="boost-icon">⚡</div>
-                        <div class="boost-name">Fast Energy Regen</div>
-                        <div class="boost-cost">1500 DRC</div>
-                        <div class="boost-description" data-translate="energyRegenDesc">Energiya 2x tez tiklanadi</div>
-                    </div>
-                    <div class="boost-card" onclick="buyBoost('coinMultiplier')" id="coinMultiplierBoost">
-                        <div class="boost-icon">💰</div>
-                        <div class="boost-name">2x Coin (30min)</div>
-                        <div class="boost-cost">3000 DRC</div>
-                        <div class="boost-description" data-translate="coinMultiplierDesc">30 daqiqa 2x coin olasiz</div>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Admin Login Modal -->
-    <div class="login-modal" id="loginModal" style="display: none;">
-        <div class="login-form">
-            <div class="login-title">
-                👑 Admin Panel
+    <!-- Player Profile Modal -->
+    <div class="player-profile-modal" id="playerProfileModal" style="display: none;">
+        <div class="player-profile-content">
+            <button class="profile-close-btn" onclick="closePlayerProfile()">×</button>
+            
+            <div class="profile-avatar" id="profileAvatar">🐉</div>
+            
+            <h2 id="profilePlayerName">Player Name</h2>
+            <div style="color: #ccc; margin-bottom: 20px;">
+                <span id="profileCountryFlag">🇺🇿</span>
+                <span id="profileOnlineStatus">🟢</span>
+                <span id="profilePlayerLevel">Level 1</span>
             </div>
-            <div class="login-error" id="loginError"></div>
-            <input type="text" class="login-input" id="usernameInput" placeholder="Username kiriting" autocomplete="username">
-            <input type="password" class="login-input" id="passwordInput" placeholder="Parol kiriting" autocomplete="current-password">
-            <div class="login-buttons">
-                <button class="login-btn secondary" onclick="closeLoginModal()">Bekor qilish</button>
-                <button class="login-btn primary" onclick="attemptLogin()">Kirish</button>
+            
+            <div class="profile-stats-grid">
+                <div class="profile-stat">
+                    <div class="profile-stat-value" id="profileBalance">0</div>
+                    <div class="profile-stat-label">Dragon Coins</div>
+                </div>
+                <div class="profile-stat">
+                    <div class="profile-stat-value" id="profileLevel">1</div>
+                    <div class="profile-stat-label">Level</div>
+                </div>
+                <div class="profile-stat">
+                    <div class="profile-stat-value" id="profileTotalTaps">0</div>
+                    <div class="profile-stat-label">Total Taps</div>
+                </div>
+                <div class="profile-stat">
+                    <div class="profile-stat-value" id="profileReferrals">0</div>
+                    <div class="profile-stat-label">Referrals</div>
+                </div>
             </div>
+            
+            <div style="background: rgba(0, 255, 136, 0.1); border-radius: 10px; padding: 15px; margin: 20px 0;">
+                <div style="font-size: 14px; color: #ccc;">Oxirgi faollik:</div>
+                <div style="font-weight: bold;" id="profileLastSeen">Hozir online</div>
+            </div>
+            
+            <a class="telegram-contact-btn" id="telegramContactBtn" href="#" target="_blank">
+                📱 Telegram orqali yozish
+            </a>
         </div>
     </div>
-
-    <!-- Firebase JavaScript SDK -->
-    <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
-
-        // Your web app's Firebase configuration
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-        const firebaseConfig = {
-            apiKey: "AIzaSyDShZAo9lg-SxpQViCT27uXVni1UK7TGYU",
-            authDomain: "dragon-92897.firebaseapp.com",
-            databaseURL: "https://dragon-92897-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "dragon-92897",
-            storageBucket: "dragon-92897.firebasestorage.app",
-            messagingSenderId: "40351345340",
-            appId: "1:40351345340:web:632388a9b45d3c7905feb9",
-            measurementId: "G-FXT1F3NPCD"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-        const analytics = getAnalytics(app);
-
-        // Make Firebase functions available globally
-        window.firebaseDB = database;
-        window.firebaseRef = ref;
-        window.firebaseSet = set;
-        window.firebaseOnValue = onValue;
-        window.firebaseOnDisconnect = onDisconnect;
-        window.firebaseServerTimestamp = serverTimestamp;
-
-        // Initialize Firebase connection after DOM loads
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('📱 DOM yuklandi, Firebase ulanishi kutilmoqda...');
-            updateFirebaseStatus(false); // Boshlang'ich holat
-            
-            // Firebase SDK yuklanishini kutish
-            setTimeout(() => {
-                console.log('🚀 Firebase ulanishni boshlash...');
-                initializeFirebaseConnection();
-            }, 2000);
-            
-            // Agar 10 soniyadan keyin ham ulanmasa, qayta urinish
-            setTimeout(() => {
-                if (!window.firebaseConnected) {
-                    console.log('⏰ 10 soniya o\'tdi, qayta urinish...');
-                    initializeFirebaseConnection();
-                }
-            }, 10000);
-        });
-    </script>
 
     <script>
         // Multi-language support
@@ -1407,9 +1392,7 @@
                 energyRefillDesc: "Energiyani to'liq tiklaydi",
                 tapPowerDesc: "Har bir tap uchun +1 coin",
                 maxEnergyDesc: "Maksimal energiyani oshiradi",
-                autoTapDesc: "4 soat avtomatik tap qiladi",
-                energyRegenDesc: "Energiya 2x tez tiklanadi",
-                coinMultiplierDesc: "30 daqiqa 2x coin olasiz"
+                autoTapDesc: "4 soat avtomatik tap qiladi"
             },
             en: {
                 tap: "Tapping",
@@ -1447,9 +1430,7 @@
                 energyRefillDesc: "Fully restores energy",
                 tapPowerDesc: "+1 coin per tap",
                 maxEnergyDesc: "Increases maximum energy",
-                autoTapDesc: "Auto taps for 4 hours",
-                energyRegenDesc: "Energy regenerates 2x faster",
-                coinMultiplierDesc: "Get 2x coins for 30 minutes"
+                autoTapDesc: "Auto taps for 4 hours"
             },
             ru: {
                 tap: "Тапинг",
@@ -1487,9 +1468,7 @@
                 energyRefillDesc: "Полностью восстанавливает энергию",
                 tapPowerDesc: "+1 монета за тап",
                 maxEnergyDesc: "Увеличивает максимальную энергию",
-                autoTapDesc: "Автотап на 4 часа",
-                energyRegenDesc: "Энергия восстанавливается в 2 раза быстрее",
-                coinMultiplierDesc: "Получайте в 2 раза больше монет 30 минут"
+                autoTapDesc: "Автотап на 4 часа"
             }
         };
 
@@ -1500,7 +1479,21 @@
             ru: '🇷🇺'
         };
 
-        // Game state with Firebase integration
+        // Level system with names and requirements
+        const levelSystem = {
+            1: { name: 'Wood', tapsRequired: 0, color: '#8B4513' },
+            2: { name: 'Bronze', tapsRequired: 500, color: '#CD7F32' },
+            3: { name: 'Silver', tapsRequired: 1500, color: '#C0C0C0' },
+            4: { name: 'Gold', tapsRequired: 3500, color: '#FFD700' },
+            5: { name: 'Platinum', tapsRequired: 7000, color: '#E5E4E2' },
+            6: { name: 'Diamond', tapsRequired: 12000, color: '#B9F2FF' },
+            7: { name: 'Master', tapsRequired: 20000, color: '#FF6B35' },
+            8: { name: 'Grandmaster', tapsRequired: 35000, color: '#9932CC' },
+            9: { name: 'Legend', tapsRequired: 60000, color: '#FF1493' },
+            10: { name: 'Mythic', tapsRequired: 100000, color: '#00FFFF' }
+        };
+
+        // Game state
         let gameState = {
             balance: 0,
             energy: 1000,
@@ -1515,8 +1508,6 @@
                 referral: false
             },
             lastSaveTime: Date.now(),
-            autoTapEndTime: 0,
-            autoTapCoins: 0,
             referralCode: generateReferralCode(),
             referrals: [],
             referralEarnings: 0,
@@ -1525,86 +1516,72 @@
             country: 'UZ'
         };
 
-        let customConditions = [];
-        let isAdmin = false;
-        const ADMIN_CREDENTIALS = {
-            username: "dragonadmin",
-            password: "dragon2024"
-        };
-        let adminLoginAttempts = [];
         let globalPlayers = [];
         let firebaseConnected = false;
-        let playersListener = null;
 
-        // Firebase connection and real-time sync
+        // Firebase connection
         function initializeFirebaseConnection() {
-            console.log('🔄 Firebase ulanishni boshlash...');
+            console.log('🔄 Firebase ulanishni tekshirish...');
+            updateFirebaseStatus(false);
             
-            if (!window.firebaseDB) {
-                console.log('❌ Firebase SDK yuklanmagan');
-                updateFirebaseStatus(false);
-                setTimeout(initializeFirebaseConnection, 2000); // Qayta urinish
-                return;
-            }
-
-            try {
-                console.log('✅ Firebase SDK topildi, ulanish tekshirilmoqda...');
-                
-                // Test Firebase connection
-                const connectedRef = window.firebaseRef(window.firebaseDB, '.info/connected');
-                window.firebaseOnValue(connectedRef, (snapshot) => {
-                    firebaseConnected = snapshot.val() === true;
-                    updateFirebaseStatus(firebaseConnected);
-                    
-                    if (firebaseConnected) {
-                        console.log('🔥 Firebase muvaffaqiyatli ulandi!');
-                        console.log('📊 Ma\'lumotlar sinxronizatsiyasi boshlandi');
-                        syncPlayerToFirebase();
-                        startFirebaseSync();
+            // Try to connect to Firebase
+            setTimeout(() => {
+                try {
+                    if (window.firebaseDatabase) {
+                        console.log('✅ Firebase muvaffaqiyatli ulandi');
+                        firebaseConnected = true;
+                        updateFirebaseStatus(true);
+                        loadPlayersFromFirebase();
+                        savePlayerToFirebase();
                     } else {
-                        console.log('⚠️ Firebase uzildi, mahalliy saqlash ishlatilmoqda');
-                        stopFirebaseSync();
+                        throw new Error('Firebase not available');
                     }
-                });
-
-                // Test database write
-                const testRef = window.firebaseRef(window.firebaseDB, 'test');
-                window.firebaseSet(testRef, {
-                    timestamp: Date.now(),
-                    message: 'Firebase test connection'
-                }).then(() => {
-                    console.log('✅ Firebase yozish testi muvaffaqiyatli');
-                }).catch((error) => {
-                    console.error('❌ Firebase yozish xatosi:', error);
-                });
-
-            } catch (error) {
-                console.error('❌ Firebase ulanish xatosi:', error);
-                updateFirebaseStatus(false);
-                // 5 soniyadan keyin qayta urinish
-                setTimeout(initializeFirebaseConnection, 5000);
-            }
+                } catch (error) {
+                    console.log('⚠️ Firebase mavjud emas, mahalliy rejimda ishlash');
+                    firebaseConnected = false;
+                    updateFirebaseStatus(false);
+                    generateDemoPlayers();
+                }
+            }, 2000);
         }
 
+        // Firebase connection status
         function updateFirebaseStatus(connected) {
             const statusElement = document.getElementById('firebaseStatus');
             if (connected) {
                 statusElement.textContent = '🔥 Firebase Ulandi - Real-time sinxronizatsiya';
                 statusElement.className = 'firebase-status firebase-connected';
-                console.log('✅ Status yangilandi: Ulandi');
+                console.log('✅ Firebase connected successfully');
+                
+                // Hide status after 3 seconds
+                setTimeout(() => {
+                    statusElement.style.opacity = '0';
+                    setTimeout(() => {
+                        statusElement.style.display = 'none';
+                    }, 500);
+                }, 3000);
             } else {
-                statusElement.textContent = '🔄 Firebase ulanmoqda... Iltimos kuting';
+                statusElement.textContent = '📱 Mahalliy rejim - Firebase mavjud emas';
                 statusElement.className = 'firebase-status firebase-disconnected';
-                console.log('⚠️ Status yangilandi: Ulanmagan');
+                console.log('⚠️ Firebase not available, using local mode');
+                
+                // Hide status after 2 seconds for offline mode
+                setTimeout(() => {
+                    statusElement.style.opacity = '0';
+                    setTimeout(() => {
+                        statusElement.style.display = 'none';
+                    }, 500);
+                }, 2000);
             }
         }
 
-        function syncPlayerToFirebase() {
-            if (!firebaseConnected || !window.firebaseDB) return;
-
+        // Firebase functions
+        function savePlayerToFirebase() {
+            if (!firebaseConnected || !window.firebaseDatabase) return;
+            
             try {
                 const playerId = getUniquePlayerId();
-                const playerRef = window.firebaseRef(window.firebaseDB, `players/${playerId}`);
+                const playerRef = window.firebaseRef(window.firebaseDatabase, `players/${playerId}`);
                 
                 const playerData = {
                     id: playerId,
@@ -1614,72 +1591,146 @@
                     totalTaps: gameState.totalTaps,
                     referrals: gameState.referrals.length,
                     country: gameState.country,
+                    lastUpdate: Date.now(),
                     isOnline: true,
-                    lastUpdate: window.firebaseServerTimestamp(),
-                    telegramId: gameState.telegramId || null,
-                    firstName: gameState.firstName || '',
-                    lastName: gameState.lastName || '',
-                    isPremium: gameState.isPremium || false
+                    referralCode: gameState.referralCode
                 };
-
-                window.firebaseSet(playerRef, playerData).then(() => {
-                    console.log('✅ Player data synced to Firebase');
-                }).catch((error) => {
-                    console.error('❌ Firebase sync error:', error);
-                });
-
-                // Set up disconnect handler
-                const onDisconnectRef = window.firebaseOnDisconnect(playerRef);
-                onDisconnectRef.update({
-                    isOnline: false,
-                    lastUpdate: window.firebaseServerTimestamp()
-                });
-
+                
+                window.firebaseSet(playerRef, playerData);
+                console.log('✅ O\'yinchi ma\'lumotlari Firebase ga saqlandi');
             } catch (error) {
-                console.error('Firebase sync error:', error);
+                console.error('❌ Firebase ga saqlashda xatolik:', error);
             }
         }
 
-        function startFirebaseSync() {
-            if (!firebaseConnected || !window.firebaseDB) return;
-
+        function loadPlayersFromFirebase() {
+            if (!firebaseConnected || !window.firebaseDatabase) return;
+            
             try {
-                // Listen to all players for real-time leaderboard
-                const playersRef = window.firebaseRef(window.firebaseDB, 'players');
-                
-                if (playersListener) {
-                    // Remove existing listener
-                    playersListener();
-                }
-
-                playersListener = window.firebaseOnValue(playersRef, (snapshot) => {
+                const playersRef = window.firebaseRef(window.firebaseDatabase, 'players');
+                window.firebaseOnValue(playersRef, (snapshot) => {
                     const data = snapshot.val();
                     if (data) {
-                        globalPlayers = Object.values(data);
-                        console.log(`🔄 Loaded ${globalPlayers.length} players from Firebase`);
+                        // Clean up duplicate players automatically
+                        const cleanedPlayers = cleanupDuplicatePlayers(Object.values(data));
                         
-                        // Update leaderboard if it's currently visible
-                        const leaderboardSection = document.getElementById('leaderboardSection');
-                        if (leaderboardSection.style.display !== 'none') {
-                            const activeTab = document.querySelector('.nav-tab.active[id*="Leaderboard"]');
-                            if (activeTab) {
-                                const type = activeTab.id.includes('coins') ? 'coins' : 'referrals';
-                                showLeaderboard(type);
-                            }
-                        }
+                        globalPlayers = cleanedPlayers.filter(player => 
+                            player.id !== getUniquePlayerId()
+                        );
+                        console.log(`✅ ${globalPlayers.length} o'yinchi Firebase dan yuklandi (dublikatlar tozalandi)`);
                     }
                 });
-
             } catch (error) {
-                console.error('Firebase listener error:', error);
+                console.error('❌ Firebase dan yuklashda xatolik:', error);
+                generateDemoPlayers();
             }
         }
 
-        function stopFirebaseSync() {
-            if (playersListener) {
-                playersListener();
-                playersListener = null;
+        // Clean up duplicate players - keep only the best one from each browser
+        function cleanupDuplicatePlayers(players) {
+            const browserGroups = {};
+            const cleanedPlayers = [];
+            
+            // Group players by browser fingerprint pattern
+            players.forEach(player => {
+                if (!player.id) return;
+                
+                // Extract browser fingerprint base
+                let browserKey = player.id;
+                if (player.id.startsWith('browser_')) {
+                    browserKey = player.id;
+                } else if (player.id.startsWith('local_')) {
+                    // For old local IDs, group by similar patterns
+                    const parts = player.id.split('_');
+                    if (parts.length >= 2) {
+                        browserKey = 'legacy_' + parts[1].substring(0, 8);
+                    }
+                } else {
+                    // Keep Telegram and other unique IDs as is
+                    cleanedPlayers.push(player);
+                    return;
+                }
+                
+                if (!browserGroups[browserKey]) {
+                    browserGroups[browserKey] = [];
+                }
+                browserGroups[browserKey].push(player);
+            });
+            
+            // For each browser group, keep only the best player
+            Object.values(browserGroups).forEach(group => {
+                if (group.length === 1) {
+                    cleanedPlayers.push(group[0]);
+                } else {
+                    // Keep the player with highest balance, or most recent if tied
+                    const bestPlayer = group.reduce((best, current) => {
+                        if ((current.balance || 0) > (best.balance || 0)) {
+                            return current;
+                        } else if ((current.balance || 0) === (best.balance || 0)) {
+                            return (current.lastUpdate || 0) > (best.lastUpdate || 0) ? current : best;
+                        }
+                        return best;
+                    });
+                    
+                    cleanedPlayers.push(bestPlayer);
+                    
+                    // Remove duplicates from Firebase
+                    if (firebaseConnected && group.length > 1) {
+                        group.forEach(player => {
+                            if (player.id !== bestPlayer.id) {
+                                try {
+                                    const playerRef = window.firebaseRef(window.firebaseDatabase, `players/${player.id}`);
+                                    window.firebaseSet(playerRef, null);
+                                    console.log(`🗑️ Dublikat o'yinchi o'chirildi: ${player.name} (${player.id})`);
+                                } catch (error) {
+                                    console.error('❌ Dublikatni o\'chirishda xatolik:', error);
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+            
+            return cleanedPlayers;
+        }
+
+        // Generate demo players for leaderboard
+        function generateDemoPlayers() {
+            const names = [
+                'CryptoKing', 'DragonMaster', 'CoinHunter', 'TapLegend', 'GoldDigger',
+                'FastTapper', 'CoinCollector', 'DragonSlayer', 'TapMaster', 'CryptoMiner',
+                'DiamondHands', 'MoonWalker', 'CoinWhale', 'TapGuru', 'DragonLord'
+            ];
+            
+            const countries = ['UZ', 'RU', 'KZ', 'TR', 'KG', 'US', 'DE', 'FR'];
+            globalPlayers = [];
+            
+            // Generate 15 demo players with realistic data
+            for (let i = 0; i < 15; i++) {
+                const baseBalance = Math.floor(Math.random() * 50000) + 5000;
+                const level = Math.max(1, Math.floor(baseBalance / 5000));
+                const referrals = Math.floor(Math.random() * 20);
+                const totalTaps = baseBalance * (1 + Math.random());
+                
+                const playerName = names[i % names.length] + (i > names.length - 1 ? i : '');
+                globalPlayers.push({
+                    id: 'demo_' + i,
+                    name: playerName,
+                    balance: baseBalance,
+                    referrals: referrals,
+                    level: level,
+                    totalTaps: Math.floor(totalTaps),
+                    country: countries[Math.floor(Math.random() * countries.length)],
+                    isCurrentPlayer: false,
+                    lastUpdate: Date.now() - Math.floor(Math.random() * 3600000),
+                    isSample: true,
+                    isOnline: Math.random() > 0.3,
+                    isPremium: Math.random() > 0.8,
+                    telegramUsername: Math.random() > 0.5 ? playerName.toLowerCase() + '_' + Math.floor(Math.random() * 999) : null
+                });
             }
+            
+            console.log(`✅ ${globalPlayers.length} demo o'yinchi yaratildi`);
         }
 
         // Generate unique referral code
@@ -1728,19 +1779,300 @@
             });
         }
 
-        // Initialize referral system from URL
-        function initializeReferralSystem() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const referralCode = urlParams.get('ref');
+        // Get Telegram user data if available
+        function getTelegramUserData() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                const user = window.Telegram.WebApp.initDataUnsafe?.user;
+                if (user) {
+                    return {
+                        id: 'tg_' + user.id,
+                        username: user.username || user.first_name || 'Telegram User',
+                        firstName: user.first_name || '',
+                        lastName: user.last_name || '',
+                        languageCode: user.language_code || 'uz',
+                        isPremium: user.is_premium || false
+                    };
+                }
+            }
+            return null;
+        }
+
+        // Generate unique browser fingerprint for one account per browser
+        function generateBrowserFingerprint() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.textBaseline = 'top';
+            ctx.font = '14px Arial';
+            ctx.fillText('Browser fingerprint', 2, 2);
             
-            if (referralCode && !gameState.referredBy) {
-                gameState.referredBy = referralCode;
-                processNewReferral(referralCode);
+            const fingerprint = [
+                navigator.userAgent,
+                navigator.language,
+                screen.width + 'x' + screen.height,
+                new Date().getTimezoneOffset(),
+                canvas.toDataURL(),
+                navigator.hardwareConcurrency || 'unknown',
+                navigator.deviceMemory || 'unknown'
+            ].join('|');
+            
+            // Create hash from fingerprint
+            let hash = 0;
+            for (let i = 0; i < fingerprint.length; i++) {
+                const char = fingerprint.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32-bit integer
+            }
+            
+            return 'browser_' + Math.abs(hash).toString(36);
+        }
+
+        // Generate unique player ID - one account per browser
+        function getUniquePlayerId() {
+            // Generate browser fingerprint for unique identification
+            const browserFingerprint = generateBrowserFingerprint();
+            
+            // First check if we already have a stored player ID
+            let playerId = localStorage.getItem('dragonCoinPlayerId');
+            
+            // If no stored ID, use browser fingerprint
+            if (!playerId) {
+                playerId = browserFingerprint;
+                localStorage.setItem('dragonCoinPlayerId', playerId);
+            }
+            
+            // Always ensure we use the browser fingerprint for consistency
+            // This prevents multiple accounts from same browser
+            playerId = browserFingerprint;
+            localStorage.setItem('dragonCoinPlayerId', playerId);
+            
+            // Check for Telegram data to enhance profile
+            const tgData = getTelegramUserData();
+            if (tgData) {
+                gameState.playerName = tgData.username;
+                gameState.telegramId = tgData.id;
+                gameState.firstName = tgData.firstName;
+                gameState.lastName = tgData.lastName;
+                gameState.isPremium = tgData.isPremium;
+                
+                if (tgData.languageCode) {
+                    if (tgData.languageCode.includes('ru')) {
+                        currentLanguage = 'ru';
+                        gameState.country = 'RU';
+                    } else if (tgData.languageCode.includes('en')) {
+                        currentLanguage = 'en';
+                        gameState.country = 'US';
+                    } else {
+                        currentLanguage = 'uz';
+                        gameState.country = 'UZ';
+                    }
+                    updateLanguageDisplay();
+                    translatePage();
+                }
+            }
+            
+            return playerId;
+        }
+
+        // Main tap function
+        function tapCoin(event) {
+            if (gameState.energy <= 0) {
+                document.getElementById('energyWarning').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('energyWarning').style.display = 'none';
+                }, 3000);
+                return;
+            }
+
+            // Add coins and reduce energy
+            gameState.balance += gameState.tapPower;
+            gameState.energy = Math.max(0, gameState.energy - 1);
+            gameState.totalTaps++;
+
+            // Create tap effect
+            createTapEffect(event, gameState.tapPower);
+
+            // Update level
+            updateLevel();
+
+            // Update UI
+            updateUI();
+
+            // Save game state
+            saveGameState();
+        }
+
+        function createTapEffect(event, coins) {
+            const effect = document.createElement('div');
+            effect.className = 'tap-effect';
+            effect.textContent = '+' + coins;
+            
+            // Position the effect at the tap location
+            const rect = event.target.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            
+            effect.style.left = x + 'px';
+            effect.style.top = y + 'px';
+            
+            event.target.parentElement.appendChild(effect);
+            
+            // Remove effect after animation
+            setTimeout(() => {
+                if (effect.parentElement) {
+                    effect.parentElement.removeChild(effect);
+                }
+            }, 1200);
+        }
+
+        function updateLevel() {
+            let newLevel = 1;
+            for (let level in levelSystem) {
+                if (gameState.totalTaps >= levelSystem[level].tapsRequired) {
+                    newLevel = parseInt(level);
+                }
+            }
+            
+            if (newLevel > gameState.level) {
+                gameState.level = newLevel;
+                alert(`🎉 Level ${newLevel} ga yetdingiz! (${levelSystem[newLevel].name})`);
             }
         }
 
-        function processNewReferral(referrerCode) {
-            console.log(`New referral from code: ${referrerCode}`);
+        // Show/hide sections
+        function showSection(sectionName) {
+            // Hide all sections
+            const sections = ['tapSection', 'tasksSection', 'referralSection', 'leaderboardSection', 'boostSection'];
+            sections.forEach(section => {
+                document.getElementById(section).style.display = 'none';
+            });
+            
+            // Remove active class from all tabs
+            const tabs = ['tapTab', 'tasksTab', 'referralTab', 'leaderboardTab', 'boostTab'];
+            tabs.forEach(tab => {
+                document.getElementById(tab).classList.remove('active');
+            });
+            
+            // Show selected section and activate tab
+            document.getElementById(sectionName + 'Section').style.display = 'block';
+            document.getElementById(sectionName + 'Tab').classList.add('active');
+            
+            // Special handling for leaderboard
+            if (sectionName === 'leaderboard') {
+                showLeaderboard('coins');
+            }
+            
+            // Special handling for referral
+            if (sectionName === 'referral') {
+                updateReferralStats();
+                updateReferralList();
+            }
+        }
+
+        function showLeaderboard(type) {
+            document.getElementById('coinsLeaderboard').classList.remove('active');
+            document.getElementById('referralsLeaderboard').classList.remove('active');
+            document.getElementById(type + 'Leaderboard').classList.add('active');
+            
+            let playersToShow = [];
+            
+            // Always include current player
+            const currentPlayerId = getUniquePlayerId();
+            const currentPlayer = {
+                id: currentPlayerId,
+                name: gameState.playerName,
+                balance: gameState.balance,
+                level: gameState.level,
+                totalTaps: gameState.totalTaps,
+                referrals: gameState.referrals.length,
+                country: gameState.country,
+                isOnline: true,
+                lastUpdate: Date.now(),
+                isCurrentPlayer: true,
+                isSample: false
+            };
+            
+            // Filter out any existing player with same ID from globalPlayers
+            const filteredGlobalPlayers = globalPlayers.filter(p => p.id !== currentPlayerId);
+            
+            // Use filtered demo players + current player (no duplicates)
+            playersToShow = [...filteredGlobalPlayers, currentPlayer];
+            
+            // Sort players
+            let sortedPlayers;
+            if (type === 'coins') {
+                sortedPlayers = [...playersToShow].sort((a, b) => (b.balance || 0) - (a.balance || 0));
+            } else {
+                sortedPlayers = [...playersToShow].sort((a, b) => (b.referrals || 0) - (a.referrals || 0));
+            }
+            
+            // Find current player rank
+            const currentPlayerIndex = sortedPlayers.findIndex(p => p.isCurrentPlayer);
+            let currentPlayerRank = currentPlayerIndex + 1;
+            
+            document.getElementById('playerRank').textContent = '#' + currentPlayerRank;
+            
+            // Display leaderboard
+            const list = document.getElementById('leaderboardList');
+            list.innerHTML = '';
+            
+            // Show top 20 players
+            sortedPlayers.slice(0, 20).forEach((player, index) => {
+                const div = document.createElement('div');
+                div.className = 'leaderboard-item';
+                
+                if (player.isCurrentPlayer) {
+                    div.style.border = '2px solid #00ff88';
+                    div.style.background = 'rgba(0, 255, 136, 0.1)';
+                }
+                
+                const rank = index + 1;
+                let rankClass = 'rank-other';
+                let rankIcon = '';
+                if (rank === 1) {
+                    rankClass = 'rank-1';
+                    rankIcon = '👑';
+                } else if (rank === 2) {
+                    rankClass = 'rank-2';
+                    rankIcon = '🥈';
+                } else if (rank === 3) {
+                    rankClass = 'rank-3';
+                    rankIcon = '🥉';
+                }
+                
+                const countryFlag = {
+                    'UZ': '🇺🇿', 'RU': '🇷🇺', 'US': '🇺🇸', 'KZ': '🇰🇿', 'TR': '🇹🇷', 'KG': '🇰🇬', 'DE': '🇩🇪', 'FR': '🇫🇷'
+                }[player.country] || '🌍';
+                
+                const playerType = player.isSample ? ' 🤖' : '';
+                const isCurrentText = player.isCurrentPlayer ? ' (Siz)' : '';
+                const onlineStatus = player.isOnline ? '🟢' : '🔴';
+                
+                const levelData = levelSystem[player.level] || levelSystem[1];
+                
+                div.innerHTML = `
+                    <div class="rank-badge ${rankClass}">
+                        ${rankIcon || rank}
+                    </div>
+                    <div class="player-info">
+                        <div class="player-name">
+                            ${countryFlag} ${player.name}${isCurrentText}${playerType}
+                        </div>
+                        <div class="player-stats">
+                            ${onlineStatus} Level ${player.level || 1} (${levelData.name}) • ${player.referrals || 0} referrals
+                        </div>
+                    </div>
+                    <div class="player-coins">
+                        ${type === 'coins' ? (player.balance || 0).toLocaleString() + ' DRC' : (player.referrals || 0) + ' refs'}
+                    </div>
+                `;
+                
+                // Add click handler to show player profile (except for current player)
+                if (!player.isCurrentPlayer) {
+                    div.addEventListener('click', () => showPlayerProfile(player));
+                }
+                
+                list.appendChild(div);
+            });
         }
 
         // Referral system functions
@@ -1759,53 +2091,26 @@
             });
         }
 
-        function addReferral(referralData) {
-            gameState.referrals.push({
-                id: referralData.id,
-                name: referralData.name,
-                joinDate: Date.now(),
-                totalCoins: 0,
-                level: 1,
-                isActive: true,
-                lastActivity: Date.now()
-            });
-            
-            gameState.balance += 500;
-            gameState.referralEarnings += 500;
-            
-            updateUI();
-            saveGameState();
-            
-            alert(`🎉 Yangi referral qo'shildi! +500 DRC`);
-        }
-
         function updateReferralStats() {
             document.getElementById('totalReferrals').textContent = gameState.referrals.length;
             document.getElementById('referralEarnings').textContent = gameState.referralEarnings.toLocaleString();
             document.getElementById('activeReferrals').textContent = gameState.referrals.filter(r => r.isActive).length;
             document.getElementById('referralCount').textContent = gameState.referrals.length;
             document.getElementById('userReferralCode').textContent = gameState.referralCode;
-            
-            document.getElementById('referralProgress').textContent = Math.min(gameState.referrals.length, 5);
-            
-            if (!gameState.completedTasks.referral && gameState.referrals.length >= 5) {
-                document.getElementById('referralTask').classList.add('task-ready');
-                document.getElementById('referralCondition').className = 'condition-status condition-completed';
-            }
         }
 
         function updateReferralList() {
             const list = document.getElementById('referralList');
             
             if (gameState.referrals.length === 0) {
-                list.innerHTML = `<div style="text-align: center; color: #ccc; padding: 20px;" data-translate="noReferrals">
+                list.innerHTML = `<div style="text-align: center; color: #ccc; padding: 20px;">
                     Hali referrallaringiz yo'q. Do'stlaringizni taklif qiling!
                 </div>`;
                 return;
             }
             
             list.innerHTML = '';
-            gameState.referrals.forEach((referral, index) => {
+            gameState.referrals.forEach((referral) => {
                 const div = document.createElement('div');
                 div.className = 'referral-item';
                 div.innerHTML = `
@@ -1813,10 +2118,6 @@
                         <div style="font-weight: bold;">${referral.name}</div>
                         <div style="font-size: 12px; color: #ccc;">
                             Level ${referral.level} • ${referral.totalCoins.toLocaleString()} coins
-                        </div>
-                        <div style="font-size: 10px; color: #999;">
-                            ${referral.isActive ? '🟢 Faol' : '🔴 Nofaol'} • 
-                            ${new Date(referral.joinDate).toLocaleDateString()}
                         </div>
                     </div>
                     <div style="color: #00ff88; font-weight: bold;">
@@ -1835,358 +2136,257 @@
             return earnings;
         }
 
-        // Get Telegram user data if available
-        function getTelegramUserData() {
-            if (window.Telegram && window.Telegram.WebApp) {
-                const user = window.Telegram.WebApp.initDataUnsafe?.user;
-                if (user) {
-                    return {
-                        id: 'tg_' + user.id,
-                        username: user.username || user.first_name || 'Telegram User',
-                        firstName: user.first_name || '',
-                        lastName: user.last_name || '',
-                        languageCode: user.language_code || 'uz',
-                        isPremium: user.is_premium || false,
-                        photoUrl: user.photo_url || null
-                    };
-                }
+        // Task system
+        function claimTask(taskType) {
+            if (gameState.completedTasks[taskType]) {
+                alert('Bu vazifa allaqachon bajarilgan!');
+                return;
             }
-            
-            const urlParams = new URLSearchParams(window.location.search);
-            const testUser = urlParams.get('testuser');
-            
-            if (testUser) {
-                return {
-                    id: 'tg_test_' + Date.now(),
-                    username: testUser,
-                    firstName: testUser,
-                    lastName: '',
-                    languageCode: 'uz',
-                    isPremium: Math.random() > 0.7,
-                    photoUrl: null
-                };
+
+            let canClaim = false;
+            let reward = 0;
+
+            switch (taskType) {
+                case 'taps':
+                    canClaim = gameState.totalTaps >= 500;
+                    reward = 1000;
+                    break;
+                case 'level':
+                    canClaim = gameState.level >= 5;
+                    reward = 2000;
+                    break;
+                case 'coins':
+                    canClaim = gameState.balance >= 10000;
+                    reward = 5000;
+                    break;
+                case 'referral':
+                    canClaim = gameState.referrals.length >= 5;
+                    reward = 3000;
+                    break;
             }
-            
-            return null;
+
+            if (canClaim) {
+                gameState.completedTasks[taskType] = true;
+                gameState.balance += reward;
+                alert(`🎉 Vazifa bajarildi! +${reward} DRC`);
+                updateUI();
+                saveGameState();
+            } else {
+                alert('Vazifa hali bajarilmagan!');
+            }
         }
 
-        // Generate unique player ID with Telegram integration
-        function getUniquePlayerId() {
-            const tgData = getTelegramUserData();
-            if (tgData) {
-                gameState.playerName = tgData.username;
-                gameState.telegramId = tgData.id;
-                gameState.firstName = tgData.firstName;
-                gameState.lastName = tgData.lastName;
-                gameState.isPremium = tgData.isPremium;
-                gameState.photoUrl = tgData.photoUrl;
-                
-                if (tgData.languageCode) {
-                    if (tgData.languageCode.includes('ru')) {
-                        currentLanguage = 'ru';
-                        gameState.country = 'RU';
-                    } else if (tgData.languageCode.includes('en')) {
-                        currentLanguage = 'en';
-                        gameState.country = 'US';
-                    } else {
-                        currentLanguage = 'uz';
-                        gameState.country = 'UZ';
+        // Boost system
+        function buyBoost(boostType) {
+            let cost = 0;
+            let canBuy = false;
+
+            switch (boostType) {
+                case 'energy':
+                    cost = 100;
+                    canBuy = gameState.balance >= cost;
+                    if (canBuy) {
+                        gameState.balance -= cost;
+                        gameState.energy = gameState.maxEnergy;
+                        alert('⚡ Energy to\'liq tiklandi!');
                     }
-                    updateLanguageDisplay();
-                    translatePage();
-                }
-                
-                return tgData.id;
+                    break;
+                case 'power':
+                    cost = 500;
+                    canBuy = gameState.balance >= cost;
+                    if (canBuy) {
+                        gameState.balance -= cost;
+                        gameState.tapPower++;
+                        alert('💪 Tap power oshirildi!');
+                    }
+                    break;
+                case 'maxEnergy':
+                    cost = 1000;
+                    canBuy = gameState.balance >= cost;
+                    if (canBuy) {
+                        gameState.balance -= cost;
+                        gameState.maxEnergy += 500;
+                        gameState.energy = gameState.maxEnergy;
+                        alert('🔋 Maksimal energy oshirildi!');
+                    }
+                    break;
+                case 'autoTap':
+                    cost = 5000;
+                    canBuy = gameState.balance >= cost;
+                    if (canBuy) {
+                        gameState.balance -= cost;
+                        alert('🤖 Auto tap 4 soatga faollashtirildi!');
+                    }
+                    break;
             }
-            
-            let playerId = localStorage.getItem('dragonCoinPlayerId');
-            
-            if (!playerId) {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                ctx.textBaseline = 'top';
-                ctx.font = '14px Arial';
-                ctx.fillText('Dragon Coin Player ID', 2, 2);
-                
-                const fingerprint = [
-                    navigator.userAgent,
-                    navigator.language,
-                    screen.width + 'x' + screen.height,
-                    new Date().getTimezoneOffset(),
-                    canvas.toDataURL()
-                ].join('|');
-                
-                let hash = 0;
-                for (let i = 0; i < fingerprint.length; i++) {
-                    const char = fingerprint.charCodeAt(i);
-                    hash = ((hash << 5) - hash) + char;
-                    hash = hash & hash;
-                }
-                
-                playerId = 'browser_' + Math.abs(hash).toString(36) + '_' + Date.now();
-                localStorage.setItem('dragonCoinPlayerId', playerId);
+
+            if (!canBuy) {
+                alert('Yetarli coin yo\'q!');
+                return;
             }
-            
-            return playerId;
+
+            updateUI();
+            saveGameState();
         }
 
-        // Generate sample players for demo
-        function generateSamplePlayers() {
-            const names = [
-                'CryptoKing', 'DragonMaster', 'CoinHunter', 'TapLegend', 'GoldDigger',
-                'FastTapper', 'CoinCollector', 'DragonSlayer', 'TapMaster', 'CryptoMiner'
-            ];
+        // Update UI
+        function updateUI() {
+            // Update main UI elements with safety checks
+            const balanceEl = document.getElementById('balance');
+            const tapPowerEl = document.getElementById('tapPower');
+            const totalTapsEl = document.getElementById('totalTaps');
+            const levelEl = document.getElementById('level');
+            const referralCountEl = document.getElementById('referralCount');
+            const playerNameEl = document.getElementById('playerName');
+            const levelBadgeEl = document.getElementById('levelBadge');
+            const levelNameEl = document.getElementById('levelName');
+            const energyProgressEl = document.getElementById('energyProgress');
+            const energyTextEl = document.getElementById('energyText');
             
-            const countries = ['UZ', 'RU', 'KZ', 'TR', 'KG'];
-            const samplePlayers = [];
-            const fixedBalances = [45000, 38000, 32000, 28000, 25000, 22000, 18000, 15000, 12000, 8000];
+            if (balanceEl) balanceEl.textContent = gameState.balance.toLocaleString();
+            if (tapPowerEl) tapPowerEl.textContent = gameState.tapPower;
+            if (totalTapsEl) totalTapsEl.textContent = gameState.totalTaps.toLocaleString();
+            if (levelEl) levelEl.textContent = gameState.level;
+            if (referralCountEl) referralCountEl.textContent = gameState.referrals.length;
+            if (playerNameEl) playerNameEl.textContent = gameState.playerName;
+            if (levelBadgeEl) levelBadgeEl.textContent = `Level ${gameState.level}`;
             
-            for (let i = 0; i < 10; i++) {
-                const baseBalance = fixedBalances[i];
-                const level = Math.max(1, Math.floor(baseBalance / 5000));
-                const referrals = Math.floor(baseBalance / 3000);
-                
-                samplePlayers.push({
-                    id: 'sample_' + i + '_fixed',
-                    name: names[i],
-                    balance: baseBalance,
-                    referrals: referrals,
-                    level: level,
-                    country: countries[Math.floor(Math.random() * countries.length)],
-                    isCurrentPlayer: false,
-                    lastUpdate: Date.now() - Math.floor(Math.random() * 3600000),
-                    isSample: true,
-                    isFixed: true,
-                    isOnline: Math.random() > 0.5,
-                    totalTaps: baseBalance * 2
-                });
+            // Update level name and trophy
+            const levelData = levelSystem[gameState.level] || levelSystem[1];
+            if (levelNameEl) {
+                levelNameEl.textContent = levelData.name;
+                levelNameEl.style.color = levelData.color;
             }
             
-            return samplePlayers;
+            // Update level trophy based on material
+            updateLevelTrophy(gameState.level);
+            
+            // Update energy
+            const energyPercent = (gameState.energy / gameState.maxEnergy) * 100;
+            if (energyProgressEl) energyProgressEl.style.width = energyPercent + '%';
+            if (energyTextEl) energyTextEl.textContent = `${gameState.energy}/${gameState.maxEnergy}`;
+            
+            // Update level progress
+            updateLevelProgress();
+            
+            // Update task progress
+            updateTaskProgress();
         }
 
-        function showLeaderboard(type) {
-            document.getElementById('coinsLeaderboard').classList.remove('active');
-            document.getElementById('referralsLeaderboard').classList.remove('active');
-            document.getElementById(type + 'Leaderboard').classList.add('active');
+        function updateLevelProgress() {
+            const currentLevel = gameState.level;
+            const nextLevel = currentLevel + 1;
             
-            let playersToShow = [];
+            const currentLevelData = levelSystem[currentLevel] || levelSystem[1];
+            const nextLevelData = levelSystem[nextLevel];
             
-            if (firebaseConnected && globalPlayers.length > 0) {
-                // Use Firebase data
-                playersToShow = globalPlayers.filter(p => p && p.id);
+            const currentLevelDisplayEl = document.getElementById('currentLevelDisplay');
+            const nextLevelDisplayEl = document.getElementById('nextLevelDisplay');
+            const levelProgressBarEl = document.getElementById('levelProgressBar');
+            const currentTapsDisplayEl = document.getElementById('currentTapsDisplay');
+            const requiredTapsDisplayEl = document.getElementById('requiredTapsDisplay');
+            
+            if (currentLevelDisplayEl) {
+                currentLevelDisplayEl.textContent = `Level ${currentLevel} - ${currentLevelData.name}`;
+            }
+            
+            if (nextLevelData) {
+                if (nextLevelDisplayEl) {
+                    nextLevelDisplayEl.textContent = `Next: Level ${nextLevel} - ${nextLevelData.name}`;
+                }
                 
-                // Mark current player
-                const currentPlayerId = getUniquePlayerId();
-                playersToShow.forEach(player => {
-                    player.isCurrentPlayer = player.id === currentPlayerId;
-                });
+                const currentTaps = gameState.totalTaps - currentLevelData.tapsRequired;
+                const requiredTaps = nextLevelData.tapsRequired - currentLevelData.tapsRequired;
+                const progress = Math.min(100, (currentTaps / requiredTaps) * 100);
+                
+                if (levelProgressBarEl) levelProgressBarEl.style.width = progress + '%';
+                if (currentTapsDisplayEl) currentTapsDisplayEl.textContent = `${currentTaps} taps`;
+                if (requiredTapsDisplayEl) requiredTapsDisplayEl.textContent = `${requiredTaps} taps kerak`;
             } else {
-                // Fallback to local + sample players
-                const realPlayers = globalPlayers.filter(p => !p.isSample);
-                const samplePlayers = generateSamplePlayers();
-                playersToShow = [...realPlayers, ...samplePlayers];
+                if (nextLevelDisplayEl) nextLevelDisplayEl.textContent = 'Maksimal level!';
+                if (levelProgressBarEl) levelProgressBarEl.style.width = '100%';
+                if (currentTapsDisplayEl) currentTapsDisplayEl.textContent = 'Maksimal';
+                if (requiredTapsDisplayEl) requiredTapsDisplayEl.textContent = 'level';
             }
+        }
+
+        function updateTaskProgress() {
+            // Update task progress displays with safety checks
+            const tapProgressEl = document.getElementById('tapProgress');
+            const currentLevelEl = document.getElementById('currentLevel');
+            const coinProgressEl = document.getElementById('coinProgress');
+            const referralProgressEl = document.getElementById('referralProgress');
             
-            // Sort players
-            let sortedPlayers;
-            if (type === 'coins') {
-                sortedPlayers = [...playersToShow].sort((a, b) => (b.balance || 0) - (a.balance || 0));
-            } else {
-                sortedPlayers = [...playersToShow].sort((a, b) => (b.referrals || 0) - (a.referrals || 0));
-            }
+            if (tapProgressEl) tapProgressEl.textContent = Math.min(gameState.totalTaps, 500);
+            if (currentLevelEl) currentLevelEl.textContent = gameState.level;
+            if (coinProgressEl) coinProgressEl.textContent = Math.min(gameState.balance, 10000);
+            if (referralProgressEl) referralProgressEl.textContent = Math.min(gameState.referrals.length, 5);
             
-            // Find current player rank
-            const currentPlayerIndex = sortedPlayers.findIndex(p => p.isCurrentPlayer);
-            let currentPlayerRank = currentPlayerIndex + 1;
+            // Update task status
+            updateTaskStatus('taps', gameState.totalTaps >= 500);
+            updateTaskStatus('level', gameState.level >= 5);
+            updateTaskStatus('coins', gameState.balance >= 10000);
+            updateTaskStatus('referral', gameState.referrals.length >= 5);
+        }
+
+        function updateTaskStatus(taskType, isReady) {
+            const taskElement = document.getElementById(taskType + 'Task');
+            const conditionElement = document.getElementById(taskType + 'Condition');
             
-            if (currentPlayerIndex === -1) {
-                currentPlayerRank = '?';
-            }
-            
-            document.getElementById('playerRank').textContent = '#' + currentPlayerRank;
-            
-            // Display leaderboard
-            const list = document.getElementById('leaderboardList');
-            list.innerHTML = '';
-            
-            if (sortedPlayers.length === 0) {
-                list.innerHTML = `
-                    <div style="text-align: center; color: #ccc; padding: 40px;">
-                        <div style="font-size: 48px; margin-bottom: 20px;">🏆</div>
-                        <div style="font-size: 18px; margin-bottom: 10px;">Reyting yuklanmoqda...</div>
-                        <div style="font-size: 14px;">Iltimos kuting...</div>
-                    </div>
-                `;
+            // Check if elements exist before trying to modify them
+            if (!taskElement || !conditionElement) {
                 return;
             }
             
-            // Add info about player count and connection status
-            const onlineCount = playersToShow.filter(p => p.isOnline && !p.isSample).length;
-            const telegramCount = playersToShow.filter(p => p.telegramId && !p.isSample).length;
-            const realPlayersCount = sortedPlayers.filter(p => !p.isSample).length;
-            
-            const infoDiv = document.createElement('div');
-            infoDiv.style.cssText = 'text-align: center; color: #ccc; padding: 10px; margin-bottom: 15px; font-size: 14px; background: rgba(0, 255, 136, 0.1); border-radius: 10px; border: 1px solid rgba(0, 255, 136, 0.3);';
-            
-            const connectionStatus = firebaseConnected ? '🔥 Firebase Real-time' : '📱 Local Mode';
-            
-            infoDiv.innerHTML = `
-                📊 Jami o'yinchilar: ${sortedPlayers.length} (${realPlayersCount} haqiqiy) | 
-                🟢 Online: ${onlineCount} | 
-                📱 Telegram: ${telegramCount}<br>
-                <small style="color: #00ff88;">⚡ ${connectionStatus}</small>
-            `;
-            list.appendChild(infoDiv);
-            
-            // Show players
-            sortedPlayers.forEach((player, index) => {
-                const div = document.createElement('div');
-                div.className = 'leaderboard-item';
-                if (player.isCurrentPlayer) {
-                    div.style.border = '2px solid #00ff88';
-                    div.style.background = 'rgba(0, 255, 136, 0.1)';
-                    div.style.boxShadow = '0 0 20px rgba(0, 255, 136, 0.3)';
-                }
-                
-                const rank = index + 1;
-                let rankClass = 'rank-other';
-                let rankIcon = '';
-                if (rank === 1) {
-                    rankClass = 'rank-1';
-                    rankIcon = '👑';
-                } else if (rank === 2) {
-                    rankClass = 'rank-2';
-                    rankIcon = '🥈';
-                } else if (rank === 3) {
-                    rankClass = 'rank-3';
-                    rankIcon = '🥉';
-                }
-                
-                const countryFlag = {
-                    'UZ': '🇺🇿', 'RU': '🇷🇺', 'US': '🇺🇸', 'KZ': '🇰🇿', 'TR': '🇹🇷', 'KG': '🇰🇬'
-                }[player.country] || '🌍';
-                
-                const playerType = player.isSample ? ' 🤖' : '';
-                const isCurrentText = player.isCurrentPlayer ? ' (Siz)' : '';
-                const onlineStatus = player.isOnline ? '🟢' : '🔴';
-                const premiumBadge = player.isPremium ? ' ⭐' : '';
-                
-                const displayName = player.telegramId ? 
-                    (player.name.startsWith('@') ? player.name : '@' + player.name) : 
-                    player.name;
-                
-                div.innerHTML = `
-                    <div class="rank-badge ${rankClass}">
-                        ${rankIcon || rank}
-                    </div>
-                    <div class="player-info">
-                        <div class="player-name">
-                            ${countryFlag} ${displayName}${premiumBadge}${isCurrentText}${playerType}
-                        </div>
-                        <div class="player-stats">
-                            ${onlineStatus} Level ${player.level || 1} • ${player.referrals || 0} referrals • ${player.totalTaps || 0} taps
-                            ${player.lastUpdate ? ' • ' + getTimeAgo(player.lastUpdate) : ''}
-                        </div>
-                    </div>
-                    <div class="player-coins">
-                        ${type === 'coins' ? (player.balance || 0).toLocaleString() + ' DRC' : (player.referrals || 0) + ' refs'}
-                    </div>
-                `;
-                list.appendChild(div);
-            });
-        }
-
-        function getTimeAgo(timestamp) {
-            const now = Date.now();
-            const diff = now - timestamp;
-            const minutes = Math.floor(diff / 60000);
-            const hours = Math.floor(diff / 3600000);
-            const days = Math.floor(diff / 86400000);
-            
-            if (days > 0) return days + 'd ago';
-            if (hours > 0) return hours + 'h ago';
-            if (minutes > 0) return minutes + 'm ago';
-            return 'just now';
+            if (gameState.completedTasks[taskType]) {
+                taskElement.classList.add('completed');
+                taskElement.classList.remove('task-ready');
+                conditionElement.className = 'condition-status condition-completed';
+            } else if (isReady) {
+                taskElement.classList.add('task-ready');
+                conditionElement.className = 'condition-status condition-completed';
+            } else {
+                taskElement.classList.remove('task-ready', 'completed');
+                conditionElement.className = 'condition-status condition-pending';
+            }
         }
 
         // Load game state from localStorage
         function loadGameState() {
-            const saved = localStorage.getItem('dragonCoinGame');
-            if (saved) {
-                const savedState = JSON.parse(saved);
-                gameState = { ...gameState, ...savedState };
-                
-                if (!gameState.referralCode) {
-                    gameState.referralCode = generateReferralCode();
-                }
-                
-                const timeDiff = Date.now() - gameState.lastSaveTime;
-                const energyToAdd = Math.floor(timeDiff / 5000);
-                gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + energyToAdd);
-                
-                if (gameState.autoTapEndTime > 0 && gameState.autoTapCoins > 0) {
-                    showAutoTapCollection();
-                }
-                
-                if (gameState.language) {
-                    currentLanguage = gameState.language;
-                }
+            let saved = localStorage.getItem('dragonCoinGame');
+            
+            // Try backup if main save is corrupted
+            if (!saved) {
+                saved = localStorage.getItem('dragonCoinBackup');
+                console.log('🔄 Backup ma\'lumotlardan tiklanmoqda...');
             }
             
-            const savedConditions = localStorage.getItem('dragonCoinConditions');
-            if (savedConditions) {
-                customConditions = JSON.parse(savedConditions);
-            }
-        }
-
-        function showAutoTapCollection() {
-            const collectedCoins = gameState.autoTapCoins;
-            if (collectedCoins > 0) {
-                const collectButton = document.createElement('div');
-                collectButton.style.cssText = `
-                    position: fixed;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    background: linear-gradient(45deg, #00ff88, #00cc6a);
-                    color: black;
-                    padding: 20px 30px;
-                    border-radius: 15px;
-                    font-size: 18px;
-                    font-weight: bold;
-                    cursor: pointer;
-                    z-index: 1000;
-                    box-shadow: 0 10px 30px rgba(0, 255, 136, 0.5);
-                    animation: collectPulse 2s ease-in-out infinite;
-                `;
-                collectButton.innerHTML = `
-                    🤖 Auto Tap Natijasi<br>
-                    💰 ${collectedCoins.toLocaleString()} DRC<br>
-                    <small style="color: #333;">Bosib oling!</small>
-                `;
-                
-                collectButton.onclick = function() {
-                    gameState.balance += collectedCoins;
-                    gameState.autoTapCoins = 0;
-                    gameState.autoTapEndTime = 0;
-                    document.body.removeChild(collectButton);
-                    updateUI();
-                    saveGameState();
-                    alert(`🎉 ${collectedCoins.toLocaleString()} DRC yig'ildi! Auto tap yana ishlatishingiz mumkin.`);
-                };
-                
-                document.body.appendChild(collectButton);
-                
-                const style = document.createElement('style');
-                style.textContent = `
-                    @keyframes collectPulse {
-                        0% { transform: translate(-50%, -50%) scale(1); }
-                        50% { transform: translate(-50%, -50%) scale(1.05); }
-                        100% { transform: translate(-50%, -50%) scale(1); }
+            if (saved) {
+                try {
+                    const savedState = JSON.parse(saved);
+                    gameState = { ...gameState, ...savedState };
+                    console.log('✅ Ma\'lumotlar muvaffaqiyatli yuklandi');
+                    
+                    if (!gameState.referralCode) {
+                        gameState.referralCode = generateReferralCode();
                     }
-                `;
-                document.head.appendChild(style);
+                    
+                    // Restore energy based on time passed
+                    const timeDiff = Date.now() - (gameState.lastSaveTime || Date.now());
+                    const energyToAdd = Math.floor(timeDiff / 5000); // 1 energy per 5 seconds
+                    gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + energyToAdd);
+                    
+                    if (gameState.language) {
+                        currentLanguage = gameState.language;
+                    }
+                } catch (error) {
+                    console.error('❌ Ma\'lumotlarni yuklashda xatolik:', error);
+                    // Reset to default state if both saves are corrupted
+                    gameState.referralCode = generateReferralCode();
+                }
+            } else {
+                console.log('🆕 Yangi o\'yinchi yaratilmoqda...');
+                gameState.referralCode = generateReferralCode();
             }
         }
 
@@ -2194,746 +2394,163 @@
         function saveGameState() {
             gameState.lastSaveTime = Date.now();
             gameState.language = currentLanguage;
-            localStorage.setItem('dragonCoinGame', JSON.stringify(gameState));
-            localStorage.setItem('dragonCoinConditions', JSON.stringify(customConditions));
             
-            // Sync to Firebase if connected
+            // Save to localStorage with error handling
+            try {
+                localStorage.setItem('dragonCoinGame', JSON.stringify(gameState));
+                localStorage.setItem('dragonCoinBackup', JSON.stringify(gameState));
+                console.log('💾 Ma\'lumotlar mahalliy saqlandi');
+            } catch (error) {
+                console.error('❌ Mahalliy saqlashda xatolik:', error);
+            }
+            
+            // Also save to Firebase if connected
             if (firebaseConnected) {
-                syncPlayerToFirebase();
+                savePlayerToFirebase();
             }
         }
 
-        // Load admin attempts from localStorage
-        function loadAdminAttempts() {
-            const saved = localStorage.getItem('dragonCoinAdminAttempts');
-            if (saved) {
-                adminLoginAttempts = JSON.parse(saved);
-            }
-        }
-
-        function saveAdminAttempts() {
-            localStorage.setItem('dragonCoinAdminAttempts', JSON.stringify(adminLoginAttempts));
-        }
-
-        // Admin functions
-        function showAdminLogin() {
-            document.getElementById('loginModal').style.display = 'flex';
-            document.getElementById('usernameInput').focus();
-            document.getElementById('usernameInput').value = '';
-            document.getElementById('passwordInput').value = '';
-            document.getElementById('loginError').style.display = 'none';
-        }
-
-        function closeLoginModal() {
-            document.getElementById('loginModal').style.display = 'none';
-        }
-
-        function attemptLogin() {
-            const username = document.getElementById('usernameInput').value;
-            const password = document.getElementById('passwordInput').value;
-            const errorDiv = document.getElementById('loginError');
-            
-            if (!username || !password) {
-                showLoginError("Username va parolni kiriting!");
-                return;
-            }
-            
-            const currentTime = new Date().toLocaleString('uz-UZ');
-            const userAgent = navigator.userAgent;
-            const ipInfo = `Browser: ${navigator.platform}`;
-            
-            if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
-                isAdmin = true;
-                document.getElementById('adminPanel').style.display = 'block';
-                updateAdminConditionsList();
-                closeLoginModal();
-                
-                const loginRecord = {
-                    type: 'success',
-                    username: username,
-                    time: currentTime,
-                    userAgent: userAgent,
-                    ipInfo: ipInfo
-                };
-                adminLoginAttempts.push(loginRecord);
-                saveAdminAttempts();
-                
-                alert("✅ Admin panelga xush kelibsiz!");
-            } else {
-                const failedAttempt = {
-                    type: 'failed',
-                    username: username,
-                    time: currentTime,
-                    userAgent: userAgent,
-                    ipInfo: ipInfo
-                };
-                adminLoginAttempts.push(failedAttempt);
-                saveAdminAttempts();
-                
-                showLoginError("❌ Noto'g'ri username yoki parol!\n⚠️ Bu urinish qayd etildi va admin xabardor qilindi!");
-                
-                if (adminLoginAttempts.filter(a => a.type === 'failed').length > 0) {
-                    console.warn("🚨 ADMIN OGOHLANTIRISH: Kimdir admin panelga kirishga urinmoqda!");
-                    console.warn("Vaqt:", currentTime);
-                    console.warn("Username:", username);
-                    console.warn("Browser:", userAgent);
+        // Energy regeneration and auto-save
+        function startEnergyRegeneration() {
+            // Energy regeneration every 5 seconds
+            setInterval(() => {
+                if (gameState.energy < gameState.maxEnergy) {
+                    gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + 1);
+                    updateUI();
                 }
-                
-                document.getElementById('passwordInput').value = '';
-            }
+            }, 5000); // 1 energy per 5 seconds
+            
+            // Auto-save every 30 seconds
+            setInterval(() => {
+                saveGameState();
+                console.log('💾 Avtomatik saqlash amalga oshirildi');
+            }, 30000); // Auto-save every 30 seconds
         }
 
-        function showLoginError(message) {
-            const errorDiv = document.getElementById('loginError');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-        }
-
-        function addCondition() {
-            const text = document.getElementById('conditionText').value;
-            const target = parseInt(document.getElementById('conditionTarget').value) || 1;
-            const reward = parseInt(document.getElementById('conditionReward').value);
-            const type = document.getElementById('conditionType').value;
-            const link = document.getElementById('conditionLink').value;
-            const code = document.getElementById('conditionCode').value;
+        // Update level trophy based on material
+        function updateLevelTrophy(level) {
+            const trophyEl = document.getElementById('levelTrophy');
+            if (!trophyEl) return;
             
-            if (!text || !reward) {
-                alert('Shart matni va mukofotni kiriting!');
-                return;
-            }
-            
-            if ((type === 'telegram' || type === 'youtube') && !link) {
-                alert('Link kiriting!');
-                return;
-            }
-            
-            if (type === 'video_code' && !code) {
-                alert('Video kodini kiriting!');
-                return;
-            }
-            
-            const newCondition = {
-                id: Date.now(),
-                text: text,
-                target: target,
-                reward: reward,
-                type: type,
-                link: link,
-                code: code,
-                completed: false
+            const levelData = levelSystem[level] || levelSystem[1];
+            const trophyData = {
+                1: { emoji: '🪵', name: 'Yog\'och kubok' },      // Wood
+                2: { emoji: '🥉', name: 'Bronza medal' },        // Bronze
+                3: { emoji: '🥈', name: 'Kumush medal' },        // Silver
+                4: { emoji: '🥇', name: 'Oltin medal' },         // Gold
+                5: { emoji: '💎', name: 'Platina kubok' },       // Platinum
+                6: { emoji: '💠', name: 'Olmos kubok' },         // Diamond
+                7: { emoji: '🏆', name: 'Master kubok' },        // Master
+                8: { emoji: '👑', name: 'Grandmaster toj' },     // Grandmaster
+                9: { emoji: '⭐', name: 'Legend yulduz' },       // Legend
+                10: { emoji: '🌟', name: 'Mythic yulduz' }       // Mythic
             };
             
-            customConditions.push(newCondition);
-            saveGameState();
-            updateAdminConditionsList();
-            updateConditionsDisplay();
+            const trophy = trophyData[level] || trophyData[1];
+            trophyEl.textContent = trophy.emoji;
+            trophyEl.style.borderColor = levelData.color + '80'; // Use level material color
+            trophyEl.style.background = `radial-gradient(circle, ${levelData.color}30 0%, transparent 70%)`;
+            trophyEl.title = `${levelData.name} - ${trophy.name}`;
             
-            document.getElementById('conditionText').value = '';
-            document.getElementById('conditionTarget').value = '';
-            document.getElementById('conditionReward').value = '';
-            document.getElementById('conditionLink').value = '';
-            document.getElementById('conditionCode').value = '';
+            // Update glow animation color to match material
+            trophyEl.style.setProperty('--trophy-color', levelData.color);
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const typeSelect = document.getElementById('conditionType');
-            const linkInput = document.getElementById('conditionLink');
-            const codeInput = document.getElementById('conditionCode');
-            const targetInput = document.getElementById('conditionTarget');
+        // Show player profile modal
+        function showPlayerProfile(player) {
+            const modal = document.getElementById('playerProfileModal');
+            const countryFlags = {
+                'UZ': '🇺🇿', 'RU': '🇷🇺', 'US': '🇺🇸', 'KZ': '🇰🇿', 
+                'TR': '🇹🇷', 'KG': '🇰🇬', 'DE': '🇩🇪', 'FR': '🇫🇷'
+            };
             
-            if (typeSelect) {
-                typeSelect.addEventListener('change', function() {
-                    const type = this.value;
-                    
-                    if (type === 'telegram' || type === 'youtube') {
-                        linkInput.style.display = 'block';
-                        codeInput.style.display = 'none';
-                        targetInput.style.display = 'none';
-                    } else if (type === 'video_code') {
-                        linkInput.style.display = 'block';
-                        codeInput.style.display = 'block';
-                        targetInput.style.display = 'none';
-                    } else {
-                        linkInput.style.display = 'none';
-                        codeInput.style.display = 'none';
-                        targetInput.style.display = 'block';
-                    }
-                });
-            }
-        });
-
-        function removeCondition(id) {
-            customConditions = customConditions.filter(c => c.id !== id);
-            saveGameState();
-            updateAdminConditionsList();
-            updateConditionsDisplay();
-        }
-
-        function updateAdminConditionsList() {
-            const list = document.getElementById('adminConditionsList');
-            list.innerHTML = '<h4 style="margin-bottom: 10px;">Mavjud shartlar:</h4>';
+            // Fill profile data
+            document.getElementById('profilePlayerName').textContent = player.name;
+            document.getElementById('profileCountryFlag').textContent = countryFlags[player.country] || '🌍';
+            document.getElementById('profileOnlineStatus').textContent = player.isOnline ? '🟢' : '🔴';
+            document.getElementById('profilePlayerLevel').textContent = `Level ${player.level || 1}`;
+            document.getElementById('profileBalance').textContent = (player.balance || 0).toLocaleString();
+            document.getElementById('profileLevel').textContent = player.level || 1;
+            document.getElementById('profileTotalTaps').textContent = (player.totalTaps || 0).toLocaleString();
+            document.getElementById('profileReferrals').textContent = player.referrals || 0;
             
-            customConditions.forEach(condition => {
-                const div = document.createElement('div');
-                div.style.cssText = 'background: rgba(255,255,255,0.1); padding: 15px; margin: 10px 0; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;';
-                div.innerHTML = `
-                    <div>
-                        <div style="font-weight: bold;">${condition.text}</div>
-                        <div style="font-size: 12px; color: #ccc;">Maqsad: ${condition.target} | Mukofot: ${condition.reward} DRC</div>
-                    </div>
-                    <button onclick="removeCondition(${condition.id})" style="background: #ff5555; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">O'chirish</button>
-                `;
-                list.appendChild(div);
-            });
-        }
-
-        function showSecurityLog() {
-            const display = document.getElementById('securityLogDisplay');
-            display.innerHTML = '';
+            // Last seen
+            const lastSeen = player.lastUpdate ? new Date(player.lastUpdate) : new Date();
+            const timeDiff = Date.now() - lastSeen.getTime();
+            let lastSeenText = 'Hozir online';
             
-            if (adminLoginAttempts.length === 0) {
-                display.innerHTML = '<p style="color: #ccc;">Hech qanday login urinishi topilmadi.</p>';
-                return;
-            }
-            
-            const sortedAttempts = adminLoginAttempts.sort((a, b) => new Date(b.time) - new Date(a.time));
-            
-            sortedAttempts.forEach(attempt => {
-                const div = document.createElement('div');
-                const statusColor = attempt.type === 'success' ? '#00ff88' : '#ff5555';
-                const statusIcon = attempt.type === 'success' ? '✅' : '❌';
-                const statusText = attempt.type === 'success' ? 'Muvaffaqiyatli' : 'Muvaffaqiyatsiz';
-                
-                div.style.cssText = `background: rgba(255,255,255,0.05); padding: 10px; margin: 5px 0; border-radius: 8px; border-left: 3px solid ${statusColor};`;
-                div.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <div style="font-weight: bold; color: ${statusColor};">${statusIcon} ${statusText}</div>
-                            <div style="font-size: 12px; color: #ccc;">Username: ${attempt.username}</div>
-                            <div style="font-size: 12px; color: #ccc;">Vaqt: ${attempt.time}</div>
-                            <div style="font-size: 12px; color: #ccc;">${attempt.ipInfo}</div>
-                        </div>
-                    </div>
-                `;
-                display.appendChild(div);
-            });
-        }
-
-        function clearSecurityLog() {
-            if (confirm('Barcha xavfsizlik loglarini o\'chirmoqchimisiz?')) {
-                adminLoginAttempts = [];
-                saveAdminAttempts();
-                document.getElementById('securityLogDisplay').innerHTML = '<p style="color: #ccc;">Loglar tozalandi.</p>';
-                alert('✅ Xavfsizlik loglari tozalandi!');
-            }
-        }
-
-        // Energy regeneration
-        setInterval(() => {
-            if (gameState.energy < gameState.maxEnergy) {
-                gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + 1);
-                updateUI();
-                saveGameState();
-            }
-        }, 5000);
-
-        function tapCoin(event) {
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            
-            if (gameState.energy <= 0) {
-                showEnergyWarning();
-                return;
-            }
-
-            gameState.energy -= 1;
-            
-            const coinsToAdd = coinMultiplierActive ? gameState.tapPower * 2 : gameState.tapPower;
-            gameState.balance += coinsToAdd;
-            gameState.totalTaps += 1;
-
-            checkLevelUp();
-            checkConditions();
-            createTapEffect(event);
-            updateUI();
-            saveGameState();
-            
-            document.getElementById('energyWarning').style.display = 'none';
-        }
-
-        function createTapEffect(event) {
-            const coin = document.getElementById('mainCoin');
-            const coinContainer = coin.parentElement;
-            const effect = document.createElement('div');
-            effect.className = 'tap-effect';
-            const coinsToShow = coinMultiplierActive ? gameState.tapPower * 2 : gameState.tapPower;
-            effect.textContent = '+' + coinsToShow + (coinMultiplierActive ? ' (2x)' : '');
-            
-            let x, y;
-            if (event) {
-                const containerRect = coinContainer.getBoundingClientRect();
-                if (event.touches && event.touches[0]) {
-                    x = event.touches[0].clientX - containerRect.left;
-                    y = event.touches[0].clientY - containerRect.top;
-                } else if (event.clientX !== undefined) {
-                    x = event.clientX - containerRect.left;
-                    y = event.clientY - containerRect.top;
+            if (!player.isOnline) {
+                if (timeDiff < 60000) {
+                    lastSeenText = 'Bir daqiqa oldin';
+                } else if (timeDiff < 3600000) {
+                    lastSeenText = Math.floor(timeDiff / 60000) + ' daqiqa oldin';
+                } else if (timeDiff < 86400000) {
+                    lastSeenText = Math.floor(timeDiff / 3600000) + ' soat oldin';
                 } else {
-                    x = 125;
-                    y = 125;
+                    lastSeenText = Math.floor(timeDiff / 86400000) + ' kun oldin';
                 }
+            }
+            
+            document.getElementById('profileLastSeen').textContent = lastSeenText;
+            
+            // Telegram contact button
+            const telegramBtn = document.getElementById('telegramContactBtn');
+            if (player.telegramUsername) {
+                telegramBtn.href = `https://t.me/${player.telegramUsername}`;
+                telegramBtn.style.display = 'inline-block';
+            } else if (player.id && player.id.startsWith('tg_')) {
+                telegramBtn.href = `tg://user?id=${player.id.replace('tg_', '')}`;
+                telegramBtn.style.display = 'inline-block';
             } else {
-                x = 125;
-                y = 125;
+                telegramBtn.style.display = 'none';
             }
             
-            effect.style.left = x + 'px';
-            effect.style.top = y + 'px';
-            effect.style.transform = 'translate(-50%, -50%)';
+            // Show modal
+            modal.style.display = 'flex';
             
-            coinContainer.appendChild(effect);
-            
-            setTimeout(() => {
-                if (effect.parentElement) {
-                    effect.parentElement.removeChild(effect);
+            // Close modal when clicking outside
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    closePlayerProfile();
                 }
-            }, 1000);
+            };
         }
 
-        function checkLevelUp() {
-            const newLevel = Math.floor(gameState.totalTaps / 200) + 1;
-            if (newLevel > gameState.level) {
-                gameState.level = newLevel;
-                gameState.balance += 100 * newLevel;
-                showLevelUpEffect();
-            }
-        }
-
-        function showLevelUpEffect() {
-            alert(`🎉 Level Up! Siz ${gameState.level} levelga yetdingiz! Bonus: ${100 * gameState.level} DRC`);
-        }
-
-        function checkConditions() {
-            if (!gameState.completedTasks.taps && gameState.totalTaps >= 500) {
-                document.getElementById('tapTask').classList.add('task-ready');
-                document.getElementById('tapCondition').className = 'condition-status condition-completed';
-            }
-
-            if (!gameState.completedTasks.level && gameState.level >= 5) {
-                document.getElementById('levelTask').classList.add('task-ready');
-                document.getElementById('levelCondition').className = 'condition-status condition-completed';
-            }
-
-            if (!gameState.completedTasks.coins && gameState.balance >= 10000) {
-                document.getElementById('coinTask').classList.add('task-ready');
-                document.getElementById('coinCondition').className = 'condition-status condition-completed';
-            }
-
-            if (!gameState.completedTasks.referral && gameState.referrals.length >= 5) {
-                document.getElementById('referralTask').classList.add('task-ready');
-                document.getElementById('referralCondition').className = 'condition-status condition-completed';
-            }
-
-            customConditions.forEach(condition => {
-                if (!condition.completed) {
-                    let currentValue = 0;
-                    switch(condition.type) {
-                        case 'taps':
-                            currentValue = gameState.totalTaps;
-                            break;
-                        case 'balance':
-                            currentValue = gameState.balance;
-                            break;
-                        case 'level':
-                            currentValue = gameState.level;
-                            break;
-                    }
-                    
-                    if (currentValue >= condition.target) {
-                        condition.completed = true;
-                        gameState.balance += condition.reward;
-                        showTaskComplete(`${condition.text} bajarildi! +${condition.reward} DRC`);
-                        saveGameState();
-                    }
-                }
-            });
-        }
-
-        function claimTask(taskType) {
-            let canClaim = false;
-            let reward = 0;
-            let message = '';
-
-            switch(taskType) {
-                case 'taps':
-                    if (!gameState.completedTasks.taps && gameState.totalTaps >= 500) {
-                        gameState.completedTasks.taps = true;
-                        reward = 1000;
-                        message = '500 tap vazifasi bajarildi!';
-                        canClaim = true;
-                        document.getElementById('tapTask').classList.add('completed');
-                        document.getElementById('tapTask').classList.remove('task-ready');
-                    }
-                    break;
-                case 'level':
-                    if (!gameState.completedTasks.level && gameState.level >= 5) {
-                        gameState.completedTasks.level = true;
-                        reward = 2000;
-                        message = 'Level 5 vazifasi bajarildi!';
-                        canClaim = true;
-                        document.getElementById('levelTask').classList.add('completed');
-                        document.getElementById('levelTask').classList.remove('task-ready');
-                    }
-                    break;
-                case 'coins':
-                    if (!gameState.completedTasks.coins && gameState.balance >= 10000) {
-                        gameState.completedTasks.coins = true;
-                        reward = 5000;
-                        message = '10000 coin vazifasi bajarildi!';
-                        canClaim = true;
-                        document.getElementById('coinTask').classList.add('completed');
-                        document.getElementById('coinTask').classList.remove('task-ready');
-                    }
-                    break;
-                case 'referral':
-                    if (!gameState.completedTasks.referral && gameState.referrals.length >= 5) {
-                        gameState.completedTasks.referral = true;
-                        reward = 3000;
-                        message = '5 referral vazifasi bajarildi!';
-                        canClaim = true;
-                        document.getElementById('referralTask').classList.add('completed');
-                        document.getElementById('referralTask').classList.remove('task-ready');
-                    }
-                    break;
-            }
-
-            if (canClaim) {
-                gameState.balance += reward;
-                updateUI();
-                saveGameState();
-                showTaskComplete(`${message} +${reward} DRC`);
-            } else {
-                alert('❌ Vazifa hali bajarilmagan yoki allaqachon olingan!');
-            }
-        }
-
-        function updateConditionsDisplay() {
-            const container = document.getElementById('customConditionsContainer');
-            container.innerHTML = '';
-            
-            customConditions.forEach(condition => {
-                let currentValue = 0;
-                let progressText = '';
-                let buttonHtml = '';
-                
-                switch(condition.type) {
-                    case 'taps':
-                        currentValue = gameState.totalTaps;
-                        progressText = `Progress: ${currentValue}/${condition.target}`;
-                        break;
-                    case 'balance':
-                        currentValue = gameState.balance;
-                        progressText = `Progress: ${currentValue}/${condition.target}`;
-                        break;
-                    case 'level':
-                        currentValue = gameState.level;
-                        progressText = `Progress: ${currentValue}/${condition.target}`;
-                        break;
-                    case 'telegram':
-                        progressText = condition.completed ? 'Bajarildi ✅' : 'Obuna bo\'ling';
-                        if (!condition.completed) {
-                            buttonHtml = `<button onclick="openLink('${condition.link}')" style="background: #0088cc; color: white; border: none; padding: 5px 10px; border-radius: 5px; margin: 5px 0; cursor: pointer;">📱 Telegram</button>
-                                         <button onclick="verifySubscription(${condition.id})" style="background: #00ff88; color: black; border: none; padding: 5px 10px; border-radius: 5px; margin: 5px 0; cursor: pointer;">✅ Tekshirish</button>`;
-                        }
-                        break;
-                    case 'youtube':
-                        progressText = condition.completed ? 'Bajarildi ✅' : 'Obuna bo\'ling';
-                        if (!condition.completed) {
-                            buttonHtml = `<button onclick="openLink('${condition.link}')" style="background: #ff0000; color: white; border: none; padding: 5px 10px; border-radius: 5px; margin: 5px 0; cursor: pointer;">📺 YouTube</button>
-                                         <button onclick="verifySubscription(${condition.id})" style="background: #00ff88; color: black; border: none; padding: 5px 10px; border-radius: 5px; margin: 5px 0; cursor: pointer;">✅ Tekshirish</button>`;
-                        }
-                        break;
-                    case 'video_code':
-                        progressText = condition.completed ? 'Bajarildi ✅' : 'Video ko\'rib kod kiriting';
-                        if (!condition.completed) {
-                            buttonHtml = `<button onclick="openLink('${condition.link}')" style="background: #ff6b35; color: white; border: none; padding: 5px 10px; border-radius: 5px; margin: 5px 0; cursor: pointer;">🎥 Video</button>
-                                         <button onclick="enterVideoCode(${condition.id})" style="background: #00ff88; color: black; border: none; padding: 5px 10px; border-radius: 5px; margin: 5px 0; cursor: pointer;">🔑 Kod</button>`;
-                        }
-                        break;
-                }
-                
-                const conditionDiv = document.createElement('div');
-                conditionDiv.className = 'condition-item';
-                conditionDiv.innerHTML = `
-                    <div class="condition-text">
-                        <div>${condition.text}</div>
-                        <div style="font-size: 12px; color: #ccc;">${progressText}</div>
-                        ${buttonHtml}
-                    </div>
-                    <div class="condition-reward">+${condition.reward} DRC</div>
-                    <div class="condition-status ${condition.completed ? 'condition-completed' : 'condition-pending'}"></div>
-                `;
-                container.appendChild(conditionDiv);
-            });
-        }
-
-        function openLink(url) {
-            window.open(url, '_blank');
-        }
-
-        function verifySubscription(conditionId) {
-            const condition = customConditions.find(c => c.id === conditionId);
-            if (condition) {
-                const confirmed = confirm(`${condition.text} vazifasini bajardingizmi?`);
-                if (confirmed) {
-                    condition.completed = true;
-                    gameState.balance += condition.reward;
-                    saveGameState();
-                    updateConditionsDisplay();
-                    updateUI();
-                    alert(`🎉 ${condition.text} bajarildi! +${condition.reward} DRC`);
-                }
-            }
-        }
-
-        function enterVideoCode(conditionId) {
-            const condition = customConditions.find(c => c.id === conditionId);
-            if (condition) {
-                const userCode = prompt('Video kodini kiriting:');
-                if (userCode && userCode.toLowerCase() === condition.code.toLowerCase()) {
-                    condition.completed = true;
-                    gameState.balance += condition.reward;
-                    saveGameState();
-                    updateConditionsDisplay();
-                    updateUI();
-                    alert(`🎉 To'g'ri kod! +${condition.reward} DRC`);
-                } else if (userCode !== null) {
-                    alert('❌ Noto\'g\'ri kod! Videoni qaytadan ko\'ring.');
-                }
-            }
-        }
-
-        function showTaskComplete(message) {
-            setTimeout(() => alert('🎉 ' + message), 100);
-        }
-
-        function showEnergyWarning() {
-            document.getElementById('energyWarning').style.display = 'block';
-            setTimeout(() => {
-                document.getElementById('energyWarning').style.display = 'none';
-            }, 3000);
-        }
-
-        // Boost system
-        let coinMultiplierActive = false;
-        let coinMultiplierEndTime = 0;
-
-        function buyBoost(type) {
-            let cost = 0;
-            let message = '';
-            let canBuy = false;
-
-            switch(type) {
-                case 'energy':
-                    cost = 100;
-                    if (gameState.balance >= cost) {
-                        gameState.balance -= cost;
-                        gameState.energy = gameState.maxEnergy;
-                        message = 'Energy to\'liq tiklandi!';
-                        canBuy = true;
-                    }
-                    break;
-                case 'power':
-                    cost = 500 * gameState.tapPower;
-                    if (gameState.balance >= cost) {
-                        gameState.balance -= cost;
-                        gameState.tapPower += 1;
-                        message = `Tap power ${gameState.tapPower} ga oshirildi!`;
-                        canBuy = true;
-                        document.getElementById('powerBoost').querySelector('.boost-cost').textContent = (500 * gameState.tapPower) + ' DRC';
-                    }
-                    break;
-                case 'maxEnergy':
-                    cost = 1000;
-                    if (gameState.balance >= cost) {
-                        gameState.balance -= cost;
-                        gameState.maxEnergy += 500;
-                        gameState.energy = gameState.maxEnergy;
-                        message = 'Maksimal energy 500 ga oshirildi!';
-                        canBuy = true;
-                    }
-                    break;
-                case 'autoTap':
-                    cost = 5000;
-                    if (gameState.autoTapEndTime > Date.now()) {
-                        alert('❌ Auto tap hali faol! Tugashini kuting.');
-                        return;
-                    }
-                    if (gameState.balance >= cost) {
-                        gameState.balance -= cost;
-                        gameState.autoTapEndTime = Date.now() + (4 * 60 * 60 * 1000);
-                        startAutoTap();
-                        message = 'Auto tap 4 soatga faollashtirildi!';
-                        canBuy = true;
-                    }
-                    break;
-                case 'energyRegen':
-                    cost = 1500;
-                    if (gameState.balance >= cost) {
-                        gameState.balance -= cost;
-                        message = 'Energy 2x tez tiklanadi!';
-                        canBuy = true;
-                    }
-                    break;
-                case 'coinMultiplier':
-                    cost = 3000;
-                    if (gameState.balance >= cost) {
-                        gameState.balance -= cost;
-                        coinMultiplierActive = true;
-                        coinMultiplierEndTime = Date.now() + (30 * 60 * 1000);
-                        message = '30 daqiqa 2x coin faol!';
-                        canBuy = true;
-                        setTimeout(() => {
-                            coinMultiplierActive = false;
-                            alert('⏰ 2x coin multiplier tugadi!');
-                        }, 30 * 60 * 1000);
-                    }
-                    break;
-            }
-
-            if (canBuy) {
-                updateUI();
-                saveGameState();
-                alert('✅ ' + message);
-            } else {
-                alert('❌ Yetarli coin yo\'q!');
-            }
-        }
-
-        function startAutoTap() {
-            const autoTapInterval = setInterval(() => {
-                if (Date.now() >= gameState.autoTapEndTime) {
-                    clearInterval(autoTapInterval);
-                    return;
-                }
-                
-                if (gameState.energy > 0) {
-                    gameState.energy -= 1;
-                    gameState.balance += gameState.tapPower;
-                    gameState.totalTaps += 1;
-                    gameState.autoTapCoins += gameState.tapPower;
-                    
-                    checkLevelUp();
-                    checkConditions();
-                }
-            }, 1000);
-        }
-
-        // Navigation functions
-        function showSection(sectionName) {
-            const sections = ['tap', 'tasks', 'referral', 'leaderboard', 'boost'];
-            const tabs = ['tapTab', 'tasksTab', 'referralTab', 'leaderboardTab', 'boostTab'];
-            
-            sections.forEach(section => {
-                document.getElementById(section + 'Section').style.display = 'none';
-            });
-            
-            tabs.forEach(tab => {
-                document.getElementById(tab).classList.remove('active');
-            });
-            
-            document.getElementById(sectionName + 'Section').style.display = 'block';
-            document.getElementById(sectionName + 'Tab').classList.add('active');
-            
-            if (sectionName === 'referral') {
-                updateReferralStats();
-                updateReferralList();
-            } else if (sectionName === 'leaderboard') {
-                showLeaderboard('coins');
-            } else if (sectionName === 'tasks') {
-                updateConditionsDisplay();
-            }
-            
-            if (sectionName === 'boost' && isAdmin) {
-                document.getElementById('adminPanel').style.display = 'block';
-            } else if (isAdmin && sectionName !== 'boost') {
-                document.getElementById('adminPanel').style.display = 'none';
-            }
-        }
-
-        // Update UI function
-        function updateUI() {
-            document.getElementById('balance').textContent = gameState.balance.toLocaleString();
-            document.getElementById('tapPower').textContent = gameState.tapPower;
-            document.getElementById('totalTaps').textContent = gameState.totalTaps.toLocaleString();
-            document.getElementById('level').textContent = gameState.level;
-            document.getElementById('levelBadge').textContent = `Level ${gameState.level}`;
-            document.getElementById('playerName').textContent = gameState.playerName;
-            
-            const energyPercent = (gameState.energy / gameState.maxEnergy) * 100;
-            document.getElementById('energyProgress').style.width = energyPercent + '%';
-            document.getElementById('energyText').textContent = `${gameState.energy}/${gameState.maxEnergy}`;
-            
-            document.getElementById('tapProgress').textContent = Math.min(gameState.totalTaps, 500);
-            document.getElementById('currentLevel').textContent = gameState.level;
-            document.getElementById('coinProgress').textContent = Math.min(gameState.balance, 10000);
+        // Close player profile modal
+        function closePlayerProfile() {
+            document.getElementById('playerProfileModal').style.display = 'none';
         }
 
         // Initialize game
         function initGame() {
-            detectCountryAndLanguage();
-            loadAdminAttempts();
+            console.log('🎮 Dragon Coin o\'yini ishga tushmoqda...');
+            
+            // Load saved game state
             loadGameState();
-            initializeReferralSystem();
+            
+            // Get unique player ID
+            getUniquePlayerId();
+            
+            // Detect language
+            detectCountryAndLanguage();
+            
+            // Initialize Firebase connection
+            initializeFirebaseConnection();
+            
+            // Update UI
             updateUI();
-            updateConditionsDisplay();
-            updateReferralStats();
             
-            // Add keyboard event listeners
-            document.addEventListener('keydown', function(event) {
-                if (event.code === 'Space' || event.code === 'Enter') {
-                    event.preventDefault();
-                    tapCoin();
-                }
-                
-                if (event.key === 'Escape') {
-                    closeLoginModal();
-                }
-            });
+            // Start energy regeneration
+            startEnergyRegeneration();
             
-            // Add password input enter key listener
-            document.getElementById('passwordInput').addEventListener('keydown', function(event) {
-                if (event.key === 'Enter') {
-                    attemptLogin();
-                }
-            });
+            // Translate page
+            translatePage();
+            
+            console.log('✅ O\'yin muvaffaqiyatli ishga tushdi!');
         }
 
-        // Make functions globally available
-        window.showSection = showSection;
-        window.tapCoin = tapCoin;
-        window.claimTask = claimTask;
-        window.buyBoost = buyBoost;
-        window.copyReferralLink = copyReferralLink;
-        window.showLeaderboard = showLeaderboard;
-        window.toggleLanguage = toggleLanguage;
-        window.showAdminLogin = showAdminLogin;
-        window.closeLoginModal = closeLoginModal;
-        window.attemptLogin = attemptLogin;
-        window.addCondition = addCondition;
-        window.removeCondition = removeCondition;
-        window.showSecurityLog = showSecurityLog;
-        window.clearSecurityLog = clearSecurityLog;
-        window.openLink = openLink;
-        window.verifySubscription = verifySubscription;
-        window.enterVideoCode = enterVideoCode;
-        window.updateFirebaseStatus = updateFirebaseStatus;
-        window.initializeFirebaseConnection = initializeFirebaseConnection;
-
-        // Start the game when DOM is loaded
+        // Initialize when page loads
         document.addEventListener('DOMContentLoaded', initGame);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96cf48d53729b27a',t:'MTc1NDgyNjcxOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96cfc47c717e82a1',t:'MTc1NDgzMTc4NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
