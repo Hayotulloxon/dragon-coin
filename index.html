@@ -2463,7 +2463,8 @@
         // Energy regeneration
         setInterval(() => {
             if (gameState.energy < gameState.maxEnergy) {
-                gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + 1);
+                const regen = 1 + (energyRegenBonus > 0 ? 1 : 0);
+                gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + regen);
                 updateUI();
                 saveGameState();
             }
@@ -2761,6 +2762,7 @@
         // Boost system
         let coinMultiplierActive = false;
         let coinMultiplierEndTime = 0;
+        let energyRegenBonus = 0;
 
         function buyBoost(type) {
             let cost = 0;
@@ -2806,4 +2808,67 @@
                     if (gameState.balance >= cost) {
                         gameState.balance -= cost;
                         gameState.autoTapEndTime = Date.now() + (4 * 60 * 60 * 1000);
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96cc88ca026c0d38',t:'MTc1NDc5Nzg4Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+                        gameState.autoTapCoins = 0;
+                        if (window.__autoTapIntervalId) {
+                            clearInterval(window.__autoTapIntervalId);
+                        }
+                        window.__autoTapIntervalId = setInterval(() => {
+                            if (Date.now() >= gameState.autoTapEndTime) {
+                                clearInterval(window.__autoTapIntervalId);
+                                window.__autoTapIntervalId = null;
+                                showAutoTapCollection();
+                                return;
+                            }
+                            const perTick = coinMultiplierActive ? gameState.tapPower * 2 : gameState.tapPower;
+                            gameState.autoTapCoins += perTick;
+                        }, 1000);
+                        message = 'Auto Tap faollashtirildi (4 soat). Yakunda natijani yig‘ib olasiz.';
+                        canBuy = true;
+                    }
+                    break;
+                case 'energyRegen':
+                    cost = 1500;
+                    if (gameState.balance >= cost) {
+                        gameState.balance -= cost;
+                        const durationMs = 30 * 60 * 1000;
+                        energyRegenBonus = 1;
+                        if (window.__energyRegenTimerId) {
+                            clearTimeout(window.__energyRegenTimerId);
+                        }
+                        window.__energyRegenTimerId = setTimeout(() => {
+                            energyRegenBonus = 0;
+                        }, durationMs);
+                        message = 'Energiya 2x tez tiklanishi 30 daqiqaga yoqildi.';
+                        canBuy = true;
+                    }
+                    break;
+                case 'coinMultiplier':
+                    cost = 3000;
+                    if (gameState.balance >= cost) {
+                        gameState.balance -= cost;
+                        coinMultiplierActive = true;
+                        coinMultiplierEndTime = Date.now() + (30 * 60 * 1000);
+                        if (window.__coinMultiplierTimerId) {
+                            clearTimeout(window.__coinMultiplierTimerId);
+                        }
+                        window.__coinMultiplierTimerId = setTimeout(() => {
+                            coinMultiplierActive = false;
+                        }, 30 * 60 * 1000);
+                        message = '2x coin 30 daqiqaga yoqildi.';
+                        canBuy = true;
+                    }
+                    break;
+            }
+
+            if (canBuy) {
+                updateUI();
+                saveGameState();
+                if (message) alert('✅ ' + message);
+            } else {
+                if (type !== 'autoTap') alert('❌ Mablag‘ yetarli emas!');
+            }
+        }
+
+        </script>
+    </body>
+</html>
