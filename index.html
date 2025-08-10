@@ -502,11 +502,259 @@
             margin-top: 30px;
         }
 
-        .boost-grid {
+        .boost-category {
+            margin-bottom: 25px;
+        }
+
+        /* Daily Boosts Styles */
+        .daily-boosts {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .daily-boost-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .daily-boost-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(0, 255, 136, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .boost-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .boost-icon-large {
+            width: 48px;
+            height: 48px;
+            background: rgba(0, 255, 136, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .boost-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .boost-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .boost-subtitle {
+            font-size: 14px;
+            color: #cccccc;
+        }
+
+        .boost-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+        }
+
+        .boost-count {
+            font-size: 14px;
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        .boost-price {
+            font-size: 14px;
+            color: #ff6b35;
+            font-weight: bold;
+        }
+
+        /* Upgrade Grid Styles */
+        .upgrade-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .upgrade-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .upgrade-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 107, 53, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .upgrade-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(255, 107, 53, 0.2);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+
+        .upgrade-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .upgrade-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .upgrade-level {
+            font-size: 14px;
+            color: #ff6b35;
+            font-weight: bold;
+        }
+
+        .upgrade-description {
+            font-size: 13px;
+            color: #cccccc;
+        }
+
+        .upgrade-cost {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .upgrade-price {
+            font-size: 14px;
+            color: #ff6b35;
+            font-weight: bold;
+            background: rgba(255, 107, 53, 0.1);
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 107, 53, 0.3);
+        }
+
+        /* Special Boosts Styles */
+        .special-boosts {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .special-boost-item {
+            background: linear-gradient(135deg, rgba(138, 43, 226, 0.1) 0%, rgba(255, 107, 53, 0.1) 100%);
+            border: 2px solid rgba(138, 43, 226, 0.3);
+            border-radius: 20px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .special-boost-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .special-boost-item:hover::before {
+            left: 100%;
+        }
+
+        .special-boost-item:hover {
+            border-color: rgba(138, 43, 226, 0.6);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(138, 43, 226, 0.3);
+        }
+
+        .special-boost-content {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .special-boost-icon {
+            width: 64px;
+            height: 64px;
+            background: rgba(138, 43, 226, 0.3);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            flex-shrink: 0;
+            border: 2px solid rgba(138, 43, 226, 0.5);
+        }
+
+        .special-boost-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .special-boost-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(138, 43, 226, 0.5);
+        }
+
+        .special-boost-description {
+            font-size: 14px;
+            color: #cccccc;
+        }
+
+        .special-boost-effects {
+            font-size: 12px;
+            color: #8a2be2;
+            font-weight: bold;
+        }
+
+        .special-boost-price {
+            font-size: 18px;
+            color: #8a2be2;
+            font-weight: bold;
+            background: rgba(138, 43, 226, 0.2);
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(138, 43, 226, 0.4);
+            text-shadow: 0 0 10px rgba(138, 43, 226, 0.5);
         }
 
         .boost-card {
@@ -942,30 +1190,90 @@
                 margin-bottom: 8px;
             }
 
-            .boost-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 10px;
+            .upgrade-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
             }
 
-            .boost-card {
-                padding: 15px;
+            .upgrade-card {
+                padding: 16px;
+                gap: 12px;
             }
 
-            .boost-icon {
+            .upgrade-icon {
+                width: 48px;
+                height: 48px;
                 font-size: 24px;
-                margin-bottom: 8px;
             }
 
-            .boost-name {
-                font-size: 14px;
+            .upgrade-title {
+                font-size: 15px;
             }
 
-            .boost-cost {
+            .upgrade-level {
+                font-size: 13px;
+            }
+
+            .upgrade-description {
                 font-size: 12px;
             }
 
-            .boost-description {
-                font-size: 10px;
+            .upgrade-price {
+                font-size: 13px;
+                padding: 5px 10px;
+            }
+
+            .daily-boost-item {
+                padding: 14px;
+            }
+
+            .boost-icon-large {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+            }
+
+            .boost-title {
+                font-size: 15px;
+            }
+
+            .boost-subtitle {
+                font-size: 13px;
+            }
+
+            .boost-count, .boost-price {
+                font-size: 13px;
+            }
+
+            .special-boost-item {
+                padding: 16px;
+            }
+
+            .special-boost-content {
+                gap: 16px;
+            }
+
+            .special-boost-icon {
+                width: 56px;
+                height: 56px;
+                font-size: 28px;
+            }
+
+            .special-boost-title {
+                font-size: 18px;
+            }
+
+            .special-boost-description {
+                font-size: 13px;
+            }
+
+            .special-boost-effects {
+                font-size: 11px;
+            }
+
+            .special-boost-price {
+                font-size: 16px;
+                padding: 10px 16px;
             }
 
             .referral-stats {
@@ -1104,6 +1412,7 @@
             <button class="nav-tab" id="referralTab" onclick="showSection('referral')">👥 <span data-translate="referral">Referral</span></button>
             <button class="nav-tab" id="leaderboardTab" onclick="showSection('leaderboard')">🏆 <span data-translate="leaderboard">Reyting</span></button>
             <button class="nav-tab" id="boostTab" onclick="showSection('boost')">🚀 <span data-translate="boost">Boostlar</span></button>
+            <button class="nav-tab" id="adminTab" onclick="showSection('admin')" style="display: none;">⚙️ <span data-translate="admin">Admin</span></button>
         </div>
 
         <div class="balance-display">
@@ -1278,31 +1587,274 @@
 
         <div class="section" id="boostSection" style="display: none;">
             <div class="boost-section">
-                <h3 style="margin-bottom: 15px; color: #ff6b35;">🚀 <span data-translate="boost">Boostlar</span></h3>
-                <div class="boost-grid">
-                    <div class="boost-card" onclick="buyBoost('energy')">
-                        <div class="boost-icon">⚡</div>
-                        <div class="boost-name">Energy Refill</div>
-                        <div class="boost-cost">100 DRC</div>
-                        <div class="boost-description" data-translate="energyRefillDesc">Energiyani to'liq tiklaydi</div>
+                <h3 style="margin-bottom: 20px; color: #ffffff; text-align: center; font-size: 24px;">🚀 <span data-translate="boost">Boostlar</span></h3>
+                
+                <!-- Daily Boosts Section -->
+                <div class="boost-category">
+                    <h4 style="color: #00ff88; margin-bottom: 15px; font-size: 18px;">⚡ Kunlik Boostlar</h4>
+                    <div class="daily-boosts">
+                        <div class="daily-boost-item" onclick="buyBoost('energy')">
+                            <div class="boost-left">
+                                <div class="boost-icon-large">⚡</div>
+                                <div class="boost-info">
+                                    <div class="boost-title">Energy Refill</div>
+                                    <div class="boost-subtitle" data-translate="energyRefillDesc">Energiyani to'liq tiklaydi</div>
+                                </div>
+                            </div>
+                            <div class="boost-right">
+                                <div class="boost-count" id="energyBoostCount">6/6</div>
+                                <div class="boost-price">100 DRC</div>
+                            </div>
+                        </div>
+                        
+                        <div class="daily-boost-item" onclick="buyBoost('turbo')">
+                            <div class="boost-left">
+                                <div class="boost-icon-large">🔥</div>
+                                <div class="boost-info">
+                                    <div class="boost-title">Turbo Tap</div>
+                                    <div class="boost-subtitle">20 soniya davomida x5 tap power</div>
+                                </div>
+                            </div>
+                            <div class="boost-right">
+                                <div class="boost-count" id="turboBoostCount">3/3</div>
+                                <div class="boost-price">200 DRC</div>
+                            </div>
+                        </div>
+                        
+                        <div class="daily-boost-item" onclick="buyBoost('multiTap')">
+                            <div class="boost-left">
+                                <div class="boost-icon-large">👆</div>
+                                <div class="boost-info">
+                                    <div class="boost-title">Multi Tap</div>
+                                    <div class="boost-subtitle">30 soniya davomida har tap 5 marta</div>
+                                </div>
+                            </div>
+                            <div class="boost-right">
+                                <div class="boost-count" id="multiTapBoostCount">3/3</div>
+                                <div class="boost-price">300 DRC</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="boost-card" onclick="buyBoost('power')" id="powerBoost">
-                        <div class="boost-icon">💪</div>
-                        <div class="boost-name">Tap Power +1</div>
-                        <div class="boost-cost">500 DRC</div>
-                        <div class="boost-description" data-translate="tapPowerDesc">Har bir tap uchun +1 coin</div>
+                </div>
+
+                <!-- Permanent Upgrades Section -->
+                <div class="boost-category" style="margin-top: 30px;">
+                    <h4 style="color: #ff6b35; margin-bottom: 15px; font-size: 18px;">🔧 Doimiy Yaxshilashlar</h4>
+                    <div class="upgrade-grid">
+                        <div class="upgrade-card" onclick="buyBoost('power')" id="powerBoost">
+                            <div class="upgrade-icon">💪</div>
+                            <div class="upgrade-info">
+                                <div class="upgrade-title">Tap Power</div>
+                                <div class="upgrade-level">Level <span id="tapPowerLevel">1</span></div>
+                                <div class="upgrade-description">+<span id="tapPowerValue">1</span> coin per tap</div>
+                            </div>
+                            <div class="upgrade-cost">
+                                <div class="upgrade-price" id="tapPowerCost">500 DRC</div>
+                            </div>
+                        </div>
+                        
+                        <div class="upgrade-card" onclick="buyBoost('maxEnergy')" id="energyBoost">
+                            <div class="upgrade-icon">🔋</div>
+                            <div class="upgrade-info">
+                                <div class="upgrade-title">Max Energy</div>
+                                <div class="upgrade-level">Level <span id="maxEnergyLevel">1</span></div>
+                                <div class="upgrade-description">+<span id="maxEnergyValue">500</span> max energy</div>
+                            </div>
+                            <div class="upgrade-cost">
+                                <div class="upgrade-price" id="maxEnergyCost">1000 DRC</div>
+                            </div>
+                        </div>
+                        
+                        <div class="upgrade-card" onclick="buyBoost('energyRegen')" id="energyRegenBoost">
+                            <div class="upgrade-icon">⚡</div>
+                            <div class="upgrade-info">
+                                <div class="upgrade-title">Energy Regen</div>
+                                <div class="upgrade-level">Level <span id="energyRegenLevel">1</span></div>
+                                <div class="upgrade-description">Energy <span id="energyRegenValue">5</span>s da tiklanadi</div>
+                            </div>
+                            <div class="upgrade-cost">
+                                <div class="upgrade-price" id="energyRegenCost">2000 DRC</div>
+                            </div>
+                        </div>
+                        
+                        <div class="upgrade-card" onclick="buyBoost('autoTap')" id="autoTapBoost">
+                            <div class="upgrade-icon">🤖</div>
+                            <div class="upgrade-info">
+                                <div class="upgrade-title">Auto Tap</div>
+                                <div class="upgrade-level">Level <span id="autoTapLevel">0</span></div>
+                                <div class="upgrade-description"><span id="autoTapValue">1</span> tap/soniya (4 soat)</div>
+                            </div>
+                            <div class="upgrade-cost">
+                                <div class="upgrade-price" id="autoTapCost">5000 DRC</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="boost-card" onclick="buyBoost('maxEnergy')" id="energyBoost">
-                        <div class="boost-icon">🔋</div>
-                        <div class="boost-name">Max Energy +500</div>
-                        <div class="boost-cost">1000 DRC</div>
-                        <div class="boost-description" data-translate="maxEnergyDesc">Maksimal energiyani oshiradi</div>
+                </div>
+
+                <!-- Special Boosts Section -->
+                <div class="boost-category" style="margin-top: 30px;">
+                    <h4 style="color: #8a2be2; margin-bottom: 15px; font-size: 18px;">✨ Maxsus Boostlar</h4>
+                    <div class="special-boosts">
+                        <div class="special-boost-item" onclick="buyBoost('megaBoost')">
+                            <div class="special-boost-content">
+                                <div class="special-boost-icon">💥</div>
+                                <div class="special-boost-info">
+                                    <div class="special-boost-title">Mega Boost</div>
+                                    <div class="special-boost-description">1 soat davomida barcha boostlar faol</div>
+                                    <div class="special-boost-effects">
+                                        • x10 Tap Power • x2 Energy Regen • Auto Tap
+                                    </div>
+                                </div>
+                                <div class="special-boost-price">10000 DRC</div>
+                            </div>
+                        </div>
+                        
+                        <div class="special-boost-item" onclick="buyBoost('goldenHour')">
+                            <div class="special-boost-content">
+                                <div class="special-boost-icon">🌟</div>
+                                <div class="special-boost-info">
+                                    <div class="special-boost-title">Golden Hour</div>
+                                    <div class="special-boost-description">1 soat davomida har tap oltin coin beradi</div>
+                                    <div class="special-boost-effects">
+                                        • x20 Tap Reward • Oltin animatsiya • Bonus XP
+                                    </div>
+                                </div>
+                                <div class="special-boost-price">25000 DRC</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="boost-card" onclick="buyBoost('autoTap')" id="autoTapBoost">
-                        <div class="boost-icon">🤖</div>
-                        <div class="boost-name">Auto Tap (4h)</div>
-                        <div class="boost-cost">5000 DRC</div>
-                        <div class="boost-description" data-translate="autoTapDesc">4 soat avtomatik tap qiladi</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Panel Section -->
+        <div class="section" id="adminSection" style="display: none;">
+            <div class="conditions-panel">
+                <h3 style="margin-bottom: 15px; color: #ff6b35;">⚙️ <span data-translate="adminPanel">Admin Panel</span></h3>
+                
+                <!-- Admin Stats -->
+                <div class="stats-grid" style="margin-bottom: 20px;">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalPlayersCount">0</div>
+                        <div class="stat-label">Jami o'yinchilar</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="onlinePlayersCount">0</div>
+                        <div class="stat-label">Online o'yinchilar</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalCoinsInGame">0</div>
+                        <div class="stat-label">Jami coinlar</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalTapsInGame">0</div>
+                        <div class="stat-label">Jami taplar</div>
+                    </div>
+                </div>
+
+                <!-- Admin Actions -->
+                <div style="background: rgba(255, 107, 53, 0.1); border-radius: 15px; padding: 20px; margin: 20px 0;">
+                    <h4 style="color: #ff6b35; margin-bottom: 15px;">🛠️ Admin Amallar</h4>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <button class="boost-card" onclick="adminAddCoins()" style="cursor: pointer; text-align: center;">
+                            <div class="boost-icon">💰</div>
+                            <div class="boost-name">O'zimga 10000 coin</div>
+                            <div class="boost-description">Admin huquqi</div>
+                        </button>
+                        
+                        <button class="boost-card" onclick="adminMaxLevel()" style="cursor: pointer; text-align: center;">
+                            <div class="boost-icon">🚀</div>
+                            <div class="boost-name">Maksimal Level</div>
+                            <div class="boost-description">Level 10 ga o'tish</div>
+                        </button>
+                        
+                        <button class="boost-card" onclick="adminResetProgress()" style="cursor: pointer; text-align: center;">
+                            <div class="boost-icon">🔄</div>
+                            <div class="boost-name">Progressni Reset</div>
+                            <div class="boost-description">Boshidan boshlash</div>
+                        </button>
+                        
+                        <button class="boost-card" onclick="adminViewAllPlayers()" style="cursor: pointer; text-align: center;">
+                            <div class="boost-icon">👥</div>
+                            <div class="boost-name">Barcha o'yinchilar</div>
+                            <div class="boost-description">To'liq ro'yxat</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Player Management -->
+                <div style="background: rgba(0, 255, 136, 0.1); border-radius: 15px; padding: 20px; margin: 20px 0;">
+                    <h4 style="color: #00ff88; margin-bottom: 15px;">👤 O'yinchilarni Boshqarish</h4>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <input type="text" id="playerSearchInput" placeholder="O'yinchi nomini kiriting..." 
+                               style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button onclick="searchPlayer()" style="background: #00ff88; color: #000; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+                            🔍 Qidirish
+                        </button>
+                        <button onclick="banPlayer()" style="background: #ff6b35; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+                            🚫 Ban qilish
+                        </button>
+                        <button onclick="giveCoinsToPlayer()" style="background: #f7931e; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+                            💰 Coin berish
+                        </button>
+                    </div>
+                    
+                    <div id="playerSearchResults" style="margin-top: 15px;"></div>
+                </div>
+
+                <!-- System Settings -->
+                <div style="background: rgba(138, 43, 226, 0.1); border-radius: 15px; padding: 20px; margin: 20px 0;">
+                    <h4 style="color: #8a2be2; margin-bottom: 15px;">⚙️ Tizim Sozlamalari</h4>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 5px;">Energy tiklash vaqti (soniya):</label>
+                            <input type="number" id="energyRegenTime" value="5" min="1" max="60" 
+                                   style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; margin-bottom: 5px;">Maksimal energy:</label>
+                            <input type="number" id="maxEnergyLimit" value="1000" min="100" max="10000" 
+                                   style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; margin-bottom: 5px;">Tap power limit:</label>
+                            <input type="number" id="tapPowerLimit" value="100" min="1" max="1000" 
+                                   style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
+                        </div>
+                    </div>
+                    
+                    <button onclick="saveSystemSettings()" style="background: #8a2be2; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-top: 15px;">
+                        💾 Sozlamalarni Saqlash
+                    </button>
+                </div>
+
+                <!-- Database Management -->
+                <div style="background: rgba(220, 20, 60, 0.1); border-radius: 15px; padding: 20px; margin: 20px 0;">
+                    <h4 style="color: #dc143c; margin-bottom: 15px;">🗄️ Ma'lumotlar Bazasi</h4>
+                    
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button onclick="exportAllData()" style="background: #00ff88; color: #000; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer;">
+                            📤 Ma'lumotlarni Export
+                        </button>
+                        <button onclick="clearInactivePlayers()" style="background: #ff6b35; color: #fff; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer;">
+                            🗑️ Nofaol o'yinchilarni o'chirish
+                        </button>
+                        <button onclick="backupDatabase()" style="background: #f7931e; color: #fff; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer;">
+                            💾 Backup yaratish
+                        </button>
+                    </div>
+                    
+                    <div id="databaseStatus" style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                        <div style="font-size: 14px; color: #ccc;">Database holati: <span style="color: #00ff88;">✅ Faol</span></div>
+                        <div style="font-size: 12px; color: #999; margin-top: 5px;">Oxirgi backup: <span id="lastBackupTime">Hech qachon</span></div>
                     </div>
                 </div>
             </div>
@@ -1362,6 +1914,8 @@
                 referral: "Referral",
                 leaderboard: "Reyting",
                 boost: "Boostlar",
+                admin: "Admin",
+                adminPanel: "Admin Panel",
                 coinsPerTap: "Har tap uchun coin",
                 totalTaps: "Jami taplar",
                 level: "Level",
@@ -1513,7 +2067,25 @@
             referralEarnings: 0,
             referredBy: null,
             playerName: 'Dragon Miner',
-            country: 'UZ'
+            country: 'UZ',
+            // Boost states
+            boosts: {
+                dailyBoosts: {
+                    energy: { count: 6, maxCount: 6, cost: 100 },
+                    turbo: { count: 3, maxCount: 3, cost: 200, active: false, endTime: 0 },
+                    multiTap: { count: 3, maxCount: 3, cost: 300, active: false, endTime: 0 }
+                },
+                upgrades: {
+                    tapPower: { level: 1, cost: 500 },
+                    maxEnergy: { level: 1, cost: 1000 },
+                    energyRegen: { level: 1, cost: 2000 },
+                    autoTap: { level: 0, cost: 5000, active: false, endTime: 0 }
+                },
+                special: {
+                    megaBoost: { active: false, endTime: 0, cost: 10000 },
+                    goldenHour: { active: false, endTime: 0, cost: 25000 }
+                }
+            }
         };
 
         let globalPlayers = [];
@@ -1883,13 +2455,21 @@
                 return;
             }
 
-            // Add coins and reduce energy
-            gameState.balance += gameState.tapPower;
-            gameState.energy = Math.max(0, gameState.energy - 1);
-            gameState.totalTaps++;
+            // Check active boosts
+            checkActiveBoosts();
 
-            // Create tap effect
-            createTapEffect(event, gameState.tapPower);
+            // Calculate effective tap power and multiplier
+            const effectivePower = getEffectiveTapPower();
+            const tapMultiplier = getTapMultiplier();
+            
+            // Add coins and reduce energy
+            const coinsEarned = effectivePower * tapMultiplier;
+            gameState.balance += coinsEarned;
+            gameState.energy = Math.max(0, gameState.energy - 1);
+            gameState.totalTaps += tapMultiplier;
+
+            // Create tap effect with boost indication
+            createTapEffect(event, coinsEarned);
 
             // Update level
             updateLevel();
@@ -1938,16 +2518,38 @@
             }
         }
 
+        // Admin user IDs - add your Telegram ID here
+        const ADMIN_IDS = [
+            'tg_1234567890',  // Replace with your actual Telegram ID
+            'admin_test',     // Test admin ID
+            'browser_admin'   // Browser admin for testing
+        ];
+
+        // Check if current user is admin
+        function isAdmin() {
+            const currentId = getUniquePlayerId();
+            const tgData = getTelegramUserData();
+            
+            // Check if current player ID or Telegram ID is in admin list
+            if (ADMIN_IDS.includes(currentId)) return true;
+            if (tgData && ADMIN_IDS.includes(tgData.id)) return true;
+            
+            // For testing purposes, also check if player name contains "admin"
+            if (gameState.playerName.toLowerCase().includes('admin')) return true;
+            
+            return false;
+        }
+
         // Show/hide sections
         function showSection(sectionName) {
             // Hide all sections
-            const sections = ['tapSection', 'tasksSection', 'referralSection', 'leaderboardSection', 'boostSection'];
+            const sections = ['tapSection', 'tasksSection', 'referralSection', 'leaderboardSection', 'boostSection', 'adminSection'];
             sections.forEach(section => {
                 document.getElementById(section).style.display = 'none';
             });
             
             // Remove active class from all tabs
-            const tabs = ['tapTab', 'tasksTab', 'referralTab', 'leaderboardTab', 'boostTab'];
+            const tabs = ['tapTab', 'tasksTab', 'referralTab', 'leaderboardTab', 'boostTab', 'adminTab'];
             tabs.forEach(tab => {
                 document.getElementById(tab).classList.remove('active');
             });
@@ -1966,6 +2568,256 @@
                 updateReferralStats();
                 updateReferralList();
             }
+            
+            // Special handling for admin
+            if (sectionName === 'admin') {
+                updateAdminStats();
+            }
+        }
+
+        // Admin Functions
+        function adminAddCoins() {
+            if (!isAdmin()) {
+                alert('❌ Admin huquqi yo\'q!');
+                return;
+            }
+            
+            gameState.balance += 10000;
+            alert('✅ 10000 coin qo\'shildi!');
+            updateUI();
+            saveGameState();
+        }
+
+        function adminMaxLevel() {
+            if (!isAdmin()) {
+                alert('❌ Admin huquqi yo\'q!');
+                return;
+            }
+            
+            gameState.level = 10;
+            gameState.totalTaps = 100000;
+            alert('✅ Maksimal level (10) ga o\'tkazildi!');
+            updateUI();
+            saveGameState();
+        }
+
+        function adminResetProgress() {
+            if (!isAdmin()) {
+                alert('❌ Admin huquqi yo\'q!');
+                return;
+            }
+            
+            if (confirm('Haqiqatan ham barcha progressni reset qilmoqchimisiz?')) {
+                gameState.balance = 0;
+                gameState.level = 1;
+                gameState.totalTaps = 0;
+                gameState.tapPower = 1;
+                gameState.energy = 1000;
+                gameState.maxEnergy = 1000;
+                gameState.completedTasks = {
+                    taps: false,
+                    level: false,
+                    coins: false,
+                    referral: false
+                };
+                alert('✅ Progress reset qilindi!');
+                updateUI();
+                saveGameState();
+            }
+        }
+
+        function adminViewAllPlayers() {
+            if (!isAdmin()) {
+                alert('❌ Admin huquqi yo\'q!');
+                return;
+            }
+            
+            let playersList = 'Barcha o\'yinchilar:\n\n';
+            
+            // Add current player
+            playersList += `👑 ${gameState.playerName} (Siz - Admin)\n`;
+            playersList += `   💰 ${gameState.balance.toLocaleString()} coins\n`;
+            playersList += `   📊 Level ${gameState.level}\n`;
+            playersList += `   👥 ${gameState.referrals.length} referrals\n\n`;
+            
+            // Add other players
+            globalPlayers.slice(0, 10).forEach((player, index) => {
+                playersList += `${index + 2}. ${player.name}\n`;
+                playersList += `   💰 ${(player.balance || 0).toLocaleString()} coins\n`;
+                playersList += `   📊 Level ${player.level || 1}\n`;
+                playersList += `   👥 ${player.referrals || 0} referrals\n`;
+                playersList += `   ${player.isOnline ? '🟢' : '🔴'} ${player.country || 'Unknown'}\n\n`;
+            });
+            
+            alert(playersList);
+        }
+
+        function searchPlayer() {
+            if (!isAdmin()) {
+                alert('❌ Admin huquqi yo\'q!');
+                return;
+            }
+            
+            const searchTerm = document.getElementById('playerSearchInput').value.toLowerCase();
+            if (!searchTerm) {
+                alert('O\'yinchi nomini kiriting!');
+                return;
+            }
+            
+            const results = globalPlayers.filter(player => 
+                player.name.toLowerCase().includes(searchTerm)
+            );
+            
+            const resultsDiv = document.getElementById('playerSearchResults');
+            if (results.length === 0) {
+                resultsDiv.innerHTML = '<div style="color: #ff6b35;">Hech qanday o\'yinchi topilmadi</div>';
+                return;
+            }
+            
+            let html = '<h5 style="color: #00ff88; margin-bottom: 10px;">Qidiruv natijalari:</h5>';
+            results.forEach(player => {
+                html += `
+                    <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin: 5px 0;">
+                        <strong>${player.name}</strong> (${player.country || 'Unknown'})
+                        <br>💰 ${(player.balance || 0).toLocaleString()} coins | 📊 Level ${player.level || 1} | 👥 ${player.referrals || 0} refs
+                        <br>${player.isOnline ? '🟢 Online' : '🔴 Offline'}
+                    </div>
+                `;
+            });
+            
+            resultsDiv.innerHTML = html;
+        }
+
+        function banPlayer() {
+            if (!isAdmin()) {
+                alert('❌ Admin huquqi yo\'q!');
+                return;
+            }
+            
+            const playerName = document.getElementById('playerSearchInput').value;
+            if (!playerName) {
+                alert('O\'yinchi nomini kiriting!');
+                return;
+            }
+            
+            if (confirm(`${playerName} ni ban qilmoqchimisiz?`)) {
+                alert(`✅ ${playerName} ban qilindi! (Demo rejimda)`);
+            }
+        }
+
+        function giveCoinsToPlayer() {
+            if (!isAdmin()) {
+                alert('❌ Admin huquqi yo\'q!');
+                return;
+            }
+            
+            const playerName = document.getElementById('playerSearchInput').value;
+            if (!playerName) {
+                alert('O\'yinchi nomini kiriting!');
+                return;
+            }
+            
+            const coins = prompt('Necha coin bermoqchisiz?', '1000');
+            if (coins && !isNaN(coins)) {
+                alert(`✅ ${playerName} ga ${coins} coin berildi! (Demo rejimda)`);
+            }
+        }
+
+        function saveSystemSettings() {
+            if (!isAdmin()) {
+                alert('❌ Admin huquqi yo\'q!');
+                return;
+            }
+            
+            const energyRegenTime = document.getElementById('energyRegenTime').value;
+            const maxEnergyLimit = document.getElementById('maxEnergyLimit').value;
+            const tapPowerLimit = document.getElementById('tapPowerLimit').value;
+            
+            // Save settings to localStorage
+            const settings = {
+                energyRegenTime: parseInt(energyRegenTime),
+                maxEnergyLimit: parseInt(maxEnergyLimit),
+                tapPowerLimit: parseInt(tapPowerLimit)
+            };
+            
+            localStorage.setItem('adminSettings', JSON.stringify(settings));
+            alert('✅ Sozlamalar saqlandi!');
+        }
+
+        function exportAllData() {
+            if (!isAdmin()) {
+                alert('❌ Admin huquqi yo\'q!');
+                return;
+            }
+            
+            const allData = {
+                currentPlayer: gameState,
+                allPlayers: globalPlayers,
+                exportTime: new Date().toISOString(),
+                totalPlayers: globalPlayers.length + 1
+            };
+            
+            const dataStr = JSON.stringify(allData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `dragon_coin_export_${Date.now()}.json`;
+            link.click();
+            
+            alert('✅ Ma\'lumotlar export qilindi!');
+        }
+
+        function clearInactivePlayers() {
+            if (!isAdmin()) {
+                alert('❌ Admin huquqi yo\'q!');
+                return;
+            }
+            
+            if (confirm('30 kundan ko\'p faol bo\'lmagan o\'yinchilarni o\'chirmoqchimisiz?')) {
+                const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+                const activePlayers = globalPlayers.filter(player => 
+                    (player.lastUpdate || 0) > thirtyDaysAgo
+                );
+                
+                const removedCount = globalPlayers.length - activePlayers.length;
+                globalPlayers = activePlayers;
+                
+                alert(`✅ ${removedCount} nofaol o\'yinchi o\'chirildi!`);
+                updateAdminStats();
+            }
+        }
+
+        function backupDatabase() {
+            if (!isAdmin()) {
+                alert('❌ Admin huquqi yo\'q!');
+                return;
+            }
+            
+            const backupData = {
+                gameState: gameState,
+                globalPlayers: globalPlayers,
+                backupTime: Date.now()
+            };
+            
+            localStorage.setItem('dragonCoinBackup_' + Date.now(), JSON.stringify(backupData));
+            document.getElementById('lastBackupTime').textContent = new Date().toLocaleString();
+            
+            alert('✅ Backup yaratildi!');
+        }
+
+        function updateAdminStats() {
+            if (!isAdmin()) return;
+            
+            const totalPlayers = globalPlayers.length + 1; // +1 for current player
+            const onlinePlayers = globalPlayers.filter(p => p.isOnline).length + 1; // +1 for current player
+            const totalCoins = globalPlayers.reduce((sum, p) => sum + (p.balance || 0), 0) + gameState.balance;
+            const totalTaps = globalPlayers.reduce((sum, p) => sum + (p.totalTaps || 0), 0) + gameState.totalTaps;
+            
+            document.getElementById('totalPlayersCount').textContent = totalPlayers;
+            document.getElementById('onlinePlayersCount').textContent = onlinePlayers;
+            document.getElementById('totalCoinsInGame').textContent = totalCoins.toLocaleString();
+            document.getElementById('totalTapsInGame').textContent = totalTaps.toLocaleString();
         }
 
         function showLeaderboard(type) {
@@ -2178,54 +3030,262 @@
 
         // Boost system
         function buyBoost(boostType) {
-            let cost = 0;
-            let canBuy = false;
+            const boosts = gameState.boosts;
+            let success = false;
 
             switch (boostType) {
+                // Daily Boosts
                 case 'energy':
-                    cost = 100;
-                    canBuy = gameState.balance >= cost;
-                    if (canBuy) {
-                        gameState.balance -= cost;
+                    const energyBoost = boosts.dailyBoosts.energy;
+                    if (energyBoost.count > 0 && gameState.balance >= energyBoost.cost) {
+                        gameState.balance -= energyBoost.cost;
                         gameState.energy = gameState.maxEnergy;
+                        energyBoost.count--;
                         alert('⚡ Energy to\'liq tiklandi!');
+                        success = true;
                     }
                     break;
+
+                case 'turbo':
+                    const turboBoost = boosts.dailyBoosts.turbo;
+                    if (turboBoost.count > 0 && gameState.balance >= turboBoost.cost) {
+                        gameState.balance -= turboBoost.cost;
+                        turboBoost.count--;
+                        turboBoost.active = true;
+                        turboBoost.endTime = Date.now() + 20000; // 20 seconds
+                        alert('🔥 Turbo Tap 20 soniyaga faollashtirildi!');
+                        success = true;
+                    }
+                    break;
+
+                case 'multiTap':
+                    const multiTapBoost = boosts.dailyBoosts.multiTap;
+                    if (multiTapBoost.count > 0 && gameState.balance >= multiTapBoost.cost) {
+                        gameState.balance -= multiTapBoost.cost;
+                        multiTapBoost.count--;
+                        multiTapBoost.active = true;
+                        multiTapBoost.endTime = Date.now() + 30000; // 30 seconds
+                        alert('👆 Multi Tap 30 soniyaga faollashtirildi!');
+                        success = true;
+                    }
+                    break;
+
+                // Permanent Upgrades
                 case 'power':
-                    cost = 500;
-                    canBuy = gameState.balance >= cost;
-                    if (canBuy) {
-                        gameState.balance -= cost;
+                    const powerUpgrade = boosts.upgrades.tapPower;
+                    if (gameState.balance >= powerUpgrade.cost) {
+                        gameState.balance -= powerUpgrade.cost;
                         gameState.tapPower++;
+                        powerUpgrade.level++;
+                        powerUpgrade.cost = Math.floor(powerUpgrade.cost * 1.5);
                         alert('💪 Tap power oshirildi!');
+                        success = true;
                     }
                     break;
+
                 case 'maxEnergy':
-                    cost = 1000;
-                    canBuy = gameState.balance >= cost;
-                    if (canBuy) {
-                        gameState.balance -= cost;
+                    const energyUpgrade = boosts.upgrades.maxEnergy;
+                    if (gameState.balance >= energyUpgrade.cost) {
+                        gameState.balance -= energyUpgrade.cost;
                         gameState.maxEnergy += 500;
                         gameState.energy = gameState.maxEnergy;
+                        energyUpgrade.level++;
+                        energyUpgrade.cost = Math.floor(energyUpgrade.cost * 1.3);
                         alert('🔋 Maksimal energy oshirildi!');
+                        success = true;
                     }
                     break;
+
+                case 'energyRegen':
+                    const regenUpgrade = boosts.upgrades.energyRegen;
+                    if (gameState.balance >= regenUpgrade.cost && regenUpgrade.level < 10) {
+                        gameState.balance -= regenUpgrade.cost;
+                        regenUpgrade.level++;
+                        regenUpgrade.cost = Math.floor(regenUpgrade.cost * 1.4);
+                        alert('⚡ Energy tiklash tezlashtirildi!');
+                        success = true;
+                    }
+                    break;
+
                 case 'autoTap':
-                    cost = 5000;
-                    canBuy = gameState.balance >= cost;
-                    if (canBuy) {
-                        gameState.balance -= cost;
+                    const autoTapUpgrade = boosts.upgrades.autoTap;
+                    if (gameState.balance >= autoTapUpgrade.cost) {
+                        gameState.balance -= autoTapUpgrade.cost;
+                        autoTapUpgrade.level++;
+                        autoTapUpgrade.active = true;
+                        autoTapUpgrade.endTime = Date.now() + 4 * 60 * 60 * 1000; // 4 hours
+                        autoTapUpgrade.cost = Math.floor(autoTapUpgrade.cost * 1.8);
                         alert('🤖 Auto tap 4 soatga faollashtirildi!');
+                        success = true;
+                    }
+                    break;
+
+                // Special Boosts
+                case 'megaBoost':
+                    const megaBoost = boosts.special.megaBoost;
+                    if (gameState.balance >= megaBoost.cost) {
+                        gameState.balance -= megaBoost.cost;
+                        megaBoost.active = true;
+                        megaBoost.endTime = Date.now() + 60 * 60 * 1000; // 1 hour
+                        alert('💥 Mega Boost 1 soatga faollashtirildi!');
+                        success = true;
+                    }
+                    break;
+
+                case 'goldenHour':
+                    const goldenHour = boosts.special.goldenHour;
+                    if (gameState.balance >= goldenHour.cost) {
+                        gameState.balance -= goldenHour.cost;
+                        goldenHour.active = true;
+                        goldenHour.endTime = Date.now() + 60 * 60 * 1000; // 1 hour
+                        alert('🌟 Golden Hour 1 soatga faollashtirildi!');
+                        success = true;
                     }
                     break;
             }
 
-            if (!canBuy) {
-                alert('Yetarli coin yo\'q!');
+            if (!success) {
+                if (boostType === 'energy' || boostType === 'turbo' || boostType === 'multiTap') {
+                    const boost = boosts.dailyBoosts[boostType];
+                    if (boost.count <= 0) {
+                        alert('Bu boost tugagan! Ertaga yangilanadi.');
+                    } else {
+                        alert('Yetarli coin yo\'q!');
+                    }
+                } else {
+                    alert('Yetarli coin yo\'q!');
+                }
                 return;
             }
 
             updateUI();
+            updateBoostUI();
+            saveGameState();
+        }
+
+        // Update boost UI elements
+        function updateBoostUI() {
+            const boosts = gameState.boosts;
+            
+            // Update daily boost counts
+            const energyCountEl = document.getElementById('energyBoostCount');
+            const turboCountEl = document.getElementById('turboBoostCount');
+            const multiTapCountEl = document.getElementById('multiTapBoostCount');
+            
+            if (energyCountEl) energyCountEl.textContent = `${boosts.dailyBoosts.energy.count}/${boosts.dailyBoosts.energy.maxCount}`;
+            if (turboCountEl) turboCountEl.textContent = `${boosts.dailyBoosts.turbo.count}/${boosts.dailyBoosts.turbo.maxCount}`;
+            if (multiTapCountEl) multiTapCountEl.textContent = `${boosts.dailyBoosts.multiTap.count}/${boosts.dailyBoosts.multiTap.maxCount}`;
+            
+            // Update upgrade levels and costs
+            const tapPowerLevelEl = document.getElementById('tapPowerLevel');
+            const tapPowerCostEl = document.getElementById('tapPowerCost');
+            const maxEnergyLevelEl = document.getElementById('maxEnergyLevel');
+            const maxEnergyCostEl = document.getElementById('maxEnergyCost');
+            const energyRegenLevelEl = document.getElementById('energyRegenLevel');
+            const energyRegenCostEl = document.getElementById('energyRegenCost');
+            const autoTapLevelEl = document.getElementById('autoTapLevel');
+            const autoTapCostEl = document.getElementById('autoTapCost');
+            
+            if (tapPowerLevelEl) tapPowerLevelEl.textContent = boosts.upgrades.tapPower.level;
+            if (tapPowerCostEl) tapPowerCostEl.textContent = boosts.upgrades.tapPower.cost + ' DRC';
+            if (maxEnergyLevelEl) maxEnergyLevelEl.textContent = boosts.upgrades.maxEnergy.level;
+            if (maxEnergyCostEl) maxEnergyCostEl.textContent = boosts.upgrades.maxEnergy.cost + ' DRC';
+            if (energyRegenLevelEl) energyRegenLevelEl.textContent = boosts.upgrades.energyRegen.level;
+            if (energyRegenCostEl) energyRegenCostEl.textContent = boosts.upgrades.energyRegen.cost + ' DRC';
+            if (autoTapLevelEl) autoTapLevelEl.textContent = boosts.upgrades.autoTap.level;
+            if (autoTapCostEl) autoTapCostEl.textContent = boosts.upgrades.autoTap.cost + ' DRC';
+            
+            // Update upgrade values
+            const tapPowerValueEl = document.getElementById('tapPowerValue');
+            const maxEnergyValueEl = document.getElementById('maxEnergyValue');
+            const energyRegenValueEl = document.getElementById('energyRegenValue');
+            const autoTapValueEl = document.getElementById('autoTapValue');
+            
+            if (tapPowerValueEl) tapPowerValueEl.textContent = boosts.upgrades.tapPower.level;
+            if (maxEnergyValueEl) maxEnergyValueEl.textContent = 500 * boosts.upgrades.maxEnergy.level;
+            if (energyRegenValueEl) energyRegenValueEl.textContent = Math.max(1, 5 - boosts.upgrades.energyRegen.level);
+            if (autoTapValueEl) autoTapValueEl.textContent = boosts.upgrades.autoTap.level;
+        }
+
+        // Check and apply active boosts
+        function checkActiveBoosts() {
+            const now = Date.now();
+            const boosts = gameState.boosts;
+            
+            // Check turbo boost
+            if (boosts.dailyBoosts.turbo.active && now > boosts.dailyBoosts.turbo.endTime) {
+                boosts.dailyBoosts.turbo.active = false;
+                boosts.dailyBoosts.turbo.endTime = 0;
+            }
+            
+            // Check multi tap boost
+            if (boosts.dailyBoosts.multiTap.active && now > boosts.dailyBoosts.multiTap.endTime) {
+                boosts.dailyBoosts.multiTap.active = false;
+                boosts.dailyBoosts.multiTap.endTime = 0;
+            }
+            
+            // Check auto tap
+            if (boosts.upgrades.autoTap.active && now > boosts.upgrades.autoTap.endTime) {
+                boosts.upgrades.autoTap.active = false;
+                boosts.upgrades.autoTap.endTime = 0;
+            }
+            
+            // Check mega boost
+            if (boosts.special.megaBoost.active && now > boosts.special.megaBoost.endTime) {
+                boosts.special.megaBoost.active = false;
+                boosts.special.megaBoost.endTime = 0;
+            }
+            
+            // Check golden hour
+            if (boosts.special.goldenHour.active && now > boosts.special.goldenHour.endTime) {
+                boosts.special.goldenHour.active = false;
+                boosts.special.goldenHour.endTime = 0;
+            }
+        }
+
+        // Calculate effective tap power with boosts
+        function getEffectiveTapPower() {
+            let power = gameState.tapPower;
+            const boosts = gameState.boosts;
+            
+            // Apply turbo boost
+            if (boosts.dailyBoosts.turbo.active) {
+                power *= 5;
+            }
+            
+            // Apply mega boost
+            if (boosts.special.megaBoost.active) {
+                power *= 10;
+            }
+            
+            // Apply golden hour
+            if (boosts.special.goldenHour.active) {
+                power *= 20;
+            }
+            
+            return power;
+        }
+
+        // Calculate tap multiplier for multi-tap
+        function getTapMultiplier() {
+            const boosts = gameState.boosts;
+            
+            if (boosts.dailyBoosts.multiTap.active) {
+                return 5; // Each tap counts as 5 taps
+            }
+            
+            return 1;
+        }
+
+        // Reset daily boosts (call this daily)
+        function resetDailyBoosts() {
+            const boosts = gameState.boosts.dailyBoosts;
+            boosts.energy.count = boosts.energy.maxCount;
+            boosts.turbo.count = boosts.turbo.maxCount;
+            boosts.multiTap.count = boosts.multiTap.maxCount;
+            
+            console.log('✅ Kunlik boostlar yangilandi');
+            updateBoostUI();
             saveGameState();
         }
 
@@ -2534,14 +3594,34 @@
             // Detect language
             detectCountryAndLanguage();
             
+            // Check if user is admin and show admin tab
+            if (isAdmin()) {
+                document.getElementById('adminTab').style.display = 'block';
+                console.log('👑 Admin huquqlari faollashtirildi');
+            }
+            
             // Initialize Firebase connection
             initializeFirebaseConnection();
             
             // Update UI
             updateUI();
+            updateBoostUI();
             
             // Start energy regeneration
             startEnergyRegeneration();
+            
+            // Start boost checking
+            setInterval(checkActiveBoosts, 1000);
+            
+            // Check for daily reset (reset boosts at midnight)
+            const now = new Date();
+            const lastReset = localStorage.getItem('lastDailyReset');
+            const today = now.toDateString();
+            
+            if (lastReset !== today) {
+                resetDailyBoosts();
+                localStorage.setItem('lastDailyReset', today);
+            }
             
             // Translate page
             translatePage();
@@ -2552,5 +3632,5 @@
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', initGame);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96cfd0365793feec',t:'MTc1NDgzMjI2NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96cfd9c36600c6a0',t:'MTc1NDgzMjY1Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
