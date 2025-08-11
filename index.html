@@ -1507,6 +1507,35 @@
                     <div class="condition-reward">+3000 DRC</div>
                     <div class="condition-status condition-pending" id="referralCondition"></div>
                 </div>
+                
+                <!-- Channel Subscription Tasks -->
+                <div class="condition-item task-button" onclick="openChannelTask('youtube', 'https://youtube.com/@DragonCoinOfficial')" id="youtubeTask">
+                    <div class="condition-text">
+                        <div>📺 YouTube kanalga obuna bo'ling</div>
+                        <div style="font-size: 12px; color: #ccc;">Dragon Coin rasmiy kanali</div>
+                    </div>
+                    <div class="condition-reward">+1500 DRC</div>
+                    <div class="condition-status condition-pending" id="youtubeCondition"></div>
+                </div>
+                
+                <div class="condition-item task-button" onclick="openChannelTask('telegram', 'https://t.me/DragonCoinNews')" id="telegramTask">
+                    <div class="condition-text">
+                        <div>📱 Telegram kanalga obuna bo'ling</div>
+                        <div style="font-size: 12px; color: #ccc;">Yangiliklar va bonuslar</div>
+                    </div>
+                    <div class="condition-reward">+1000 DRC</div>
+                    <div class="condition-status condition-pending" id="telegramCondition"></div>
+                </div>
+                
+                <div class="condition-item task-button" onclick="openVideoTask('https://youtu.be/dQw4w9WgXcQ')" id="videoTask">
+                    <div class="condition-text">
+                        <div>🎬 Videoni to'liq ko'ring</div>
+                        <div style="font-size: 12px; color: #ccc;">Dragon Coin haqida video</div>
+                    </div>
+                    <div class="condition-reward">+800 DRC</div>
+                    <div class="condition-status condition-pending" id="videoCondition"></div>
+                </div>
+                
                 <div id="customConditionsContainer"></div>
             </div>
         </div>
@@ -1783,6 +1812,62 @@
                     </div>
                 </div>
 
+                <!-- Admin Task Management -->
+                <div style="background: rgba(0, 255, 136, 0.1); border-radius: 15px; padding: 20px; margin: 20px 0;">
+                    <h4 style="color: #00ff88; margin-bottom: 15px;">📋 Vazifa Boshqaruvi</h4>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <h5 style="color: #00ff88; margin-bottom: 10px;">Yangi vazifa qo'shish:</h5>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 100px; gap: 10px; margin-bottom: 10px;">
+                            <input type="text" id="newTaskTitle" placeholder="Vazifa nomi..." 
+                                   style="padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
+                            <input type="text" id="newTaskDescription" placeholder="Tavsif..." 
+                                   style="padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
+                            <input type="number" id="newTaskReward" placeholder="Mukofot" 
+                                   style="padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 100px; gap: 10px; margin-bottom: 10px;">
+                            <select id="newTaskType" onchange="toggleTaskInputs()" style="padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
+                                <option value="taps">Tap soni</option>
+                                <option value="level">Level</option>
+                                <option value="coins">Coin miqdori</option>
+                                <option value="referrals">Referral soni</option>
+                                <option value="youtube">YouTube obuna</option>
+                                <option value="telegram">Telegram obuna</option>
+                                <option value="video">Video ko'rish</option>
+                                <option value="custom">Maxsus</option>
+                            </select>
+                            <input type="text" id="newTaskTarget" placeholder="Link yoki maqsad" 
+                                   style="padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
+                            <button onclick="addCustomTask()" style="background: #00ff88; color: #000; border: none; padding: 8px; border-radius: 6px; cursor: pointer;">
+                                ➕ Qo'shish
+                            </button>
+                        </div>
+                        <div id="taskHelperText" style="font-size: 12px; color: #ccc; margin-top: 5px;">
+                            Tap soni, Level, Coin miqdori yoki Referral soni uchun raqam kiriting
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <h5 style="color: #00ff88; margin-bottom: 10px;">Mavjud maxsus vazifalar:</h5>
+                        <div id="customTasksList" style="max-height: 200px; overflow-y: auto;">
+                            <!-- Custom tasks will be listed here -->
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button onclick="resetAllTasks()" style="background: #ff6b35; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+                            🔄 Barcha vazifalarni reset
+                        </button>
+                        <button onclick="completeAllTasks()" style="background: #00ff88; color: #000; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+                            ✅ Barcha vazifalarni bajarish
+                        </button>
+                        <button onclick="exportTasks()" style="background: #8a2be2; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+                            📤 Vazifalarni export
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Player Management -->
                 <div style="background: rgba(0, 255, 136, 0.1); border-radius: 15px; padding: 20px; margin: 20px 0;">
                     <h4 style="color: #00ff88; margin-bottom: 15px;">👤 O'yinchilarni Boshqarish</h4>
@@ -1856,6 +1941,92 @@
                         <div style="font-size: 14px; color: #ccc;">Database holati: <span style="color: #00ff88;">✅ Faol</span></div>
                         <div style="font-size: 12px; color: #999; margin-top: 5px;">Oxirgi backup: <span id="lastBackupTime">Hech qachon</span></div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Channel Task Modal -->
+    <div class="player-profile-modal" id="channelTaskModal" style="display: none;">
+        <div class="player-profile-content">
+            <button class="profile-close-btn" onclick="closeChannelTask()">×</button>
+            
+            <div class="profile-avatar" id="channelTaskIcon">📺</div>
+            
+            <h2 id="channelTaskTitle">YouTube kanalga obuna bo'ling</h2>
+            <div style="color: #ccc; margin-bottom: 20px;" id="channelTaskDescription">
+                Dragon Coin rasmiy kanaliga obuna bo'lib, yangiliklar va bonuslardan xabardor bo'ling!
+            </div>
+            
+            <div style="background: rgba(0, 255, 136, 0.1); border-radius: 10px; padding: 15px; margin: 20px 0;">
+                <div style="font-size: 18px; font-weight: bold; color: #00ff88; margin-bottom: 10px;">
+                    Mukofot: <span id="channelTaskReward">+1500 DRC</span>
+                </div>
+                <div style="font-size: 14px; color: #ccc;">
+                    1. Kanalga obuna bo'ling<br>
+                    2. "Obuna bo'ldim" tugmasini bosing<br>
+                    3. Mukofotni oling!
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <a class="telegram-contact-btn" id="channelTaskLink" href="#" target="_blank" style="background: linear-gradient(45deg, #ff0000, #cc0000);">
+                    📺 Kanalga o'tish
+                </a>
+                <button class="telegram-contact-btn" onclick="claimChannelTask()" id="claimChannelBtn" style="background: linear-gradient(45deg, #00ff88, #00cc6a); color: #000;">
+                    ✅ Obuna bo'ldim
+                </button>
+            </div>
+            
+            <div id="channelTaskTimer" style="margin-top: 15px; font-size: 14px; color: #ff6b35; text-align: center; display: none;">
+                Iltimos, 10 soniya kuting...
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Task Modal -->
+    <div class="player-profile-modal" id="videoTaskModal" style="display: none;">
+        <div class="player-profile-content" style="max-width: 600px;">
+            <button class="profile-close-btn" onclick="closeVideoTask()">×</button>
+            
+            <div class="profile-avatar">🎬</div>
+            
+            <h2>Videoni to'liq ko'ring</h2>
+            <div style="color: #ccc; margin-bottom: 20px;">
+                Dragon Coin haqida qiziqarli videoni ko'ring va mukofot oling!
+            </div>
+            
+            <div id="videoContainer" style="width: 100%; height: 300px; background: #000; border-radius: 10px; margin: 20px 0; position: relative; display: flex; align-items: center; justify-content: center;">
+                <div style="color: #fff; text-align: center;">
+                    <div style="font-size: 48px; margin-bottom: 10px;">▶️</div>
+                    <div>Video yuklanmoqda...</div>
+                </div>
+            </div>
+            
+            <div style="background: rgba(0, 255, 136, 0.1); border-radius: 10px; padding: 15px; margin: 20px 0;">
+                <div style="font-size: 18px; font-weight: bold; color: #00ff88; margin-bottom: 10px;">
+                    Mukofot: +800 DRC
+                </div>
+                <div style="font-size: 14px; color: #ccc;">
+                    Videoni oxirigacha ko'ring va mukofotni oling!
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <a class="telegram-contact-btn" id="videoTaskLink" href="#" target="_blank" style="background: linear-gradient(45deg, #ff0000, #cc0000);">
+                    🎬 YouTube da ko'rish
+                </a>
+                <button class="telegram-contact-btn" onclick="claimVideoTask()" id="claimVideoBtn" style="background: linear-gradient(45deg, #00ff88, #00cc6a); color: #000; opacity: 0.5;" disabled>
+                    ✅ Ko'rdim
+                </button>
+            </div>
+            
+            <div id="videoTaskProgress" style="margin-top: 15px; text-align: center;">
+                <div style="background: rgba(255,255,255,0.1); border-radius: 10px; height: 8px; margin: 10px 0;">
+                    <div id="videoProgressBar" style="background: #00ff88; height: 100%; border-radius: 10px; width: 0%; transition: width 0.3s ease;"></div>
+                </div>
+                <div style="font-size: 14px; color: #ccc;">
+                    Progress: <span id="videoProgressText">0%</span>
                 </div>
             </div>
         </div>
@@ -2059,7 +2230,10 @@
                 taps: false,
                 level: false,
                 coins: false,
-                referral: false
+                referral: false,
+                youtube: false,
+                telegram: false,
+                video: false
             },
             lastSaveTime: Date.now(),
             referralCode: generateReferralCode(),
@@ -2398,28 +2572,15 @@
             return 'browser_' + Math.abs(hash).toString(36);
         }
 
-        // Generate unique player ID - one account per browser
+        // Generate unique player ID - one account per browser/telegram
         function getUniquePlayerId() {
-            // Generate browser fingerprint for unique identification
-            const browserFingerprint = generateBrowserFingerprint();
-            
-            // First check if we already have a stored player ID
-            let playerId = localStorage.getItem('dragonCoinPlayerId');
-            
-            // If no stored ID, use browser fingerprint
-            if (!playerId) {
-                playerId = browserFingerprint;
-                localStorage.setItem('dragonCoinPlayerId', playerId);
-            }
-            
-            // Always ensure we use the browser fingerprint for consistency
-            // This prevents multiple accounts from same browser
-            playerId = browserFingerprint;
-            localStorage.setItem('dragonCoinPlayerId', playerId);
-            
-            // Check for Telegram data to enhance profile
+            // Check for Telegram data first (priority)
             const tgData = getTelegramUserData();
+            let playerId;
+            
             if (tgData) {
+                // Use Telegram ID as primary identifier
+                playerId = tgData.id;
                 gameState.playerName = tgData.username;
                 gameState.telegramId = tgData.id;
                 gameState.firstName = tgData.firstName;
@@ -2440,13 +2601,37 @@
                     updateLanguageDisplay();
                     translatePage();
                 }
+            } else {
+                // Fallback to browser fingerprint for web users
+                const browserFingerprint = generateBrowserFingerprint();
+                
+                // Check if we already have a stored player ID
+                let storedId = localStorage.getItem('dragonCoinPlayerId');
+                
+                if (!storedId) {
+                    playerId = browserFingerprint;
+                    localStorage.setItem('dragonCoinPlayerId', playerId);
+                } else {
+                    // Use stored ID but ensure it matches browser fingerprint pattern
+                    playerId = browserFingerprint;
+                    localStorage.setItem('dragonCoinPlayerId', playerId);
+                }
             }
             
             return playerId;
         }
 
-        // Main tap function
+        // Main tap function - optimized for mobile performance
+        let lastTapTime = 0;
+        let tapQueue = [];
+        
         function tapCoin(event) {
+            const now = Date.now();
+            
+            // Prevent too frequent taps (mobile optimization)
+            if (now - lastTapTime < 50) return;
+            lastTapTime = now;
+            
             if (gameState.energy <= 0) {
                 document.getElementById('energyWarning').style.display = 'block';
                 setTimeout(() => {
@@ -2455,8 +2640,8 @@
                 return;
             }
 
-            // Check active boosts
-            checkActiveBoosts();
+            // Check active boosts (less frequent)
+            if (now % 1000 < 100) checkActiveBoosts();
 
             // Calculate effective tap power and multiplier
             const effectivePower = getEffectiveTapPower();
@@ -2476,14 +2661,32 @@
             // Create tap effect with boost indication
             createTapEffect(event, coinsEarned);
 
-            // Update level
-            updateLevel();
-
-            // Update UI
-            updateUI();
-
-            // Save game state
-            saveGameState();
+            // Queue level and UI updates for better performance
+            tapQueue.push({ level: true, ui: true });
+            
+            // Process queue with throttling
+            if (tapQueue.length === 1) {
+                requestAnimationFrame(() => {
+                    processTapQueue();
+                });
+            }
+        }
+        
+        function processTapQueue() {
+            if (tapQueue.length === 0) return;
+            
+            // Process all queued updates at once
+            const hasLevelUpdate = tapQueue.some(item => item.level);
+            const hasUIUpdate = tapQueue.some(item => item.ui);
+            
+            if (hasLevelUpdate) updateLevel();
+            if (hasUIUpdate) updateUI();
+            
+            // Clear queue
+            tapQueue = [];
+            
+            // Save less frequently for performance
+            if (Math.random() < 0.1) saveGameState();
         }
 
         function createTapEffect(event, coins) {
@@ -2833,6 +3036,279 @@
             document.getElementById('onlinePlayersCount').textContent = onlinePlayers;
             document.getElementById('totalCoinsInGame').textContent = totalCoins.toLocaleString();
             document.getElementById('totalTapsInGame').textContent = totalTaps.toLocaleString();
+            
+            // Update custom tasks list
+            updateCustomTasksList();
+        }
+        
+        // Admin task management functions
+        function addCustomTask() {
+            if (!isAdmin()) {
+                alert('❌ Admin huquqi yo\'q!');
+                return;
+            }
+            
+            const title = document.getElementById('newTaskTitle').value;
+            const description = document.getElementById('newTaskDescription').value;
+            const reward = parseInt(document.getElementById('newTaskReward').value);
+            const type = document.getElementById('newTaskType').value;
+            const target = parseInt(document.getElementById('newTaskTarget').value);
+            
+            if (!title || !description || !reward || !target) {
+                alert('Barcha maydonlarni to\'ldiring!');
+                return;
+            }
+            
+            if (!gameState.customTasks) {
+                gameState.customTasks = [];
+            }
+            
+            const taskId = 'custom_' + Date.now();
+            const newTask = {
+                id: taskId,
+                title: title,
+                description: description,
+                reward: reward,
+                type: type,
+                target: target,
+                completed: false,
+                createdAt: Date.now()
+            };
+            
+            gameState.customTasks.push(newTask);
+            
+            // Clear form
+            document.getElementById('newTaskTitle').value = '';
+            document.getElementById('newTaskDescription').value = '';
+            document.getElementById('newTaskReward').value = '';
+            document.getElementById('newTaskTarget').value = '';
+            
+            alert(`✅ Yangi vazifa qo'shildi: ${title}`);
+            updateCustomTasksList();
+            saveGameState();
+        }
+        
+        function updateCustomTasksList() {
+            if (!isAdmin()) return;
+            
+            const container = document.getElementById('customTasksList');
+            if (!container) return;
+            
+            if (!gameState.customTasks || gameState.customTasks.length === 0) {
+                container.innerHTML = '<div style="color: #ccc; text-align: center; padding: 20px;">Maxsus vazifalar yo\'q</div>';
+                return;
+            }
+            
+            let html = '';
+            gameState.customTasks.forEach(task => {
+                const isCompleted = task.completed;
+                const canComplete = checkTaskCompletion(task);
+                const isChannelTask = ['youtube', 'telegram', 'video'].includes(task.type);
+                
+                let targetDisplay = task.target;
+                if (task.type === 'youtube' || task.type === 'telegram' || task.type === 'video') {
+                    targetDisplay = 'Kanal/Video';
+                } else {
+                    targetDisplay = `${task.target} ${task.type}`;
+                }
+                
+                html += `
+                    <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin: 8px 0; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: bold; color: ${isCompleted ? '#00ff88' : '#fff'};">${task.title}</div>
+                            <div style="font-size: 12px; color: #ccc;">${task.description}</div>
+                            <div style="font-size: 11px; color: #999;">Maqsad: ${targetDisplay} | Mukofot: ${task.reward} DRC</div>
+                            ${isChannelTask ? `<div style="font-size: 10px; color: #8a2be2;">Link: ${task.target}</div>` : ''}
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            ${isCompleted ? 
+                                '<span style="color: #00ff88;">✅ Bajarilgan</span>' : 
+                                (isChannelTask ? 
+                                    `<button onclick="openCustomChannelTask('${task.id}')" style="background: #8a2be2; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">Ochish</button>` :
+                                    (canComplete ? 
+                                        `<button onclick="completeCustomTask('${task.id}')" style="background: #00ff88; color: #000; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">Olish</button>` :
+                                        '<span style="color: #ff6b35;">❌ Bajarilmagan</span>'
+                                    )
+                                )
+                            }
+                            <button onclick="deleteCustomTask('${task.id}')" style="background: #ff6b35; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function checkTaskCompletion(task) {
+            switch (task.type) {
+                case 'taps':
+                    return gameState.totalTaps >= task.target;
+                case 'level':
+                    return gameState.level >= task.target;
+                case 'coins':
+                    return gameState.balance >= task.target;
+                case 'referrals':
+                    return gameState.referrals.length >= task.target;
+                case 'youtube':
+                case 'telegram':
+                case 'video':
+                    return false; // These require manual completion
+                default:
+                    return false;
+            }
+        }
+        
+        function completeCustomTask(taskId) {
+            if (!isAdmin()) {
+                alert('❌ Admin huquqi yo\'q!');
+                return;
+            }
+            
+            const task = gameState.customTasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            if (task.completed) {
+                alert('Bu vazifa allaqachon bajarilgan!');
+                return;
+            }
+            
+            if (!checkTaskCompletion(task)) {
+                alert('Vazifa shartlari bajarilmagan!');
+                return;
+            }
+            
+            task.completed = true;
+            gameState.balance += task.reward;
+            
+            alert(`🎉 Vazifa bajarildi! +${task.reward} DRC`);
+            updateCustomTasksList();
+            updateUI();
+            saveGameState();
+        }
+        
+        function deleteCustomTask(taskId) {
+            if (!isAdmin()) {
+                alert('❌ Admin huquqi yo\'q!');
+                return;
+            }
+            
+            if (confirm('Bu vazifani o\'chirmoqchimisiz?')) {
+                gameState.customTasks = gameState.customTasks.filter(t => t.id !== taskId);
+                updateCustomTasksList();
+                saveGameState();
+                alert('✅ Vazifa o\'chirildi!');
+            }
+        }
+        
+        function resetAllTasks() {
+            if (!isAdmin()) {
+                alert('❌ Admin huquqi yo\'q!');
+                return;
+            }
+            
+            if (confirm('Barcha vazifalarni reset qilmoqchimisiz?')) {
+                gameState.completedTasks = {
+                    taps: false,
+                    level: false,
+                    coins: false,
+                    referral: false
+                };
+                
+                if (gameState.customTasks) {
+                    gameState.customTasks.forEach(task => {
+                        task.completed = false;
+                    });
+                }
+                
+                alert('✅ Barcha vazifalar reset qilindi!');
+                updateCustomTasksList();
+                updateUI();
+                saveGameState();
+            }
+        }
+        
+        function completeAllTasks() {
+            if (!isAdmin()) {
+                alert('❌ Admin huquqi yo\'q!');
+                return;
+            }
+            
+            if (confirm('Barcha vazifalarni bajarmoqchimisiz?')) {
+                let totalReward = 0;
+                
+                // Complete default tasks
+                if (!gameState.completedTasks.taps) {
+                    gameState.completedTasks.taps = true;
+                    totalReward += 1000;
+                }
+                if (!gameState.completedTasks.level) {
+                    gameState.completedTasks.level = true;
+                    totalReward += 2000;
+                }
+                if (!gameState.completedTasks.coins) {
+                    gameState.completedTasks.coins = true;
+                    totalReward += 5000;
+                }
+                if (!gameState.completedTasks.referral) {
+                    gameState.completedTasks.referral = true;
+                    totalReward += 3000;
+                }
+                
+                // Complete custom tasks
+                if (gameState.customTasks) {
+                    gameState.customTasks.forEach(task => {
+                        if (!task.completed) {
+                            task.completed = true;
+                            totalReward += task.reward;
+                        }
+                    });
+                }
+                
+                gameState.balance += totalReward;
+                
+                alert(`✅ Barcha vazifalar bajarildi! +${totalReward} DRC`);
+                updateCustomTasksList();
+                updateUI();
+                saveGameState();
+            }
+        }
+        
+        function exportTasks() {
+            if (!isAdmin()) {
+                alert('❌ Admin huquqi yo\'q!');
+                return;
+            }
+            
+            const tasksData = {
+                defaultTasks: gameState.completedTasks,
+                customTasks: gameState.customTasks || [],
+                exportTime: new Date().toISOString()
+            };
+            
+            const dataStr = JSON.stringify(tasksData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `dragon_coin_tasks_${Date.now()}.json`;
+            link.click();
+            
+            alert('✅ Vazifalar export qilindi!');
+        }
+
+        function openCustomChannelTask(taskId) {
+            const task = gameState.customTasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            if (task.type === 'video') {
+                openVideoTask(task.target);
+            } else {
+                openChannelTask(task.type, task.target);
+            }
+            
+            // Override the reward and completion logic for custom tasks
+            currentChannelTask = { ...currentChannelTask, customTask: task };
         }
 
         function showLeaderboard(type) {
@@ -2858,11 +3334,47 @@
                 isSample: false
             };
             
-            // Filter out any existing player with same ID from globalPlayers
-            const filteredGlobalPlayers = globalPlayers.filter(p => p.id !== currentPlayerId);
+            // Remove duplicates more thoroughly
+            const uniquePlayers = new Map();
             
-            // Use filtered demo players + current player (no duplicates)
-            playersToShow = [...filteredGlobalPlayers, currentPlayer];
+            // Add global players first
+            globalPlayers.forEach(player => {
+                if (player.id && player.id !== currentPlayerId) {
+                    // Use ID as primary key, but also check name similarity
+                    const key = player.id;
+                    if (!uniquePlayers.has(key)) {
+                        uniquePlayers.set(key, player);
+                    } else {
+                        // If duplicate found, keep the one with higher balance
+                        const existing = uniquePlayers.get(key);
+                        if ((player.balance || 0) > (existing.balance || 0)) {
+                            uniquePlayers.set(key, player);
+                        }
+                    }
+                }
+            });
+            
+            // Also check for name duplicates (different IDs but same name)
+            const nameMap = new Map();
+            uniquePlayers.forEach((player, id) => {
+                const name = player.name.toLowerCase();
+                if (nameMap.has(name)) {
+                    // Keep the one with higher balance
+                    const existingId = nameMap.get(name);
+                    const existing = uniquePlayers.get(existingId);
+                    if ((player.balance || 0) > (existing.balance || 0)) {
+                        uniquePlayers.delete(existingId);
+                        nameMap.set(name, id);
+                    } else {
+                        uniquePlayers.delete(id);
+                    }
+                } else {
+                    nameMap.set(name, id);
+                }
+            });
+            
+            // Convert back to array and add current player
+            playersToShow = [currentPlayer, ...Array.from(uniquePlayers.values())];
             
             // Sort players
             let sortedPlayers;
@@ -2956,6 +3468,60 @@
                 document.body.removeChild(textArea);
                 alert('✅ Referral link nusxalandi!');
             });
+        }
+        
+        // Process referral when user joins
+        function processReferral(referralCode) {
+            if (!referralCode || referralCode === gameState.referralCode) return;
+            
+            // Check if already referred
+            if (gameState.referredBy) {
+                console.log('O\'yinchi allaqachon referral orqali kelgan');
+                return;
+            }
+            
+            // Find referrer in Firebase or local players
+            const referrer = globalPlayers.find(p => p.referralCode === referralCode);
+            if (referrer) {
+                // Add this player to referrer's list
+                gameState.referredBy = referralCode;
+                
+                // Give bonus to referrer
+                if (firebaseConnected) {
+                    const referrerRef = window.firebaseRef(window.firebaseDatabase, `players/${referrer.id}`);
+                    window.firebaseGet(referrerRef).then((snapshot) => {
+                        const referrerData = snapshot.val();
+                        if (referrerData) {
+                            referrerData.balance = (referrerData.balance || 0) + 500;
+                            referrerData.referralEarnings = (referrerData.referralEarnings || 0) + 500;
+                            if (!referrerData.referrals) referrerData.referrals = [];
+                            referrerData.referrals.push({
+                                id: getUniquePlayerId(),
+                                name: gameState.playerName,
+                                joinDate: Date.now(),
+                                isActive: true,
+                                level: 1,
+                                totalCoins: 0
+                            });
+                            window.firebaseSet(referrerRef, referrerData);
+                        }
+                    });
+                }
+                
+                alert('🎉 Referral bonus olindi! Sizni taklif qilgan odamga 500 coin berildi!');
+                console.log(`✅ Referral processed: ${referralCode}`);
+            }
+        }
+        
+        // Check URL for referral code on page load
+        function checkReferralFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const startParam = urlParams.get('start') || urlParams.get('tgWebAppStartParam');
+            
+            if (startParam && startParam.startsWith('ref_')) {
+                const referralCode = startParam.replace('ref_', '');
+                processReferral(referralCode);
+            }
         }
 
         function updateReferralStats() {
@@ -3402,6 +3968,9 @@
             updateTaskStatus('level', gameState.level >= 5);
             updateTaskStatus('coins', gameState.balance >= 10000);
             updateTaskStatus('referral', gameState.referrals.length >= 5);
+            updateTaskStatus('youtube', gameState.completedTasks.youtube);
+            updateTaskStatus('telegram', gameState.completedTasks.telegram);
+            updateTaskStatus('video', gameState.completedTasks.video);
         }
 
         function updateTaskStatus(taskType, isReady) {
@@ -3601,6 +4170,200 @@
             document.getElementById('playerProfileModal').style.display = 'none';
         }
 
+        // Channel task functions
+        let currentChannelTask = null;
+        let channelTaskTimer = null;
+        let videoTaskTimer = null;
+        let videoProgress = 0;
+
+        function openChannelTask(type, url) {
+            // Check if task is already completed
+            if (gameState.completedTasks[type]) {
+                alert('Bu vazifa allaqachon bajarilgan!');
+                return;
+            }
+
+            currentChannelTask = { type, url };
+            const modal = document.getElementById('channelTaskModal');
+            
+            // Update modal content based on type
+            if (type === 'youtube') {
+                document.getElementById('channelTaskIcon').textContent = '📺';
+                document.getElementById('channelTaskTitle').textContent = 'YouTube kanalga obuna bo\'ling';
+                document.getElementById('channelTaskDescription').textContent = 'Dragon Coin rasmiy kanaliga obuna bo\'lib, yangiliklar va bonuslardan xabardor bo\'ling!';
+                document.getElementById('channelTaskReward').textContent = '+1500 DRC';
+                document.getElementById('channelTaskLink').textContent = '📺 YouTube kanalga o\'tish';
+                document.getElementById('channelTaskLink').style.background = 'linear-gradient(45deg, #ff0000, #cc0000)';
+            } else if (type === 'telegram') {
+                document.getElementById('channelTaskIcon').textContent = '📱';
+                document.getElementById('channelTaskTitle').textContent = 'Telegram kanalga obuna bo\'ling';
+                document.getElementById('channelTaskDescription').textContent = 'Dragon Coin yangiliklar kanaliga qo\'shilib, bonuslar va yangiliklar oling!';
+                document.getElementById('channelTaskReward').textContent = '+1000 DRC';
+                document.getElementById('channelTaskLink').textContent = '📱 Telegram kanalga o\'tish';
+                document.getElementById('channelTaskLink').style.background = 'linear-gradient(45deg, #0088cc, #0066aa)';
+            }
+            
+            document.getElementById('channelTaskLink').href = url;
+            modal.style.display = 'flex';
+            
+            // Reset timer
+            document.getElementById('channelTaskTimer').style.display = 'none';
+            document.getElementById('claimChannelBtn').disabled = false;
+            document.getElementById('claimChannelBtn').style.opacity = '1';
+        }
+
+        function closeChannelTask() {
+            document.getElementById('channelTaskModal').style.display = 'none';
+            if (channelTaskTimer) {
+                clearTimeout(channelTaskTimer);
+                channelTaskTimer = null;
+            }
+            currentChannelTask = null;
+        }
+
+        function claimChannelTask() {
+            if (!currentChannelTask) return;
+            
+            const { type } = currentChannelTask;
+            
+            // Show timer
+            document.getElementById('channelTaskTimer').style.display = 'block';
+            document.getElementById('claimChannelBtn').disabled = true;
+            document.getElementById('claimChannelBtn').style.opacity = '0.5';
+            
+            let countdown = 10;
+            const timerElement = document.getElementById('channelTaskTimer');
+            
+            const updateTimer = () => {
+                timerElement.textContent = `Iltimos, ${countdown} soniya kuting...`;
+                countdown--;
+                
+                if (countdown < 0) {
+                    // Complete the task
+                    let reward = 0;
+                    
+                    if (currentChannelTask.customTask) {
+                        // Custom task completion
+                        const task = currentChannelTask.customTask;
+                        task.completed = true;
+                        reward = task.reward;
+                    } else {
+                        // Default task completion
+                        gameState.completedTasks[type] = true;
+                        if (type === 'youtube') reward = 1500;
+                        else if (type === 'telegram') reward = 1000;
+                    }
+                    
+                    gameState.balance += reward;
+                    
+                    alert(`🎉 Vazifa bajarildi! +${reward} DRC`);
+                    closeChannelTask();
+                    updateUI();
+                    updateTaskProgress();
+                    updateCustomTasksList();
+                    saveGameState();
+                } else {
+                    channelTaskTimer = setTimeout(updateTimer, 1000);
+                }
+            };
+            
+            updateTimer();
+        }
+
+        function openVideoTask(url) {
+            // Check if task is already completed
+            if (gameState.completedTasks.video) {
+                alert('Bu vazifa allaqachon bajarilgan!');
+                return;
+            }
+
+            const modal = document.getElementById('videoTaskModal');
+            document.getElementById('videoTaskLink').href = url;
+            modal.style.display = 'flex';
+            
+            // Reset video progress
+            videoProgress = 0;
+            updateVideoProgress();
+            
+            // Start video progress simulation
+            startVideoProgress();
+        }
+
+        function closeVideoTask() {
+            document.getElementById('videoTaskModal').style.display = 'none';
+            if (videoTaskTimer) {
+                clearInterval(videoTaskTimer);
+                videoTaskTimer = null;
+            }
+            videoProgress = 0;
+        }
+
+        function startVideoProgress() {
+            // Simulate video watching progress
+            videoTaskTimer = setInterval(() => {
+                videoProgress += Math.random() * 2 + 1; // Random progress 1-3% per second
+                
+                if (videoProgress >= 100) {
+                    videoProgress = 100;
+                    clearInterval(videoTaskTimer);
+                    videoTaskTimer = null;
+                    
+                    // Enable claim button
+                    const claimBtn = document.getElementById('claimVideoBtn');
+                    claimBtn.disabled = false;
+                    claimBtn.style.opacity = '1';
+                    claimBtn.textContent = '✅ Mukofotni olish';
+                }
+                
+                updateVideoProgress();
+            }, 1000);
+        }
+
+        function updateVideoProgress() {
+            const progressBar = document.getElementById('videoProgressBar');
+            const progressText = document.getElementById('videoProgressText');
+            
+            if (progressBar) progressBar.style.width = videoProgress + '%';
+            if (progressText) progressText.textContent = Math.floor(videoProgress) + '%';
+        }
+
+        function claimVideoTask() {
+            if (videoProgress < 100) {
+                alert('Videoni oxirigacha ko\'ring!');
+                return;
+            }
+            
+            gameState.completedTasks.video = true;
+            gameState.balance += 800;
+            
+            alert('🎉 Video vazifasi bajarildi! +800 DRC');
+            closeVideoTask();
+            updateUI();
+            updateTaskProgress();
+            saveGameState();
+        }
+
+        // Helper function for admin task creation
+        function toggleTaskInputs() {
+            const taskType = document.getElementById('newTaskType').value;
+            const targetInput = document.getElementById('newTaskTarget');
+            const helperText = document.getElementById('taskHelperText');
+            
+            if (taskType === 'youtube' || taskType === 'telegram' || taskType === 'video') {
+                targetInput.placeholder = 'Kanal yoki video linki';
+                targetInput.type = 'url';
+                helperText.textContent = 'YouTube, Telegram kanal yoki video linkini kiriting';
+            } else if (taskType === 'custom') {
+                targetInput.placeholder = 'Maxsus shart';
+                targetInput.type = 'text';
+                helperText.textContent = 'Maxsus vazifa shartini kiriting';
+            } else {
+                targetInput.placeholder = 'Maqsad (masalan: 1000)';
+                targetInput.type = 'number';
+                helperText.textContent = 'Tap soni, Level, Coin miqdori yoki Referral soni uchun raqam kiriting';
+            }
+        }
+
         // Initialize game
         function initGame() {
             console.log('🎮 Dragon Coin o\'yini ishga tushmoqda...');
@@ -3610,6 +4373,9 @@
             
             // Get unique player ID
             getUniquePlayerId();
+            
+            // Check for referral from URL
+            checkReferralFromURL();
             
             // Detect language
             detectCountryAndLanguage();
@@ -3652,5 +4418,5 @@
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', initGame);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96cfe329d54b2e01',t:'MTc1NDgzMzA0MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96d73f6bd20582d3',t:'MTc1NDkxMDIyMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
