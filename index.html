@@ -1272,11 +1272,13 @@
             const tgData = getTelegramUserData();
             
             // Priority 1: Telegram User ID (most reliable)
-            if (tgData && tgData.id) {
+            if (tgData && tgData.telegramId) {
+                // Set player name from Telegram data
                 gameState.playerName = tgData.username;
                 const telegramId = 'tg_' + tgData.telegramId;
                 localStorage.setItem('dragonCoinPlayerId', telegramId);
                 localStorage.setItem('dragonCoinTelegramId', tgData.telegramId);
+                localStorage.setItem('dragonCoinPlayerName', tgData.username);
                 return telegramId;
             }
             
@@ -1285,6 +1287,11 @@
             if (storedTgId) {
                 const telegramId = 'tg_' + storedTgId;
                 localStorage.setItem('dragonCoinPlayerId', telegramId);
+                // Restore player name if available
+                const storedName = localStorage.getItem('dragonCoinPlayerName');
+                if (storedName) {
+                    gameState.playerName = storedName;
+                }
                 return telegramId;
             }
             
@@ -1297,6 +1304,12 @@
                 localStorage.setItem('dragonCoinPlayerId', storedId);
             }
             
+            // Restore player name if available
+            const storedName = localStorage.getItem('dragonCoinPlayerName');
+            if (storedName && storedName !== 'Dragon Miner') {
+                gameState.playerName = storedName;
+            }
+            
             return storedId;
         }
 
@@ -1304,10 +1317,21 @@
             if (window.Telegram && window.Telegram.WebApp) {
                 const user = window.Telegram.WebApp.initDataUnsafe?.user;
                 if (user) {
+                    // Create proper display name
+                    let displayName = 'Telegram User';
+                    if (user.username) {
+                        displayName = '@' + user.username;
+                    } else if (user.first_name) {
+                        displayName = user.first_name;
+                        if (user.last_name) {
+                            displayName += ' ' + user.last_name;
+                        }
+                    }
+                    
                     return {
                         id: 'tg_' + user.id,
                         telegramId: user.id.toString(),
-                        username: user.username || user.first_name || 'Telegram User',
+                        username: displayName,
                         firstName: user.first_name || '',
                         lastName: user.last_name || '',
                         languageCode: user.language_code || 'uz'
@@ -1966,6 +1990,10 @@
             if (levelEl) levelEl.textContent = gameState.level;
             if (referralCountEl) referralCountEl.textContent = gameState.referrals.length;
             
+            // Update player name in header
+            const playerNameEl = document.getElementById('playerName');
+            if (playerNameEl) playerNameEl.textContent = gameState.playerName;
+            
             // Update level info
             const currentLevelData = levelSystem[gameState.level];
             const nextLevelData = levelSystem[gameState.level + 1];
@@ -1999,6 +2027,7 @@
         function saveGameState() {
             localStorage.setItem('dragonCoinGameState', JSON.stringify(gameState));
             localStorage.setItem('dragonCoinLanguage', currentLanguage);
+            localStorage.setItem('dragonCoinPlayerName', gameState.playerName);
             
             if (firebaseConnected) {
                 savePlayerToFirebase();
@@ -2218,6 +2247,41 @@
 
         function loadExistingAccount() {
             return new Promise((resolve) => {
+                // First, try to load from localStorage
+                const storedPlayerId = localStorage.getItem('dragonCoinPlayerId');
+                const storedGameState = localStorage.getItem('dragonCoinGameState');
+                
+                if (storedGameState) {
+                    try {
+                        const loadedState = JSON.parse(storedGameState);
+                        // Load all saved data
+                        gameState.balance = loadedState.balance || 0;
+                        gameState.level = loadedState.level || 1;
+                        gameState.totalTaps = loadedState.totalTaps || 0;
+                        gameState.referralEarnings = loadedState.referralEarnings || 0;
+                        gameState.referrals = loadedState.referrals || [];
+                        gameState.completedTasks = loadedState.completedTasks || gameState.completedTasks;
+                        gameState.referralCode = loadedState.referralCode || gameState.referralCode;
+                        gameState.adminTasks = loadedState.adminTasks || [];
+                        
+                        // Load player name from localStorage or Telegram
+                        const storedName = localStorage.getItem('dragonCoinPlayerName');
+                        if (storedName && storedName !== 'Dragon Miner') {
+                            gameState.playerName = storedName;
+                        } else if (loadedState.playerName && loadedState.playerName !== 'Dragon Miner') {
+                            gameState.playerName = loadedState.playerName;
+                        }
+                        
+                        console.log('✅ Mahalliy akkount yuklandi:', storedPlayerId);
+                        console.log('👤 O\'yinchi nomi:', gameState.playerName);
+                        console.log('💰 Balans:', gameState.balance);
+                        console.log('📊 Level:', gameState.level);
+                        console.log('👆 Jami taplar:', gameState.totalTaps);
+                    } catch (error) {
+                        console.error('❌ Mahalliy ma\'lumotlarni yuklashda xatolik:', error);
+                    }
+                }
+                
                 if (!firebaseConnected) {
                     resolve();
                     return;
@@ -2226,7 +2290,7 @@
                 try {
                     const currentTelegramId = getTelegramUserId();
                     const currentBrowserFingerprint = getBrowserFingerprint();
-                    const currentPlayerName = gameState.playerName;
+                    const currentPlayerId = getUniquePlayerId();
                     
                     const playersRef = window.firebaseRef(window.firebaseDatabase, 'players');
                     window.firebaseGet(playersRef).then((snapshot) => {
@@ -2236,88 +2300,71 @@
                             return;
                         }
                         
-                        // Find all matching accounts
-                        const matchingAccounts = [];
+                        // Find exact matching account
+                        let matchingAccount = null;
                         Object.entries(data).forEach(([playerId, playerData]) => {
                             const matchesTelegram = currentTelegramId && playerData.telegramId === currentTelegramId;
                             const matchesBrowser = !currentTelegramId && playerData.browserFingerprint === currentBrowserFingerprint;
-                            const matchesName = playerData.name === currentPlayerName && currentPlayerName !== 'Dragon Miner';
+                            const matchesId = playerId === currentPlayerId;
                             
-                            if (matchesTelegram || matchesBrowser || matchesName) {
-                                matchingAccounts.push({ id: playerId, data: playerData });
+                            if (matchesTelegram || matchesBrowser || matchesId) {
+                                if (!matchingAccount || (playerData.balance || 0) > (matchingAccount.data.balance || 0)) {
+                                    matchingAccount = { id: playerId, data: playerData };
+                                }
                             }
                         });
                         
-                        if (matchingAccounts.length > 0) {
-                            // Find the best account (highest balance or level)
-                            const bestAccount = matchingAccounts.reduce((best, current) => {
-                                const bestScore = (best.data.balance || 0) + (best.data.level || 1) * 1000 + (best.data.totalTaps || 0) * 0.1;
-                                const currentScore = (current.data.balance || 0) + (current.data.level || 1) * 1000 + (current.data.totalTaps || 0) * 0.1;
-                                return currentScore > bestScore ? current : best;
-                            });
+                        if (matchingAccount) {
+                            // Only update if Firebase data is newer or has more progress
+                            const firebaseBalance = matchingAccount.data.balance || 0;
+                            const firebaseLevel = matchingAccount.data.level || 1;
+                            const firebaseTaps = matchingAccount.data.totalTaps || 0;
                             
-                            // Merge all accounts into the best one
-                            matchingAccounts.forEach(account => {
-                                if (account.id !== bestAccount.id) {
-                                    const playerData = account.data;
-                                    
-                                    // Merge stats
-                                    bestAccount.data.balance = Math.max(bestAccount.data.balance || 0, playerData.balance || 0);
-                                    bestAccount.data.level = Math.max(bestAccount.data.level || 1, playerData.level || 1);
-                                    bestAccount.data.totalTaps = Math.max(bestAccount.data.totalTaps || 0, playerData.totalTaps || 0);
-                                    bestAccount.data.referralEarnings = Math.max(bestAccount.data.referralEarnings || 0, playerData.referralEarnings || 0);
-                                    
-                                    // Merge referrals
-                                    if (playerData.referrals && Array.isArray(playerData.referrals)) {
-                                        bestAccount.data.referrals = bestAccount.data.referrals || [];
-                                        playerData.referrals.forEach(ref => {
-                                            if (!bestAccount.data.referrals.find(r => r.id === ref.id || r.name === ref.name)) {
-                                                bestAccount.data.referrals.push(ref);
-                                            }
-                                        });
+                            // Use the best data from both sources
+                            gameState.balance = Math.max(gameState.balance, firebaseBalance);
+                            gameState.level = Math.max(gameState.level, firebaseLevel);
+                            gameState.totalTaps = Math.max(gameState.totalTaps, firebaseTaps);
+                            gameState.referralEarnings = Math.max(gameState.referralEarnings, matchingAccount.data.referralEarnings || 0);
+                            
+                            // Merge referrals
+                            if (matchingAccount.data.referrals && Array.isArray(matchingAccount.data.referrals)) {
+                                matchingAccount.data.referrals.forEach(ref => {
+                                    if (!gameState.referrals.find(r => r.id === ref.id || r.name === ref.name)) {
+                                        gameState.referrals.push(ref);
                                     }
-                                    
-                                    // Merge completed tasks
-                                    if (playerData.completedTasks) {
-                                        bestAccount.data.completedTasks = bestAccount.data.completedTasks || {};
-                                        Object.keys(playerData.completedTasks).forEach(taskKey => {
-                                            if (playerData.completedTasks[taskKey]) {
-                                                bestAccount.data.completedTasks[taskKey] = true;
-                                            }
-                                        });
+                                });
+                            }
+                            
+                            // Merge completed tasks
+                            if (matchingAccount.data.completedTasks) {
+                                Object.keys(matchingAccount.data.completedTasks).forEach(taskKey => {
+                                    if (matchingAccount.data.completedTasks[taskKey]) {
+                                        gameState.completedTasks[taskKey] = true;
                                     }
-                                    
-                                    // Remove duplicate account
-                                    const duplicateRef = window.firebaseRef(window.firebaseDatabase, `players/${account.id}`);
-                                    window.firebaseSet(duplicateRef, null);
-                                    console.log(`🗑️ Dublikat akkount o'chirildi: ${account.id}`);
-                                }
-                            });
+                                });
+                            }
                             
-                            // Update the best account in Firebase
-                            const bestAccountRef = window.firebaseRef(window.firebaseDatabase, `players/${bestAccount.id}`);
-                            window.firebaseSet(bestAccountRef, bestAccount.data);
+                            // Use Firebase player name if it's better
+                            if (matchingAccount.data.name && matchingAccount.data.name !== 'Dragon Miner') {
+                                gameState.playerName = matchingAccount.data.name;
+                                localStorage.setItem('dragonCoinPlayerName', matchingAccount.data.name);
+                            }
                             
-                            // Load the merged account data
-                            gameState.balance = bestAccount.data.balance || 0;
-                            gameState.level = bestAccount.data.level || 1;
-                            gameState.totalTaps = bestAccount.data.totalTaps || 0;
-                            gameState.referralEarnings = bestAccount.data.referralEarnings || 0;
-                            gameState.referrals = bestAccount.data.referrals || [];
-                            gameState.completedTasks = bestAccount.data.completedTasks || gameState.completedTasks;
-                            gameState.referralCode = bestAccount.data.referralCode || gameState.referralCode;
-                            gameState.playerName = bestAccount.data.name || gameState.playerName;
-                            gameState.adminTasks = bestAccount.data.adminTasks || [];
+                            // Merge admin tasks
+                            if (matchingAccount.data.adminTasks && Array.isArray(matchingAccount.data.adminTasks)) {
+                                matchingAccount.data.adminTasks.forEach(task => {
+                                    if (!gameState.adminTasks.find(t => t.id === task.id)) {
+                                        gameState.adminTasks.push(task);
+                                    }
+                                });
+                            }
                             
                             // Update localStorage with correct ID
-                            localStorage.setItem('dragonCoinPlayerId', bestAccount.id);
+                            localStorage.setItem('dragonCoinPlayerId', matchingAccount.id);
                             
-                            console.log('✅ Akkount yuklandi va dublikatlar tozalandi:', bestAccount.id);
-                            if (matchingAccounts.length > 1) {
-                                showNotification(`✅ ${matchingAccounts.length - 1} ta dublikat akkount birlashtirildi!`, 'success');
-                            } else {
-                                showNotification('✅ Akkountingiz muvaffaqiyatli yuklandi!', 'success');
-                            }
+                            console.log('✅ Firebase akkount birlashtirildi:', matchingAccount.id);
+                            console.log('👤 Yakuniy o\'yinchi nomi:', gameState.playerName);
+                            console.log('💰 Yakuniy balans:', gameState.balance);
                         }
                         
                         resolve();
@@ -2325,7 +2372,7 @@
                         resolve();
                     });
                 } catch (error) {
-                    console.error('❌ Akkount yuklashda xatolik:', error);
+                    console.error('❌ Firebase akkount yuklashda xatolik:', error);
                     resolve();
                 }
             });
@@ -2493,5 +2540,5 @@
         // Save before page unload
         window.addEventListener('beforeunload', saveGameState);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96e068b6d3d4e0de',t:'MTc1NTAwNjI4My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96e08cda0772da45',t:'MTc1NTAwNzc2My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
