@@ -1179,30 +1179,76 @@
         }
 
         function getTelegramUserData() {
-            if (window.Telegram && window.Telegram.WebApp) {
-                const user = window.Telegram.WebApp.initDataUnsafe?.user;
-                if (user) {
-                    // Create proper display name
-                    let displayName = 'Telegram User';
-                    if (user.username) {
-                        displayName = '@' + user.username;
-                    } else if (user.first_name) {
-                        displayName = user.first_name;
-                        if (user.last_name) {
-                            displayName += ' ' + user.last_name;
-                        }
-                    }
+            try {
+                // Check if we're in Telegram WebApp
+                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
+                    const webApp = window.Telegram.WebApp;
+                    const user = webApp.initDataUnsafe?.user;
                     
-                    return {
-                        id: 'tg_' + user.id,
-                        username: displayName,
-                        firstName: user.first_name || '',
-                        lastName: user.last_name || '',
-                        languageCode: user.language_code || 'uz'
-                    };
+                    if (user && user.id) {
+                        // Create proper display name
+                        let displayName = 'Telegram User';
+                        
+                        if (user.username) {
+                            displayName = '@' + user.username;
+                        } else if (user.first_name) {
+                            displayName = user.first_name;
+                            if (user.last_name) {
+                                displayName += ' ' + user.last_name;
+                            }
+                        }
+                        
+                        console.log('✅ Telegram foydalanuvchi topildi:', displayName);
+                        
+                        return {
+                            id: 'tg_' + user.id,
+                            username: displayName,
+                            firstName: user.first_name || '',
+                            lastName: user.last_name || '',
+                            languageCode: user.language_code || 'uz'
+                        };
+                    }
                 }
+                
+                // Alternative method - check URL parameters for Telegram data
+                const urlParams = new URLSearchParams(window.location.search);
+                const tgWebAppData = urlParams.get('tgWebAppData');
+                if (tgWebAppData) {
+                    try {
+                        const decodedData = decodeURIComponent(tgWebAppData);
+                        const userData = JSON.parse(decodedData);
+                        if (userData.user) {
+                            let displayName = 'Telegram User';
+                            if (userData.user.username) {
+                                displayName = '@' + userData.user.username;
+                            } else if (userData.user.first_name) {
+                                displayName = userData.user.first_name;
+                                if (userData.user.last_name) {
+                                    displayName += ' ' + userData.user.last_name;
+                                }
+                            }
+                            
+                            console.log('✅ URL dan Telegram foydalanuvchi topildi:', displayName);
+                            
+                            return {
+                                id: 'tg_' + userData.user.id,
+                                username: displayName,
+                                firstName: userData.user.first_name || '',
+                                lastName: userData.user.last_name || '',
+                                languageCode: userData.user.language_code || 'uz'
+                            };
+                        }
+                    } catch (e) {
+                        console.log('URL parametrlarini parse qilishda xatolik:', e);
+                    }
+                }
+                
+                console.log('⚠️ Telegram foydalanuvchi ma\'lumotlari topilmadi');
+                return null;
+            } catch (error) {
+                console.log('❌ Telegram ma\'lumotlarini olishda xatolik:', error);
+                return null;
             }
-            return null;
         }
 
         function detectCountryAndLanguage() {
@@ -1758,8 +1804,30 @@
 
         // Initialize game
         function initGame() {
+            console.log('🎮 O\'yin boshlanmoqda...');
+            
+            // First get Telegram user data and update name
+            const tgData = getTelegramUserData();
+            console.log('📱 Telegram ma\'lumotlari:', tgData);
+            
+            if (tgData && tgData.username) {
+                console.log('✅ Telegram nomini o\'rnatish:', tgData.username);
+                gameState.playerName = tgData.username;
+            } else {
+                console.log('⚠️ Telegram nomi topilmadi, standart nom qoldiriladi:', gameState.playerName);
+            }
+            
             detectCountryAndLanguage();
             loadGameState();
+            
+            // Update name again after loading state (in case Telegram data is newer)
+            if (tgData && tgData.username) {
+                console.log('🔄 Nomni qayta yangilash:', tgData.username);
+                gameState.playerName = tgData.username;
+            }
+            
+            console.log('👤 Yakuniy foydalanuvchi nomi:', gameState.playerName);
+            
             updateUI();
             updateTasksDisplay();
             startEnergyRegeneration();
@@ -1794,5 +1862,5 @@
         // Save before page unload
         window.addEventListener('beforeunload', saveGameState);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96e0a1f650f4431d',t:'MTc1NTAwODYyOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96e0b3ccf5b3fb58',t:'MTc1NTAwOTM1OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
