@@ -666,7 +666,6 @@
             <button class="nav-tab" id="tasksTab" onclick="showSection('tasks')">📋 <span data-translate="tasks">Vazifalar</span></button>
             <button class="nav-tab" id="referralTab" onclick="showSection('referral')">👥 <span data-translate="referral">Referral</span></button>
             <button class="nav-tab" id="leaderboardTab" onclick="showSection('leaderboard')">🏆 <span data-translate="leaderboard">Reyting</span></button>
-            <button class="nav-tab" id="adminTab" onclick="showSection('admin')" style="display: none;">⚙️ <span data-translate="admin">Admin</span></button>
         </div>
 
         <div class="balance-display">
@@ -796,14 +795,6 @@
                     <div class="condition-reward">+5000 DRC</div>
                     <div class="condition-status condition-pending" id="codeCondition"></div>
                 </div>
-                
-                <!-- Admin Tasks Section -->
-                <div id="adminTasksSection" style="display: none;">
-                    <h4 style="margin: 20px 0 10px 0; color: #ff6b35;">🎯 Admin Vazifalari</h4>
-                    <div id="adminTasksList">
-                        <!-- Admin tasks will be populated here -->
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -876,83 +867,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Admin Panel Section -->
-        <div class="section" id="adminSection" style="display: none;">
-            <div class="conditions-panel">
-                <h3 style="margin-bottom: 15px; color: #ff6b35;">⚙️ <span data-translate="adminPanel">Admin Panel</span></h3>
-                
-                <!-- Add New Task Form -->
-                <div style="background: rgba(255, 255, 255, 0.05); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
-                    <h4 style="margin-bottom: 15px; color: #00ff88;">➕ Yangi Vazifa Qo'shish</h4>
-                    
-                    <div style="display: grid; gap: 15px;">
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; color: #ccc;">Vazifa nomi:</label>
-                            <input type="text" id="taskTitle" placeholder="Masalan: Instagram sahifaga obuna bo'ling" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
-                        </div>
-                        
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; color: #ccc;">Tavsif:</label>
-                            <input type="text" id="taskDescription" placeholder="@dragoncoin_official" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
-                        </div>
-                        
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                            <div>
-                                <label style="display: block; margin-bottom: 5px; color: #ccc;">Mukofot (DRC):</label>
-                                <input type="number" id="taskReward" placeholder="1000" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
-                            </div>
-                            
-                            <div>
-                                <label style="display: block; margin-bottom: 5px; color: #ccc;">Turi:</label>
-                                <select id="taskType" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
-                                    <option value="link">Link ochish</option>
-                                    <option value="code">Kod kiritish</option>
-                                    <option value="subscribe">Obuna bo'lish</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; color: #ccc;">Link (ixtiyoriy):</label>
-                            <input type="url" id="taskLink" placeholder="https://t.me/dragoncoin_official" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
-                        </div>
-                        
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; color: #ccc;">To'g'ri kod (kod turi uchun):</label>
-                            <input type="text" id="taskCode" placeholder="DRAGON2024" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white;">
-                        </div>
-                        
-                        <button onclick="addAdminTask()" style="background: #00ff88; color: #000; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s ease;">
-                            ➕ Vazifa Qo'shish
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Existing Admin Tasks -->
-                <div style="background: rgba(255, 255, 255, 0.05); border-radius: 15px; padding: 20px;">
-                    <h4 style="margin-bottom: 15px; color: #00ff88;">📋 Mavjud Admin Vazifalari</h4>
-                    <div id="adminTasksDisplay">
-                        <div style="text-align: center; color: #ccc; padding: 20px;">
-                            Hali admin vazifalari qo'shilmagan
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Admin Controls -->
-                <div style="background: rgba(255, 107, 53, 0.1); border-radius: 15px; padding: 20px; margin-top: 20px;">
-                    <h4 style="margin-bottom: 15px; color: #ff6b35;">🔧 Admin Boshqaruv</h4>
-                    <div style="display: grid; gap: 10px;">
-                        <button onclick="clearAllTasks()" style="background: rgba(255, 107, 53, 0.2); color: #ff6b35; border: 1px solid #ff6b35; padding: 10px 15px; border-radius: 8px; cursor: pointer;">
-                            🗑️ Barcha vazifalarni tozalash
-                        </button>
-                        <button onclick="exportGameData()" style="background: rgba(0, 255, 136, 0.2); color: #00ff88; border: 1px solid #00ff88; padding: 10px 15px; border-radius: 8px; cursor: pointer;">
-                            📤 O'yin ma'lumotlarini eksport qilish
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -963,8 +877,6 @@
                 tasks: "Vazifalar",
                 referral: "Referral",
                 leaderboard: "Reyting",
-                admin: "Admin",
-                adminPanel: "Admin Panel",
                 coinsPerTap: "Har tap uchun coin",
                 totalTaps: "Jami taplar",
                 level: "Level",
@@ -1108,9 +1020,7 @@
             referralEarnings: 0,
             referredBy: null,
             playerName: 'Dragon Miner',
-            country: 'UZ',
-            isAdmin: false,
-            adminTasks: []
+            country: 'UZ'
         };
 
         let globalPlayers = [];
@@ -1192,15 +1102,10 @@
                     country: gameState.country,
                     lastUpdate: Date.now(),
                     isOnline: true,
-                    referralCode: gameState.referralCode,
-                    telegramId: getTelegramUserId(),
-                    browserFingerprint: getBrowserFingerprint()
+                    referralCode: gameState.referralCode
                 };
                 
                 window.firebaseSet(playerRef, playerData);
-                
-                // Remove any duplicate accounts
-                removeDuplicateAccounts(playerId);
             } catch (error) {
                 console.error('❌ Firebase ga saqlashda xatolik:', error);
             }
@@ -1218,19 +1123,6 @@
                         globalPlayers = Object.values(data).filter(player => 
                             player.id !== currentPlayerId
                         );
-                        
-                        // Remove duplicates based on ID
-                        const uniquePlayers = [];
-                        const seenIds = new Set();
-                        
-                        globalPlayers.forEach(player => {
-                            if (!seenIds.has(player.id)) {
-                                seenIds.add(player.id);
-                                uniquePlayers.push(player);
-                            }
-                        });
-                        
-                        globalPlayers = uniquePlayers;
                     }
                 });
             } catch (error) {
@@ -1269,48 +1161,21 @@
         }
 
         function getUniquePlayerId() {
+            // Try to get Telegram user data first
             const tgData = getTelegramUserData();
-            
-            // Priority 1: Telegram User ID (most reliable)
-            if (tgData && tgData.telegramId) {
-                // Set player name from Telegram data
+            if (tgData && tgData.id) {
+                // Update player name from Telegram
                 gameState.playerName = tgData.username;
-                const telegramId = 'tg_' + tgData.telegramId;
-                localStorage.setItem('dragonCoinPlayerId', telegramId);
-                localStorage.setItem('dragonCoinTelegramId', tgData.telegramId);
-                localStorage.setItem('dragonCoinPlayerName', tgData.username);
-                return telegramId;
+                return tgData.id;
             }
             
-            // Priority 2: Check if we have stored Telegram ID
-            const storedTgId = localStorage.getItem('dragonCoinTelegramId');
-            if (storedTgId) {
-                const telegramId = 'tg_' + storedTgId;
-                localStorage.setItem('dragonCoinPlayerId', telegramId);
-                // Restore player name if available
-                const storedName = localStorage.getItem('dragonCoinPlayerName');
-                if (storedName) {
-                    gameState.playerName = storedName;
-                }
-                return telegramId;
+            // Fallback to localStorage or generate new ID
+            let playerId = localStorage.getItem('dragonCoinPlayerId');
+            if (!playerId) {
+                playerId = 'player_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+                localStorage.setItem('dragonCoinPlayerId', playerId);
             }
-            
-            // Priority 3: Browser fingerprint + stored ID
-            const browserFingerprint = getBrowserFingerprint();
-            let storedId = localStorage.getItem('dragonCoinPlayerId');
-            
-            if (!storedId) {
-                storedId = 'browser_' + browserFingerprint;
-                localStorage.setItem('dragonCoinPlayerId', storedId);
-            }
-            
-            // Restore player name if available
-            const storedName = localStorage.getItem('dragonCoinPlayerName');
-            if (storedName && storedName !== 'Dragon Miner') {
-                gameState.playerName = storedName;
-            }
-            
-            return storedId;
+            return playerId;
         }
 
         function getTelegramUserData() {
@@ -1330,7 +1195,6 @@
                     
                     return {
                         id: 'tg_' + user.id,
-                        telegramId: user.id.toString(),
                         username: displayName,
                         firstName: user.first_name || '',
                         lastName: user.last_name || '',
@@ -1341,137 +1205,33 @@
             return null;
         }
 
-        function getTelegramUserId() {
-            const tgData = getTelegramUserData();
-            return tgData ? tgData.telegramId : null;
-        }
-
-        function getBrowserFingerprint() {
-            // Create a unique browser fingerprint
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            ctx.textBaseline = 'top';
-            ctx.font = '14px Arial';
-            ctx.fillText('Browser fingerprint', 2, 2);
-            
-            const fingerprint = [
-                navigator.userAgent,
-                navigator.language,
-                screen.width + 'x' + screen.height,
-                new Date().getTimezoneOffset(),
-                canvas.toDataURL()
-            ].join('|');
-            
-            // Create a simple hash
-            let hash = 0;
-            for (let i = 0; i < fingerprint.length; i++) {
-                const char = fingerprint.charCodeAt(i);
-                hash = ((hash << 5) - hash) + char;
-                hash = hash & hash; // Convert to 32-bit integer
-            }
-            
-            return Math.abs(hash).toString(36);
-        }
-
-        function removeDuplicateAccounts(currentPlayerId) {
-            if (!firebaseConnected || !window.firebaseDatabase) return;
-            
-            try {
-                const playersRef = window.firebaseRef(window.firebaseDatabase, 'players');
-                window.firebaseGet(playersRef).then((snapshot) => {
-                    const data = snapshot.val();
-                    if (!data) return;
-                    
-                    const currentTelegramId = getTelegramUserId();
-                    const currentBrowserFingerprint = getBrowserFingerprint();
-                    const currentPlayerName = gameState.playerName;
-                    
-                    const duplicatesToRemove = [];
-                    const accountsToMerge = [];
-                    
-                    Object.entries(data).forEach(([playerId, playerData]) => {
-                        if (playerId === currentPlayerId) return; // Skip current player
-                        
-                        // Check for duplicates based on multiple criteria
-                        const isDuplicateByTelegram = currentTelegramId && playerData.telegramId === currentTelegramId;
-                        const isDuplicateByBrowser = !currentTelegramId && playerData.browserFingerprint === currentBrowserFingerprint;
-                        const isDuplicateByName = playerData.name === currentPlayerName && currentPlayerName !== 'Dragon Miner';
-                        
-                        if (isDuplicateByTelegram || isDuplicateByBrowser || isDuplicateByName) {
-                            accountsToMerge.push({ id: playerId, data: playerData });
-                            duplicatesToRemove.push(playerId);
-                        }
-                    });
-                    
-                    // Merge all duplicate accounts into current account
-                    accountsToMerge.forEach(account => {
-                        const playerData = account.data;
-                        
-                        // Keep the best stats from all accounts
-                        gameState.balance = Math.max(gameState.balance, playerData.balance || 0);
-                        gameState.level = Math.max(gameState.level, playerData.level || 1);
-                        gameState.totalTaps = Math.max(gameState.totalTaps, playerData.totalTaps || 0);
-                        gameState.referralEarnings = Math.max(gameState.referralEarnings, playerData.referralEarnings || 0);
-                        
-                        // Merge referrals without duplicates
-                        if (playerData.referrals && Array.isArray(playerData.referrals)) {
-                            playerData.referrals.forEach(ref => {
-                                if (!gameState.referrals.find(r => r.id === ref.id || r.name === ref.name)) {
-                                    gameState.referrals.push(ref);
-                                }
-                            });
-                        }
-                        
-                        // Merge completed tasks
-                        if (playerData.completedTasks) {
-                            Object.keys(playerData.completedTasks).forEach(taskKey => {
-                                if (playerData.completedTasks[taskKey]) {
-                                    gameState.completedTasks[taskKey] = true;
-                                }
-                            });
-                        }
-                        
-                        // Merge admin tasks
-                        if (playerData.adminTasks && Array.isArray(playerData.adminTasks)) {
-                            playerData.adminTasks.forEach(task => {
-                                if (!gameState.adminTasks.find(t => t.id === task.id)) {
-                                    gameState.adminTasks.push(task);
-                                }
-                            });
-                        }
-                        
-                        console.log(`🔄 Akkount birlashtirildi: ${account.id} -> ${currentPlayerId}`);
-                    });
-                    
-                    // Remove all duplicate accounts
-                    duplicatesToRemove.forEach(playerId => {
-                        const duplicateRef = window.firebaseRef(window.firebaseDatabase, `players/${playerId}`);
-                        window.firebaseSet(duplicateRef, null);
-                        console.log(`🗑️ Dublikat akkount o'chirildi: ${playerId}`);
-                    });
-                    
-                    if (accountsToMerge.length > 0) {
-                        updateUI();
-                        saveGameState();
-                        showNotification(`✅ ${accountsToMerge.length} ta dublikat akkount birlashtirildi!`, 'success');
-                    }
-                });
-            } catch (error) {
-                console.error('❌ Dublikatlarni tozalashda xatolik:', error);
-            }
-        }
-
         function detectCountryAndLanguage() {
-            const userLang = navigator.language.toLowerCase();
-            if (userLang.includes('ru')) {
-                currentLanguage = 'ru';
-                gameState.country = 'RU';
-            } else if (userLang.includes('en')) {
-                currentLanguage = 'en';
-                gameState.country = 'US';
+            // First try to get from Telegram
+            const tgData = getTelegramUserData();
+            if (tgData && tgData.languageCode) {
+                if (tgData.languageCode.includes('ru')) {
+                    currentLanguage = 'ru';
+                    gameState.country = 'RU';
+                } else if (tgData.languageCode.includes('en')) {
+                    currentLanguage = 'en';
+                    gameState.country = 'US';
+                } else {
+                    currentLanguage = 'uz';
+                    gameState.country = 'UZ';
+                }
             } else {
-                currentLanguage = 'uz';
-                gameState.country = 'UZ';
+                // Fallback to browser language
+                const userLang = navigator.language.toLowerCase();
+                if (userLang.includes('ru')) {
+                    currentLanguage = 'ru';
+                    gameState.country = 'RU';
+                } else if (userLang.includes('en')) {
+                    currentLanguage = 'en';
+                    gameState.country = 'US';
+                } else {
+                    currentLanguage = 'uz';
+                    gameState.country = 'UZ';
+                }
             }
             updateLanguageDisplay();
             translatePage();
@@ -1709,17 +1469,6 @@
             updateTaskStatus('youtube', gameState.completedTasks.youtube);
             updateTaskStatus('code', gameState.completedTasks.code);
             
-            // Show/hide admin tasks section
-            const adminTasksSection = document.getElementById('adminTasksSection');
-            if (adminTasksSection) {
-                if (gameState.adminTasks && gameState.adminTasks.length > 0) {
-                    adminTasksSection.style.display = 'block';
-                    updateAdminTasksDisplay();
-                } else {
-                    adminTasksSection.style.display = 'none';
-                }
-            }
-            
             updateCompletedTasksDisplay();
         }
 
@@ -1762,11 +1511,15 @@
                     taps: { name: '500 marta tap qiling', reward: 1000 },
                     level: { name: 'Level 5 ga yeting', reward: 2000 },
                     coins: { name: '10000 coin to\'plang', reward: 5000 },
-                    referral: { name: '5 ta do\'st taklif qiling', reward: 3000 }
+                    referral: { name: '5 ta do\'st taklif qiling', reward: 3000 },
+                    telegram: { name: 'Telegram kanalga obuna bo\'ling', reward: 1500 },
+                    youtube: { name: 'YouTube kanalga obuna bo\'ling', reward: 2000 },
+                    code: { name: 'Maxsus kodni kiriting', reward: 5000 }
                 };
                 
                 completedTasksList.innerHTML = completedTasks.map(([taskType]) => {
                     const task = taskNames[taskType];
+                    if (!task) return '';
                     return `
                         <div class="completed-task-item">
                             <div class="completed-task-text">${task.name}</div>
@@ -1806,60 +1559,8 @@
             const playerRank = document.getElementById('playerRank');
             const currentPlayerId = getUniquePlayerId();
             
-            // Ultra-strict duplicate detection and removal
-            const uniquePlayersMap = new Map();
-            const seenTelegramIds = new Set();
-            const seenBrowserFingerprints = new Set();
-            const seenNameBalanceCombos = new Set();
-            
-            // Process global players with ultra-strict duplicate detection
-            globalPlayers.forEach(player => {
-                if (!player.id || player.id === currentPlayerId) return;
-                
-                // Skip if player doesn't have valid data
-                if (!player.name || typeof player.balance !== 'number' || player.name === 'Dragon Miner') return;
-                
-                let isDuplicate = false;
-                
-                // Check Telegram ID duplicates
-                if (player.telegramId) {
-                    if (seenTelegramIds.has(player.telegramId)) {
-                        isDuplicate = true;
-                    } else {
-                        seenTelegramIds.add(player.telegramId);
-                    }
-                }
-                
-                // Check browser fingerprint duplicates (only if no Telegram ID)
-                if (!isDuplicate && !player.telegramId && player.browserFingerprint) {
-                    if (seenBrowserFingerprints.has(player.browserFingerprint)) {
-                        isDuplicate = true;
-                    } else {
-                        seenBrowserFingerprints.add(player.browserFingerprint);
-                    }
-                }
-                
-                // Check name+balance combination duplicates
-                const nameBalanceCombo = `${player.name}_${player.balance}`;
-                if (!isDuplicate) {
-                    if (seenNameBalanceCombos.has(nameBalanceCombo)) {
-                        isDuplicate = true;
-                    } else {
-                        seenNameBalanceCombos.add(nameBalanceCombo);
-                    }
-                }
-                
-                // Only add if not duplicate
-                if (!isDuplicate) {
-                    uniquePlayersMap.set(player.id, {
-                        ...player,
-                        isCurrentPlayer: false
-                    });
-                }
-            });
-            
-            // Add current player
-            uniquePlayersMap.set(currentPlayerId, {
+            // Combine current player with global players
+            const allPlayers = [...globalPlayers, {
                 id: currentPlayerId,
                 name: gameState.playerName,
                 balance: gameState.balance,
@@ -1868,15 +1569,11 @@
                 totalTaps: gameState.totalTaps,
                 country: gameState.country,
                 isCurrentPlayer: true,
-                isOnline: true,
-                telegramId: getTelegramUserId(),
-                browserFingerprint: getBrowserFingerprint()
-            });
+                isOnline: true
+            }];
             
-            // Convert to array and sort by balance
-            const allPlayers = Array.from(uniquePlayersMap.values())
-                .filter(player => player.name && typeof player.balance === 'number' && player.balance >= 0)
-                .sort((a, b) => (b.balance || 0) - (a.balance || 0));
+            // Sort by balance
+            allPlayers.sort((a, b) => (b.balance || 0) - (a.balance || 0));
             
             // Find current player rank
             const currentPlayerIndex = allPlayers.findIndex(p => p.isCurrentPlayer);
@@ -1894,8 +1591,8 @@
                             <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px;" class="${rankClass}">
                                 ${index + 1}
                             </div>
-                            <div style="cursor: pointer;" onclick="showPlayerDetails('${player.id}', '${player.name}', ${player.balance || 0}, ${player.level || 1}, ${player.totalTaps || 0}, ${player.referrals || 0}, '${player.country || 'UZ'}', ${player.isOnline || false})">
-                                <div style="font-weight: bold; color: #00ff88; text-decoration: underline;">${player.name} ${player.isCurrentPlayer ? '(Siz)' : ''}</div>
+                            <div>
+                                <div style="font-weight: bold; color: #00ff88;">${player.name} ${player.isCurrentPlayer ? '(Siz)' : ''}</div>
                                 <div style="font-size: 12px; color: #ccc;">
                                     Level ${player.level || 1} • ${player.country || 'UZ'} 
                                     ${player.isOnline ? '🟢' : '🔴'}
@@ -2027,7 +1724,6 @@
         function saveGameState() {
             localStorage.setItem('dragonCoinGameState', JSON.stringify(gameState));
             localStorage.setItem('dragonCoinLanguage', currentLanguage);
-            localStorage.setItem('dragonCoinPlayerName', gameState.playerName);
             
             if (firebaseConnected) {
                 savePlayerToFirebase();
@@ -2060,322 +1756,20 @@
             }, 5000); // Regenerate 1 energy every 5 seconds
         }
 
-        // Admin functions
-        function addAdminTask() {
-            const title = document.getElementById('taskTitle').value;
-            const description = document.getElementById('taskDescription').value;
-            const reward = parseInt(document.getElementById('taskReward').value);
-            const type = document.getElementById('taskType').value;
-            const link = document.getElementById('taskLink').value;
-            const code = document.getElementById('taskCode').value;
-            
-            if (!title || !reward) {
-                showNotification('❌ Vazifa nomi va mukofot kiritilishi shart!', 'error');
-                return;
-            }
-            
-            const newTask = {
-                id: 'admin_' + Date.now(),
-                title: title,
-                description: description,
-                reward: reward,
-                type: type,
-                link: link,
-                code: code.toUpperCase(),
-                completed: false
-            };
-            
-            gameState.adminTasks.push(newTask);
-            
-            // Clear form
-            document.getElementById('taskTitle').value = '';
-            document.getElementById('taskDescription').value = '';
-            document.getElementById('taskReward').value = '';
-            document.getElementById('taskLink').value = '';
-            document.getElementById('taskCode').value = '';
-            
-            updateAdminTasksDisplay();
-            saveGameState();
-            
-            showNotification('✅ Yangi vazifa qo\'shildi!', 'success');
-        }
-        
-        function updateAdminTasksDisplay() {
-            const adminTasksDisplay = document.getElementById('adminTasksDisplay');
-            const adminTasksList = document.getElementById('adminTasksList');
-            
-            if (gameState.adminTasks.length === 0) {
-                adminTasksDisplay.innerHTML = '<div style="text-align: center; color: #ccc; padding: 20px;">Hali admin vazifalari qo\'shilmagan</div>';
-                if (adminTasksList) adminTasksList.innerHTML = '';
-                return;
-            }
-            
-            // Display in admin panel
-            adminTasksDisplay.innerHTML = gameState.adminTasks.map(task => `
-                <div class="condition-item" style="margin-bottom: 10px;">
-                    <div class="condition-text">
-                        <div style="font-weight: bold;">${task.title}</div>
-                        <div style="font-size: 12px; color: #ccc;">${task.description}</div>
-                        <div style="font-size: 11px; color: #999;">Turi: ${task.type} | Mukofot: ${task.reward} DRC</div>
-                    </div>
-                    <button onclick="removeAdminTask('${task.id}')" style="background: rgba(255, 107, 53, 0.2); color: #ff6b35; border: 1px solid #ff6b35; padding: 5px 10px; border-radius: 5px; cursor: pointer;">
-                        🗑️ O'chirish
-                    </button>
-                </div>
-            `).join('');
-            
-            // Display in tasks section
-            if (adminTasksList) {
-                adminTasksList.innerHTML = gameState.adminTasks.map(task => `
-                    <div class="condition-item task-button" onclick="claimAdminTask('${task.id}')" id="adminTask_${task.id}">
-                        <div class="condition-text">
-                            <div>${task.title}</div>
-                            <div style="font-size: 12px; color: #ccc;">${task.description}</div>
-                        </div>
-                        <div class="condition-reward">+${task.reward} DRC</div>
-                        <div class="condition-status condition-pending" id="adminCondition_${task.id}"></div>
-                    </div>
-                `).join('');
-            }
-        }
-        
-        function claimAdminTask(taskId) {
-            const task = gameState.adminTasks.find(t => t.id === taskId);
-            if (!task || task.completed) return;
-            
-            if (task.type === 'link' && task.link) {
-                window.open(task.link, '_blank');
-                setTimeout(() => {
-                    task.completed = true;
-                    gameState.balance += task.reward;
-                    showNotification(`✅ ${task.title} bajarildi! +${task.reward} DRC`, 'success');
-                    updateAdminTasksDisplay();
-                    updateUI();
-                    saveGameState();
-                }, 3000);
-            } else if (task.type === 'code') {
-                const userCode = prompt(`${task.title}\n\nKodni kiriting:`);
-                if (userCode && userCode.toUpperCase() === task.code) {
-                    task.completed = true;
-                    gameState.balance += task.reward;
-                    showNotification(`✅ To'g'ri kod! +${task.reward} DRC olindi!`, 'success');
-                    updateAdminTasksDisplay();
-                    updateUI();
-                    saveGameState();
-                } else {
-                    showNotification('❌ Noto\'g\'ri kod!', 'error');
-                }
-            } else {
-                // Subscribe type or link without URL
-                task.completed = true;
-                gameState.balance += task.reward;
-                showNotification(`✅ ${task.title} bajarildi! +${task.reward} DRC`, 'success');
-                updateAdminTasksDisplay();
-                updateUI();
-                saveGameState();
-            }
-        }
-        
-        function removeAdminTask(taskId) {
-            gameState.adminTasks = gameState.adminTasks.filter(task => task.id !== taskId);
-            updateAdminTasksDisplay();
-            saveGameState();
-            showNotification('✅ Vazifa o\'chirildi!', 'success');
-        }
-        
-        function clearAllTasks() {
-            gameState.adminTasks = [];
-            updateAdminTasksDisplay();
-            saveGameState();
-            showNotification('✅ Barcha vazifalar o\'chirildi!', 'success');
-        }
-        
-        function exportGameData() {
-            const data = {
-                gameState: gameState,
-                globalPlayers: globalPlayers,
-                exportDate: new Date().toISOString(),
-                totalPlayers: globalPlayers.length + 1,
-                playerStats: {
-                    balance: gameState.balance,
-                    level: gameState.level,
-                    totalTaps: gameState.totalTaps,
-                    referrals: gameState.referrals.length,
-                    completedTasks: Object.values(gameState.completedTasks).filter(Boolean).length
-                }
-            };
-            
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `dragon-coin-data-${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            
-            showNotification('✅ Ma\'lumotlar muvaffaqiyatli eksport qilindi!', 'success');
-        }
-
         // Initialize game
         function initGame() {
             detectCountryAndLanguage();
+            loadGameState();
+            updateUI();
+            updateTasksDisplay();
+            startEnergyRegeneration();
+            initializeFirebaseConnection();
             
-            // Load existing account data if available
-            loadExistingAccount().then(() => {
-                loadGameState();
-                
-                // Check if user is admin (you can modify this logic)
-                const adminIds = ['tg_123456789', 'local_admin']; // Add your admin IDs here
-                if (adminIds.includes(getUniquePlayerId())) {
-                    gameState.isAdmin = true;
-                    document.getElementById('adminTab').style.display = 'block';
-                }
-                
-                updateUI();
-                updateTasksDisplay();
-                updateAdminTasksDisplay();
-                startEnergyRegeneration();
-                initializeFirebaseConnection();
-                
-                // Process referral if exists
-                processReferralFromURL();
-                
-                // Auto-save every 30 seconds
-                setInterval(saveGameState, 30000);
-            });
-        }
-
-        function loadExistingAccount() {
-            return new Promise((resolve) => {
-                // First, try to load from localStorage
-                const storedPlayerId = localStorage.getItem('dragonCoinPlayerId');
-                const storedGameState = localStorage.getItem('dragonCoinGameState');
-                
-                if (storedGameState) {
-                    try {
-                        const loadedState = JSON.parse(storedGameState);
-                        // Load all saved data
-                        gameState.balance = loadedState.balance || 0;
-                        gameState.level = loadedState.level || 1;
-                        gameState.totalTaps = loadedState.totalTaps || 0;
-                        gameState.referralEarnings = loadedState.referralEarnings || 0;
-                        gameState.referrals = loadedState.referrals || [];
-                        gameState.completedTasks = loadedState.completedTasks || gameState.completedTasks;
-                        gameState.referralCode = loadedState.referralCode || gameState.referralCode;
-                        gameState.adminTasks = loadedState.adminTasks || [];
-                        
-                        // Load player name from localStorage or Telegram
-                        const storedName = localStorage.getItem('dragonCoinPlayerName');
-                        if (storedName && storedName !== 'Dragon Miner') {
-                            gameState.playerName = storedName;
-                        } else if (loadedState.playerName && loadedState.playerName !== 'Dragon Miner') {
-                            gameState.playerName = loadedState.playerName;
-                        }
-                        
-                        console.log('✅ Mahalliy akkount yuklandi:', storedPlayerId);
-                        console.log('👤 O\'yinchi nomi:', gameState.playerName);
-                        console.log('💰 Balans:', gameState.balance);
-                        console.log('📊 Level:', gameState.level);
-                        console.log('👆 Jami taplar:', gameState.totalTaps);
-                    } catch (error) {
-                        console.error('❌ Mahalliy ma\'lumotlarni yuklashda xatolik:', error);
-                    }
-                }
-                
-                if (!firebaseConnected) {
-                    resolve();
-                    return;
-                }
-                
-                try {
-                    const currentTelegramId = getTelegramUserId();
-                    const currentBrowserFingerprint = getBrowserFingerprint();
-                    const currentPlayerId = getUniquePlayerId();
-                    
-                    const playersRef = window.firebaseRef(window.firebaseDatabase, 'players');
-                    window.firebaseGet(playersRef).then((snapshot) => {
-                        const data = snapshot.val();
-                        if (!data) {
-                            resolve();
-                            return;
-                        }
-                        
-                        // Find exact matching account
-                        let matchingAccount = null;
-                        Object.entries(data).forEach(([playerId, playerData]) => {
-                            const matchesTelegram = currentTelegramId && playerData.telegramId === currentTelegramId;
-                            const matchesBrowser = !currentTelegramId && playerData.browserFingerprint === currentBrowserFingerprint;
-                            const matchesId = playerId === currentPlayerId;
-                            
-                            if (matchesTelegram || matchesBrowser || matchesId) {
-                                if (!matchingAccount || (playerData.balance || 0) > (matchingAccount.data.balance || 0)) {
-                                    matchingAccount = { id: playerId, data: playerData };
-                                }
-                            }
-                        });
-                        
-                        if (matchingAccount) {
-                            // Only update if Firebase data is newer or has more progress
-                            const firebaseBalance = matchingAccount.data.balance || 0;
-                            const firebaseLevel = matchingAccount.data.level || 1;
-                            const firebaseTaps = matchingAccount.data.totalTaps || 0;
-                            
-                            // Use the best data from both sources
-                            gameState.balance = Math.max(gameState.balance, firebaseBalance);
-                            gameState.level = Math.max(gameState.level, firebaseLevel);
-                            gameState.totalTaps = Math.max(gameState.totalTaps, firebaseTaps);
-                            gameState.referralEarnings = Math.max(gameState.referralEarnings, matchingAccount.data.referralEarnings || 0);
-                            
-                            // Merge referrals
-                            if (matchingAccount.data.referrals && Array.isArray(matchingAccount.data.referrals)) {
-                                matchingAccount.data.referrals.forEach(ref => {
-                                    if (!gameState.referrals.find(r => r.id === ref.id || r.name === ref.name)) {
-                                        gameState.referrals.push(ref);
-                                    }
-                                });
-                            }
-                            
-                            // Merge completed tasks
-                            if (matchingAccount.data.completedTasks) {
-                                Object.keys(matchingAccount.data.completedTasks).forEach(taskKey => {
-                                    if (matchingAccount.data.completedTasks[taskKey]) {
-                                        gameState.completedTasks[taskKey] = true;
-                                    }
-                                });
-                            }
-                            
-                            // Use Firebase player name if it's better
-                            if (matchingAccount.data.name && matchingAccount.data.name !== 'Dragon Miner') {
-                                gameState.playerName = matchingAccount.data.name;
-                                localStorage.setItem('dragonCoinPlayerName', matchingAccount.data.name);
-                            }
-                            
-                            // Merge admin tasks
-                            if (matchingAccount.data.adminTasks && Array.isArray(matchingAccount.data.adminTasks)) {
-                                matchingAccount.data.adminTasks.forEach(task => {
-                                    if (!gameState.adminTasks.find(t => t.id === task.id)) {
-                                        gameState.adminTasks.push(task);
-                                    }
-                                });
-                            }
-                            
-                            // Update localStorage with correct ID
-                            localStorage.setItem('dragonCoinPlayerId', matchingAccount.id);
-                            
-                            console.log('✅ Firebase akkount birlashtirildi:', matchingAccount.id);
-                            console.log('👤 Yakuniy o\'yinchi nomi:', gameState.playerName);
-                            console.log('💰 Yakuniy balans:', gameState.balance);
-                        }
-                        
-                        resolve();
-                    }).catch(() => {
-                        resolve();
-                    });
-                } catch (error) {
-                    console.error('❌ Firebase akkount yuklashda xatolik:', error);
-                    resolve();
-                }
-            });
+            // Process referral if exists
+            processReferralFromURL();
+            
+            // Auto-save every 30 seconds
+            setInterval(saveGameState, 30000);
         }
         
         function processReferralFromURL() {
@@ -2394,151 +1788,11 @@
             }
         }
 
-        function showPlayerDetails(playerId, playerName, balance, level, totalTaps, referrals, country, isOnline) {
-            // Create modal overlay
-            const modal = document.createElement('div');
-            modal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.8);
-                backdrop-filter: blur(10px);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 1000;
-                animation: fadeIn 0.3s ease;
-            `;
-            
-            // Get level name
-            const levelData = levelSystem[level] || { name: 'Unknown', color: '#ffffff' };
-            
-            // Calculate next level progress
-            const nextLevelData = levelSystem[level + 1];
-            let progressText = '';
-            if (nextLevelData) {
-                const currentLevelTaps = levelSystem[level].tapsRequired;
-                const progress = ((totalTaps - currentLevelTaps) / (nextLevelData.tapsRequired - currentLevelTaps)) * 100;
-                progressText = `
-                    <div style="margin: 15px 0;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                            <span>Level ${level + 1} uchun:</span>
-                            <span>${Math.max(0, Math.min(100, progress)).toFixed(1)}%</span>
-                        </div>
-                        <div style="background: rgba(255, 255, 255, 0.1); border-radius: 10px; height: 8px; overflow: hidden;">
-                            <div style="height: 100%; background: linear-gradient(90deg, #ff6b35, #f7931e); border-radius: 10px; width: ${Math.max(0, Math.min(100, progress))}%; transition: width 0.3s ease;"></div>
-                        </div>
-                    </div>
-                `;
-            } else {
-                progressText = '<div style="text-align: center; color: #00ff88; font-weight: bold; margin: 15px 0;">🏆 MAX LEVEL!</div>';
-            }
-            
-            modal.innerHTML = `
-                <div style="
-                    background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(26, 10, 26, 0.9));
-                    border: 2px solid rgba(0, 255, 136, 0.3);
-                    border-radius: 20px;
-                    padding: 30px;
-                    max-width: 400px;
-                    width: 90%;
-                    box-shadow: 0 0 50px rgba(0, 255, 136, 0.3);
-                    position: relative;
-                    animation: slideIn 0.3s ease;
-                ">
-                    <button onclick="this.parentElement.parentElement.remove()" style="
-                        position: absolute;
-                        top: 15px;
-                        right: 15px;
-                        background: rgba(255, 107, 53, 0.2);
-                        border: 1px solid #ff6b35;
-                        color: #ff6b35;
-                        border-radius: 50%;
-                        width: 35px;
-                        height: 35px;
-                        cursor: pointer;
-                        font-size: 18px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                    ">×</button>
-                    
-                    <div style="text-align: center; margin-bottom: 25px;">
-                        <div style="
-                            width: 80px;
-                            height: 80px;
-                            background: linear-gradient(45deg, #ff6b35, #f7931e);
-                            border-radius: 50%;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            font-size: 40px;
-                            margin: 0 auto 15px auto;
-                            box-shadow: 0 0 30px rgba(255, 107, 53, 0.5);
-                        ">🐉</div>
-                        <h2 style="color: #00ff88; margin: 0; font-size: 24px;">${playerName}</h2>
-                        <div style="color: #ccc; font-size: 14px; margin-top: 5px;">
-                            ${country} ${isOnline ? '🟢 Online' : '🔴 Offline'}
-                        </div>
-                    </div>
-                    
-                    <div style="background: rgba(255, 255, 255, 0.05); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: center;">
-                            <div>
-                                <div style="font-size: 24px; font-weight: bold; color: #00ff88;">${balance.toLocaleString()}</div>
-                                <div style="font-size: 12px; color: #ccc;">Dragon Coins</div>
-                            </div>
-                            <div>
-                                <div style="font-size: 24px; font-weight: bold; color: ${levelData.color};">${level}</div>
-                                <div style="font-size: 12px; color: #ccc;">Level - ${levelData.name}</div>
-                            </div>
-                            <div>
-                                <div style="font-size: 20px; font-weight: bold; color: #ff6b35;">${totalTaps.toLocaleString()}</div>
-                                <div style="font-size: 12px; color: #ccc;">Jami Taplar</div>
-                            </div>
-                            <div>
-                                <div style="font-size: 20px; font-weight: bold; color: #f7931e;">${referrals}</div>
-                                <div style="font-size: 12px; color: #ccc;">Referrallar</div>
-                            </div>
-                        </div>
-                        
-                        ${progressText}
-                    </div>
-                    
-                    <div style="text-align: center;">
-                        <button onclick="this.parentElement.parentElement.remove()" style="
-                            background: linear-gradient(45deg, #00ff88, #00cc6a);
-                            color: #000;
-                            border: none;
-                            padding: 12px 30px;
-                            border-radius: 25px;
-                            font-weight: bold;
-                            cursor: pointer;
-                            transition: all 0.3s ease;
-                        " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                            Yopish
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            document.body.appendChild(modal);
-            
-            // Close modal when clicking outside
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    modal.remove();
-                }
-            });
-        }
-
         // Start the game when page loads
         window.addEventListener('load', initGame);
         
         // Save before page unload
         window.addEventListener('beforeunload', saveGameState);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96e08cda0772da45',t:'MTc1NTAwNzc2My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96e0a1f650f4431d',t:'MTc1NTAwODYyOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
