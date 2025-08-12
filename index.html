@@ -1360,57 +1360,77 @@
                     
                     const currentTelegramId = getTelegramUserId();
                     const currentBrowserFingerprint = getBrowserFingerprint();
+                    const currentPlayerName = gameState.playerName;
+                    
+                    const duplicatesToRemove = [];
+                    const accountsToMerge = [];
                     
                     Object.entries(data).forEach(([playerId, playerData]) => {
                         if (playerId === currentPlayerId) return; // Skip current player
                         
-                        // Check for duplicates based on Telegram ID or browser fingerprint
-                        const isDuplicate = (
-                            (currentTelegramId && playerData.telegramId === currentTelegramId) ||
-                            (playerData.browserFingerprint === currentBrowserFingerprint && currentTelegramId === null)
-                        );
+                        // Check for duplicates based on multiple criteria
+                        const isDuplicateByTelegram = currentTelegramId && playerData.telegramId === currentTelegramId;
+                        const isDuplicateByBrowser = !currentTelegramId && playerData.browserFingerprint === currentBrowserFingerprint;
+                        const isDuplicateByName = playerData.name === currentPlayerName && currentPlayerName !== 'Dragon Miner';
                         
-                        if (isDuplicate) {
-                            // Merge data from duplicate account if it has better stats
-                            if (playerData.balance > gameState.balance || 
-                                playerData.level > gameState.level || 
-                                playerData.totalTaps > gameState.totalTaps) {
-                                
-                                // Keep the better stats
-                                gameState.balance = Math.max(gameState.balance, playerData.balance || 0);
-                                gameState.level = Math.max(gameState.level, playerData.level || 1);
-                                gameState.totalTaps = Math.max(gameState.totalTaps, playerData.totalTaps || 0);
-                                gameState.referralEarnings = Math.max(gameState.referralEarnings, playerData.referralEarnings || 0);
-                                
-                                // Merge referrals
-                                if (playerData.referrals && Array.isArray(playerData.referrals)) {
-                                    playerData.referrals.forEach(ref => {
-                                        if (!gameState.referrals.find(r => r.id === ref.id)) {
-                                            gameState.referrals.push(ref);
-                                        }
-                                    });
-                                }
-                                
-                                // Merge completed tasks
-                                if (playerData.completedTasks) {
-                                    Object.keys(playerData.completedTasks).forEach(taskKey => {
-                                        if (playerData.completedTasks[taskKey]) {
-                                            gameState.completedTasks[taskKey] = true;
-                                        }
-                                    });
-                                }
-                                
-                                updateUI();
-                                saveGameState();
-                            }
-                            
-                            // Remove duplicate account
-                            const duplicateRef = window.firebaseRef(window.firebaseDatabase, `players/${playerId}`);
-                            window.firebaseSet(duplicateRef, null);
-                            
-                            console.log(`🗑️ Dublikat akkount o'chirildi: ${playerId}`);
+                        if (isDuplicateByTelegram || isDuplicateByBrowser || isDuplicateByName) {
+                            accountsToMerge.push({ id: playerId, data: playerData });
+                            duplicatesToRemove.push(playerId);
                         }
                     });
+                    
+                    // Merge all duplicate accounts into current account
+                    accountsToMerge.forEach(account => {
+                        const playerData = account.data;
+                        
+                        // Keep the best stats from all accounts
+                        gameState.balance = Math.max(gameState.balance, playerData.balance || 0);
+                        gameState.level = Math.max(gameState.level, playerData.level || 1);
+                        gameState.totalTaps = Math.max(gameState.totalTaps, playerData.totalTaps || 0);
+                        gameState.referralEarnings = Math.max(gameState.referralEarnings, playerData.referralEarnings || 0);
+                        
+                        // Merge referrals without duplicates
+                        if (playerData.referrals && Array.isArray(playerData.referrals)) {
+                            playerData.referrals.forEach(ref => {
+                                if (!gameState.referrals.find(r => r.id === ref.id || r.name === ref.name)) {
+                                    gameState.referrals.push(ref);
+                                }
+                            });
+                        }
+                        
+                        // Merge completed tasks
+                        if (playerData.completedTasks) {
+                            Object.keys(playerData.completedTasks).forEach(taskKey => {
+                                if (playerData.completedTasks[taskKey]) {
+                                    gameState.completedTasks[taskKey] = true;
+                                }
+                            });
+                        }
+                        
+                        // Merge admin tasks
+                        if (playerData.adminTasks && Array.isArray(playerData.adminTasks)) {
+                            playerData.adminTasks.forEach(task => {
+                                if (!gameState.adminTasks.find(t => t.id === task.id)) {
+                                    gameState.adminTasks.push(task);
+                                }
+                            });
+                        }
+                        
+                        console.log(`🔄 Akkount birlashtirildi: ${account.id} -> ${currentPlayerId}`);
+                    });
+                    
+                    // Remove all duplicate accounts
+                    duplicatesToRemove.forEach(playerId => {
+                        const duplicateRef = window.firebaseRef(window.firebaseDatabase, `players/${playerId}`);
+                        window.firebaseSet(duplicateRef, null);
+                        console.log(`🗑️ Dublikat akkount o'chirildi: ${playerId}`);
+                    });
+                    
+                    if (accountsToMerge.length > 0) {
+                        updateUI();
+                        saveGameState();
+                        showNotification(`✅ ${accountsToMerge.length} ta dublikat akkount birlashtirildi!`, 'success');
+                    }
                 });
             } catch (error) {
                 console.error('❌ Dublikatlarni tozalashda xatolik:', error);
@@ -1762,25 +1782,51 @@
             const playerRank = document.getElementById('playerRank');
             const currentPlayerId = getUniquePlayerId();
             
-            // Create a Map to ensure unique players by ID and remove duplicates more effectively
+            // Ultra-strict duplicate detection and removal
             const uniquePlayersMap = new Map();
             const seenTelegramIds = new Set();
             const seenBrowserFingerprints = new Set();
+            const seenNameBalanceCombos = new Set();
             
-            // Add global players first with duplicate detection
+            // Process global players with ultra-strict duplicate detection
             globalPlayers.forEach(player => {
                 if (!player.id || player.id === currentPlayerId) return;
                 
-                // Check for duplicates by Telegram ID or browser fingerprint
-                const isDuplicate = (
-                    (player.telegramId && seenTelegramIds.has(player.telegramId)) ||
-                    (player.browserFingerprint && seenBrowserFingerprints.has(player.browserFingerprint))
-                );
+                // Skip if player doesn't have valid data
+                if (!player.name || typeof player.balance !== 'number' || player.name === 'Dragon Miner') return;
                 
+                let isDuplicate = false;
+                
+                // Check Telegram ID duplicates
+                if (player.telegramId) {
+                    if (seenTelegramIds.has(player.telegramId)) {
+                        isDuplicate = true;
+                    } else {
+                        seenTelegramIds.add(player.telegramId);
+                    }
+                }
+                
+                // Check browser fingerprint duplicates (only if no Telegram ID)
+                if (!isDuplicate && !player.telegramId && player.browserFingerprint) {
+                    if (seenBrowserFingerprints.has(player.browserFingerprint)) {
+                        isDuplicate = true;
+                    } else {
+                        seenBrowserFingerprints.add(player.browserFingerprint);
+                    }
+                }
+                
+                // Check name+balance combination duplicates
+                const nameBalanceCombo = `${player.name}_${player.balance}`;
                 if (!isDuplicate) {
-                    if (player.telegramId) seenTelegramIds.add(player.telegramId);
-                    if (player.browserFingerprint) seenBrowserFingerprints.add(player.browserFingerprint);
-                    
+                    if (seenNameBalanceCombos.has(nameBalanceCombo)) {
+                        isDuplicate = true;
+                    } else {
+                        seenNameBalanceCombos.add(nameBalanceCombo);
+                    }
+                }
+                
+                // Only add if not duplicate
+                if (!isDuplicate) {
                     uniquePlayersMap.set(player.id, {
                         ...player,
                         isCurrentPlayer: false
@@ -1788,7 +1834,7 @@
                 }
             });
             
-            // Add current player (this will overwrite any duplicate)
+            // Add current player
             uniquePlayersMap.set(currentPlayerId, {
                 id: currentPlayerId,
                 name: gameState.playerName,
@@ -1803,8 +1849,9 @@
                 browserFingerprint: getBrowserFingerprint()
             });
             
-            // Convert Map to array and sort by balance
+            // Convert to array and sort by balance
             const allPlayers = Array.from(uniquePlayersMap.values())
+                .filter(player => player.name && typeof player.balance === 'number' && player.balance >= 0)
                 .sort((a, b) => (b.balance || 0) - (a.balance || 0));
             
             // Find current player rank
@@ -2179,11 +2226,7 @@
                 try {
                     const currentTelegramId = getTelegramUserId();
                     const currentBrowserFingerprint = getBrowserFingerprint();
-                    
-                    if (!currentTelegramId && !currentBrowserFingerprint) {
-                        resolve();
-                        return;
-                    }
+                    const currentPlayerName = gameState.playerName;
                     
                     const playersRef = window.firebaseRef(window.firebaseDatabase, 'players');
                     window.firebaseGet(playersRef).then((snapshot) => {
@@ -2193,32 +2236,88 @@
                             return;
                         }
                         
-                        // Find existing account
-                        let existingAccount = null;
+                        // Find all matching accounts
+                        const matchingAccounts = [];
                         Object.entries(data).forEach(([playerId, playerData]) => {
-                            if (currentTelegramId && playerData.telegramId === currentTelegramId) {
-                                existingAccount = { id: playerId, data: playerData };
-                            } else if (!currentTelegramId && playerData.browserFingerprint === currentBrowserFingerprint) {
-                                existingAccount = { id: playerId, data: playerData };
+                            const matchesTelegram = currentTelegramId && playerData.telegramId === currentTelegramId;
+                            const matchesBrowser = !currentTelegramId && playerData.browserFingerprint === currentBrowserFingerprint;
+                            const matchesName = playerData.name === currentPlayerName && currentPlayerName !== 'Dragon Miner';
+                            
+                            if (matchesTelegram || matchesBrowser || matchesName) {
+                                matchingAccounts.push({ id: playerId, data: playerData });
                             }
                         });
                         
-                        if (existingAccount) {
-                            // Load existing account data
-                            gameState.balance = existingAccount.data.balance || 0;
-                            gameState.level = existingAccount.data.level || 1;
-                            gameState.totalTaps = existingAccount.data.totalTaps || 0;
-                            gameState.referralEarnings = existingAccount.data.referralEarnings || 0;
-                            gameState.referrals = existingAccount.data.referrals || [];
-                            gameState.completedTasks = existingAccount.data.completedTasks || gameState.completedTasks;
-                            gameState.referralCode = existingAccount.data.referralCode || gameState.referralCode;
-                            gameState.playerName = existingAccount.data.name || gameState.playerName;
+                        if (matchingAccounts.length > 0) {
+                            // Find the best account (highest balance or level)
+                            const bestAccount = matchingAccounts.reduce((best, current) => {
+                                const bestScore = (best.data.balance || 0) + (best.data.level || 1) * 1000 + (best.data.totalTaps || 0) * 0.1;
+                                const currentScore = (current.data.balance || 0) + (current.data.level || 1) * 1000 + (current.data.totalTaps || 0) * 0.1;
+                                return currentScore > bestScore ? current : best;
+                            });
+                            
+                            // Merge all accounts into the best one
+                            matchingAccounts.forEach(account => {
+                                if (account.id !== bestAccount.id) {
+                                    const playerData = account.data;
+                                    
+                                    // Merge stats
+                                    bestAccount.data.balance = Math.max(bestAccount.data.balance || 0, playerData.balance || 0);
+                                    bestAccount.data.level = Math.max(bestAccount.data.level || 1, playerData.level || 1);
+                                    bestAccount.data.totalTaps = Math.max(bestAccount.data.totalTaps || 0, playerData.totalTaps || 0);
+                                    bestAccount.data.referralEarnings = Math.max(bestAccount.data.referralEarnings || 0, playerData.referralEarnings || 0);
+                                    
+                                    // Merge referrals
+                                    if (playerData.referrals && Array.isArray(playerData.referrals)) {
+                                        bestAccount.data.referrals = bestAccount.data.referrals || [];
+                                        playerData.referrals.forEach(ref => {
+                                            if (!bestAccount.data.referrals.find(r => r.id === ref.id || r.name === ref.name)) {
+                                                bestAccount.data.referrals.push(ref);
+                                            }
+                                        });
+                                    }
+                                    
+                                    // Merge completed tasks
+                                    if (playerData.completedTasks) {
+                                        bestAccount.data.completedTasks = bestAccount.data.completedTasks || {};
+                                        Object.keys(playerData.completedTasks).forEach(taskKey => {
+                                            if (playerData.completedTasks[taskKey]) {
+                                                bestAccount.data.completedTasks[taskKey] = true;
+                                            }
+                                        });
+                                    }
+                                    
+                                    // Remove duplicate account
+                                    const duplicateRef = window.firebaseRef(window.firebaseDatabase, `players/${account.id}`);
+                                    window.firebaseSet(duplicateRef, null);
+                                    console.log(`🗑️ Dublikat akkount o'chirildi: ${account.id}`);
+                                }
+                            });
+                            
+                            // Update the best account in Firebase
+                            const bestAccountRef = window.firebaseRef(window.firebaseDatabase, `players/${bestAccount.id}`);
+                            window.firebaseSet(bestAccountRef, bestAccount.data);
+                            
+                            // Load the merged account data
+                            gameState.balance = bestAccount.data.balance || 0;
+                            gameState.level = bestAccount.data.level || 1;
+                            gameState.totalTaps = bestAccount.data.totalTaps || 0;
+                            gameState.referralEarnings = bestAccount.data.referralEarnings || 0;
+                            gameState.referrals = bestAccount.data.referrals || [];
+                            gameState.completedTasks = bestAccount.data.completedTasks || gameState.completedTasks;
+                            gameState.referralCode = bestAccount.data.referralCode || gameState.referralCode;
+                            gameState.playerName = bestAccount.data.name || gameState.playerName;
+                            gameState.adminTasks = bestAccount.data.adminTasks || [];
                             
                             // Update localStorage with correct ID
-                            localStorage.setItem('dragonCoinPlayerId', existingAccount.id);
+                            localStorage.setItem('dragonCoinPlayerId', bestAccount.id);
                             
-                            console.log('✅ Mavjud akkount yuklandi:', existingAccount.id);
-                            showNotification('✅ Akkountingiz muvaffaqiyatli yuklandi!', 'success');
+                            console.log('✅ Akkount yuklandi va dublikatlar tozalandi:', bestAccount.id);
+                            if (matchingAccounts.length > 1) {
+                                showNotification(`✅ ${matchingAccounts.length - 1} ta dublikat akkount birlashtirildi!`, 'success');
+                            } else {
+                                showNotification('✅ Akkountingiz muvaffaqiyatli yuklandi!', 'success');
+                            }
                         }
                         
                         resolve();
@@ -2394,5 +2493,5 @@
         // Save before page unload
         window.addEventListener('beforeunload', saveGameState);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96e0590f5320f375',t:'MTc1NTAwNTY0Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96e068b6d3d4e0de',t:'MTc1NTAwNjI4My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
