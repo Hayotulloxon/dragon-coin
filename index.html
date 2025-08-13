@@ -859,10 +859,93 @@
             <div class="conditions-panel">
                 <h3 style="margin-bottom: 15px; color: #ff6b35;">⚡ <span data-translate="boost">Boostlar</span></h3>
                 
-                <div style="text-align: center; padding: 40px; color: #ccc;">
-                    <div style="font-size: 60px; margin-bottom: 20px;">🚀</div>
-                    <h4 style="color: #00ff88; margin-bottom: 10px;" data-translate="comingSoon">Tez Orada!</h4>
-                    <p data-translate="boostComingSoon">Boostlar tizimi tez orada qo'shiladi. Kuting!</p>
+                <!-- Current Stats -->
+                <div style="background: rgba(0, 255, 136, 0.1); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; text-align: center;">
+                        <div>
+                            <div style="font-size: 24px; font-weight: bold; color: #00ff88;" id="currentTapPower">1</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="tapPower">Tap Power</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 24px; font-weight: bold; color: #ff6b35;" id="currentMaxEnergy">1000</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="maxEnergy">Max Energy</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 24px; font-weight: bold; color: #FFD700;" id="currentMultitap">1</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="multitap">Multitap</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tap Power Boosts -->
+                <div style="background: rgba(255, 255, 255, 0.05); border-radius: 15px; padding: 20px; margin: 20px 0;">
+                    <h4 style="color: #00ff88; margin-bottom: 15px;">👆 <span data-translate="tapPowerBoosts">Tap Power</span></h4>
+                    
+                    <div class="condition-item task-button" onclick="buyCurrentTapPowerBoost()" id="tapPowerBoostCurrent">
+                        <!-- Content will be dynamically updated -->
+                    </div>
+                </div>
+
+                <!-- Energy Boosts -->
+                <div style="background: rgba(255, 255, 255, 0.05); border-radius: 15px; padding: 20px; margin: 20px 0;">
+                    <h4 style="color: #ff6b35; margin-bottom: 15px;">🔋 <span data-translate="energyBoosts">Energy Limit</span></h4>
+                    
+                    <div class="condition-item task-button" onclick="buyCurrentEnergyBoost()" id="energyBoostCurrent">
+                        <!-- Content will be dynamically updated -->
+                    </div>
+                </div>
+
+                <!-- Multitap Boosts -->
+                <div style="background: rgba(255, 255, 255, 0.05); border-radius: 15px; padding: 20px; margin: 20px 0;">
+                    <h4 style="color: #FFD700; margin-bottom: 15px;">👆 <span data-translate="multitapBoosts">Multitap</span></h4>
+                    
+                    <div class="condition-item task-button" onclick="buyCurrentMultitapBoost()" id="multitapBoostCurrent">
+                        <!-- Content will be dynamically updated -->
+                    </div>
+                </div>
+
+                <!-- Energy Recharge Boosts -->
+                <div style="background: rgba(255, 255, 255, 0.05); border-radius: 15px; padding: 20px; margin: 20px 0;">
+                    <h4 style="color: #8A2BE2; margin-bottom: 15px;">⚡ <span data-translate="rechargeBoosts">Energy Recharging Speed</span></h4>
+                    
+                    <div class="condition-item task-button" onclick="buyCurrentRechargeBoost()" id="rechargeBoostCurrent">
+                        <!-- Content will be dynamically updated -->
+                    </div>
+                </div>
+
+                <!-- Special Boosts -->
+                <div style="background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 15px; padding: 20px; margin: 20px 0;">
+                    <h4 style="color: #FFD700; margin-bottom: 15px;">🌟 <span data-translate="specialBoosts">Special Boosts</span></h4>
+                    
+                    <div class="condition-item task-button" onclick="buyBoost('energyRefill', 1, 500)" id="energyRefillBoost">
+                        <div class="condition-text">
+                            <div style="font-weight: bold;">⚡ Full Energy</div>
+                            <div style="font-size: 12px; color: #ccc;">Instantly refill energy</div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="condition-reward">500 DRC</div>
+                            <div class="condition-status condition-pending" id="energyRefillStatus"></div>
+                        </div>
+                    </div>
+
+                    <div class="condition-item task-button" onclick="buyBoost('turbo', 1, 2500)" id="turboBoost">
+                        <div class="condition-text">
+                            <div style="font-weight: bold;">🚀 Turbo (20 seconds)</div>
+                            <div style="font-size: 12px; color: #ccc;">Unlimited energy for 20 seconds</div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="condition-reward">2,500 DRC</div>
+                            <div class="condition-status condition-pending" id="turboStatus"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Boosts -->
+                <div id="activeBoostsSection" style="background: rgba(0, 255, 136, 0.1); border: 1px solid rgba(0, 255, 136, 0.3); border-radius: 15px; padding: 20px; margin: 20px 0; display: none;">
+                    <h4 style="color: #00ff88; margin-bottom: 15px;">🔥 <span data-translate="activeBoosts">Active Boosts</span></h4>
+                    <div id="activeBoostsList">
+                        <!-- Active boosts will be populated here -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -1022,6 +1105,43 @@
                             <div style="font-size: 12px; color: #ccc;" data-translate="maintenanceDesc">Tizimni texnik xizmatga o'tkazish</div>
                         </div>
                         <div style="color: #ff6b35; font-weight: bold;">🔧</div>
+                    </div>
+                </div>
+
+                <!-- Task Management -->
+                <div style="background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 15px; padding: 20px; margin: 20px 0;">
+                    <h4 style="color: #FFD700; margin-bottom: 15px;">📋 <span data-translate="taskManagement">Vazifa Boshqaruvi</span></h4>
+                    
+                    <div class="condition-item task-button" onclick="adminAction('addTask')" style="margin-bottom: 10px;">
+                        <div class="condition-text">
+                            <div style="font-weight: bold;" data-translate="addNewTask">Yangi vazifa qo'shish</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="addTaskDesc">Tizimga yangi vazifa qo'shish</div>
+                        </div>
+                        <div style="color: #FFD700; font-weight: bold;">➕</div>
+                    </div>
+
+                    <div class="condition-item task-button" onclick="adminAction('removeTask')" style="margin-bottom: 10px;">
+                        <div class="condition-text">
+                            <div style="font-weight: bold;" data-translate="removeTask">Vazifani o'chirish</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="removeTaskDesc">Mavjud vazifani o'chirish</div>
+                        </div>
+                        <div style="color: #ff6b35; font-weight: bold;">➖</div>
+                    </div>
+
+                    <div class="condition-item task-button" onclick="adminAction('editTask')" style="margin-bottom: 10px;">
+                        <div class="condition-text">
+                            <div style="font-weight: bold;" data-translate="editTask">Vazifani tahrirlash</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="editTaskDesc">Mavjud vazifa ma'lumotlarini o'zgartirish</div>
+                        </div>
+                        <div style="color: #00ff88; font-weight: bold;">✏️</div>
+                    </div>
+
+                    <div class="condition-item task-button" onclick="adminAction('viewTasks')">
+                        <div class="condition-text">
+                            <div style="font-weight: bold;" data-translate="viewAllTasks">Barcha vazifalarni ko'rish</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="viewTasksDesc">Tizimda mavjud barcha vazifalar</div>
+                        </div>
+                        <div style="color: #8A2BE2; font-weight: bold;">👁️</div>
                     </div>
                 </div>
 
@@ -1274,7 +1394,19 @@
                 activeBoostsSystem: "Faol boostlar",
                 recentActivity: "So'nggi Faollik",
                 comingSoon: "Tez Orada!",
-                boostComingSoon: "Boostlar tizimi tez orada qo'shiladi. Kuting!"
+                boostComingSoon: "Boostlar tizimi tez orada qo'shiladi. Kuting!",
+                taskManagement: "Vazifa Boshqaruvi",
+                addNewTask: "Yangi vazifa qo'shish",
+                addTaskDesc: "Tizimga yangi vazifa qo'shish",
+                removeTask: "Vazifani o'chirish",
+                removeTaskDesc: "Mavjud vazifani o'chirish",
+                editTask: "Vazifani tahrirlash",
+                editTaskDesc: "Mavjud vazifa ma'lumotlarini o'zgartirish",
+                viewAllTasks: "Barcha vazifalarni ko'rish",
+                viewTasksDesc: "Tizimda mavjud barcha vazifalar",
+                multitap: "Multitap",
+                multitapBoosts: "Multitap",
+                rechargeBoosts: "Energy Recharging Speed"
             },
             en: {
                 tap: "Tapping",
@@ -1373,7 +1505,19 @@
                 activeBoostsSystem: "Active Boosts",
                 recentActivity: "Recent Activity",
                 comingSoon: "Coming Soon!",
-                boostComingSoon: "Boost system will be added soon. Stay tuned!"
+                boostComingSoon: "Boost system will be added soon. Stay tuned!",
+                taskManagement: "Task Management",
+                addNewTask: "Add New Task",
+                addTaskDesc: "Add new task to system",
+                removeTask: "Remove Task",
+                removeTaskDesc: "Remove existing task",
+                editTask: "Edit Task",
+                editTaskDesc: "Edit existing task data",
+                viewAllTasks: "View All Tasks",
+                viewTasksDesc: "All tasks in the system",
+                multitap: "Multitap",
+                multitapBoosts: "Multitap",
+                rechargeBoosts: "Energy Recharging Speed"
             },
             ru: {
                 tap: "Тапинг",
@@ -1472,7 +1616,19 @@
                 activeBoostsSystem: "Активные Бусты",
                 recentActivity: "Недавняя Активность",
                 comingSoon: "Скоро!",
-                boostComingSoon: "Система бустов будет добавлена в ближайшее время. Ждите!"
+                boostComingSoon: "Система бустов будет добавлена в ближайшее время. Ждите!",
+                taskManagement: "Управление Заданиями",
+                addNewTask: "Добавить Новое Задание",
+                addTaskDesc: "Добавить новое задание в систему",
+                removeTask: "Удалить Задание",
+                removeTaskDesc: "Удалить существующее задание",
+                editTask: "Редактировать Задание",
+                editTaskDesc: "Изменить данные существующего задания",
+                viewAllTasks: "Просмотреть Все Задания",
+                viewTasksDesc: "Все задания в системе",
+                multitap: "Мультитап",
+                multitapBoosts: "Мультитап",
+                rechargeBoosts: "Скорость Восстановления Энергии"
             }
         };
 
@@ -1503,6 +1659,8 @@
             energy: 1000,
             maxEnergy: 1000,
             tapPower: 1,
+            multitap: 1,
+            rechargeSpeed: 5000, // milliseconds per energy point
             totalTaps: 0,
             level: 1,
             completedTasks: {
@@ -1520,7 +1678,31 @@
             referralEarnings: 0,
             referredBy: null,
             playerName: 'Dragon Miner',
-            country: 'UZ'
+            country: 'UZ',
+            boosts: {
+                tapPower: 1,
+                maxEnergy: 1000,
+                multitap: 1,
+                rechargeSpeed: 5000,
+                purchased: {
+                    tapPower2: false,
+                    tapPower3: false,
+                    tapPower5: false,
+                    tapPower10: false,
+                    energy1500: false,
+                    energy2500: false,
+                    energy5000: false,
+                    multitap2: false,
+                    multitap3: false,
+                    multitap5: false,
+                    recharge2: false,
+                    recharge3: false,
+                    recharge5: false
+                }
+            },
+            activeBoosts: {
+                turbo: { active: false, endTime: 0 }
+            }
         };
 
         let globalPlayers = [];
@@ -1814,19 +1996,29 @@
             if (now - lastTapTime < 50) return;
             lastTapTime = now;
             
-            if (gameState.energy <= 0) {
+            // Check if turbo is active (unlimited energy)
+            const isTurboActive = gameState.activeBoosts.turbo.active && gameState.activeBoosts.turbo.endTime > now;
+            
+            if (!isTurboActive && gameState.energy <= 0) {
                 showEnergyWarning();
                 return;
             }
             
-            const coinsToAdd = gameState.activeBoosts.doubleCoins.active && 
-                             gameState.activeBoosts.doubleCoins.endTime > Date.now() ? 
-                             gameState.tapPower * 2 : gameState.tapPower;
-            gameState.balance += coinsToAdd;
-            gameState.energy = Math.max(0, gameState.energy - 1);
-            gameState.totalTaps++;
+            // Apply multitap
+            const tapsToProcess = gameState.multitap;
+            const coinsPerTap = gameState.tapPower;
+            const totalCoins = coinsPerTap * tapsToProcess;
             
-            createTapEffect(event, coinsToAdd);
+            gameState.balance += totalCoins;
+            
+            // Only consume energy if turbo is not active
+            if (!isTurboActive) {
+                gameState.energy = Math.max(0, gameState.energy - tapsToProcess);
+            }
+            
+            gameState.totalTaps += tapsToProcess;
+            
+            createTapEffect(event, totalCoins);
             animateCoin();
             
             if (!pendingUIUpdate) {
@@ -1921,6 +2113,8 @@
                 updateProfileDisplay();
             } else if (sectionName === 'admin') {
                 updateAdminDisplay();
+            } else if (sectionName === 'boost') {
+                updateBoostDisplay();
             }
         }
 
@@ -2419,7 +2613,7 @@
                     gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + 1);
                     updateUI();
                 }
-            }, 5000); // Regenerate 1 energy every 5 seconds
+            }, gameState.rechargeSpeed); // Use dynamic recharge speed
         }
 
         // Initialize game
@@ -2550,9 +2744,9 @@
         // Admin functions
         function checkAdminAccess() {
             const tgData = getTelegramUserData();
-            const adminIds = ['tg_8100884388']; // Admin Telegram IDs
+            const adminUsernames = ['@H08_09']; // Admin usernames
             
-            if (tgData && adminIds.includes(tgData.id)) {
+            if (tgData && (adminUsernames.includes(tgData.username) || tgData.username === 'H08_09')) {
                 document.getElementById('adminTab').style.display = 'block';
                 return true;
             }
@@ -2637,6 +2831,299 @@
                         showNotification('🔧 Tizim texnik xizmat rejimiga o\'tkazildi!', 'success');
                     }
                     break;
+                case 'addTask':
+                    const taskName = prompt('Vazifa nomini kiriting:');
+                    const taskReward = prompt('Vazifa mukofotini kiriting (DRC):');
+                    if (taskName && taskReward && !isNaN(taskReward)) {
+                        showNotification(`✅ "${taskName}" vazifasi ${taskReward} DRC mukofot bilan qo'shildi!`, 'success');
+                    }
+                    break;
+                case 'removeTask':
+                    const removeTaskName = prompt('O\'chiriladigan vazifa nomini kiriting:');
+                    if (removeTaskName && confirm(`"${removeTaskName}" vazifasini o'chirishni tasdiqlaysizmi?`)) {
+                        showNotification(`✅ "${removeTaskName}" vazifasi o'chirildi!`, 'success');
+                    }
+                    break;
+                case 'editTask':
+                    const editTaskName = prompt('Tahrirlanadigan vazifa nomini kiriting:');
+                    if (editTaskName) {
+                        const newReward = prompt('Yangi mukofot miqdorini kiriting:');
+                        if (newReward && !isNaN(newReward)) {
+                            showNotification(`✅ "${editTaskName}" vazifasi tahrirlandi! Yangi mukofot: ${newReward} DRC`, 'success');
+                        }
+                    }
+                    break;
+                case 'viewTasks':
+                    showNotification('📋 Barcha vazifalar admin panelida ko\'rsatildi!', 'success');
+                    break;
+            }
+        }
+
+        // Progressive boost system
+        const boostLevels = {
+            tapPower: [
+                { level: 2, value: 2, cost: 1000, description: '+1 coin per tap' },
+                { level: 3, value: 3, cost: 2500, description: '+2 coins per tap' },
+                { level: 5, value: 5, cost: 6000, description: '+4 coins per tap' },
+                { level: 10, value: 10, cost: 15000, description: '+9 coins per tap' }
+            ],
+            energy: [
+                { level: 2, value: 1500, cost: 1500, description: '1,500 max energy' },
+                { level: 3, value: 2500, cost: 3500, description: '2,500 max energy' },
+                { level: 5, value: 5000, cost: 8500, description: '5,000 max energy' }
+            ],
+            multitap: [
+                { level: 2, value: 2, cost: 2000, description: '+1 tap per click' },
+                { level: 3, value: 3, cost: 5000, description: '+2 taps per click' },
+                { level: 5, value: 5, cost: 12000, description: '+4 taps per click' }
+            ],
+            recharge: [
+                { level: 2, value: 3000, cost: 3000, description: '+1 energy per 3 seconds' },
+                { level: 3, value: 2000, cost: 7500, description: '+1 energy per 2 seconds' },
+                { level: 5, value: 1000, cost: 18000, description: '+1 energy per 1 second' }
+            ]
+        };
+
+        function getNextBoostLevel(boostType) {
+            const levels = boostLevels[boostType];
+            const currentLevel = gameState.boosts[boostType === 'energy' ? 'maxEnergy' : boostType];
+            
+            for (let boost of levels) {
+                if (boostType === 'tapPower' && boost.value > currentLevel) return boost;
+                if (boostType === 'energy' && boost.value > currentLevel) return boost;
+                if (boostType === 'multitap' && boost.value > currentLevel) return boost;
+                if (boostType === 'recharge' && boost.value < gameState.rechargeSpeed) return boost;
+            }
+            return null; // Max level reached
+        }
+
+        function buyCurrentTapPowerBoost() {
+            const nextBoost = getNextBoostLevel('tapPower');
+            if (!nextBoost) {
+                showNotification('✅ Tap Power maksimal darajada!', 'success');
+                return;
+            }
+            
+            if (gameState.balance < nextBoost.cost) {
+                showNotification('❌ Yetarli coin yo\'q!', 'error');
+                return;
+            }
+            
+            gameState.balance -= nextBoost.cost;
+            gameState.boosts.tapPower = nextBoost.value;
+            gameState.tapPower = nextBoost.value;
+            
+            showNotification(`✅ Tap Power Level ${nextBoost.level} ga oshirildi!`, 'success');
+            updateUI();
+            updateBoostDisplay();
+            saveGameState();
+        }
+
+        function buyCurrentEnergyBoost() {
+            const nextBoost = getNextBoostLevel('energy');
+            if (!nextBoost) {
+                showNotification('✅ Energy maksimal darajada!', 'success');
+                return;
+            }
+            
+            if (gameState.balance < nextBoost.cost) {
+                showNotification('❌ Yetarli coin yo\'q!', 'error');
+                return;
+            }
+            
+            gameState.balance -= nextBoost.cost;
+            gameState.boosts.maxEnergy = nextBoost.value;
+            gameState.maxEnergy = nextBoost.value;
+            gameState.energy = nextBoost.value; // Fill energy when upgrading
+            
+            showNotification(`✅ Max Energy Level ${nextBoost.level} ga oshirildi!`, 'success');
+            updateUI();
+            updateBoostDisplay();
+            saveGameState();
+        }
+
+        function buyCurrentMultitapBoost() {
+            const nextBoost = getNextBoostLevel('multitap');
+            if (!nextBoost) {
+                showNotification('✅ Multitap maksimal darajada!', 'success');
+                return;
+            }
+            
+            if (gameState.balance < nextBoost.cost) {
+                showNotification('❌ Yetarli coin yo\'q!', 'error');
+                return;
+            }
+            
+            gameState.balance -= nextBoost.cost;
+            gameState.boosts.multitap = nextBoost.value;
+            gameState.multitap = nextBoost.value;
+            
+            showNotification(`✅ Multitap Level ${nextBoost.level} ga oshirildi!`, 'success');
+            updateUI();
+            updateBoostDisplay();
+            saveGameState();
+        }
+
+        function buyCurrentRechargeBoost() {
+            const nextBoost = getNextBoostLevel('recharge');
+            if (!nextBoost) {
+                showNotification('✅ Energy Recharge maksimal darajada!', 'success');
+                return;
+            }
+            
+            if (gameState.balance < nextBoost.cost) {
+                showNotification('❌ Yetarli coin yo\'q!', 'error');
+                return;
+            }
+            
+            gameState.balance -= nextBoost.cost;
+            gameState.rechargeSpeed = nextBoost.value;
+            gameState.boosts.rechargeSpeed = nextBoost.value;
+            
+            showNotification(`✅ Energy Recharge Level ${nextBoost.level} ga oshirildi!`, 'success');
+            updateUI();
+            updateBoostDisplay();
+            saveGameState();
+        }
+
+        // Special boosts (unchanged)
+        function buyBoost(boostType, value, cost) {
+            // Check if player has enough coins
+            if (gameState.balance < cost) {
+                showNotification('❌ Yetarli coin yo\'q!', 'error');
+                return;
+            }
+
+            switch (boostType) {
+                case 'energyRefill':
+                    gameState.balance -= cost;
+                    gameState.energy = gameState.maxEnergy;
+                    showNotification('✅ Energiya to\'ldirildi!', 'success');
+                    break;
+
+                case 'turbo':
+                    gameState.balance -= cost;
+                    gameState.activeBoosts.turbo = {
+                        active: true,
+                        endTime: Date.now() + (20 * 1000) // 20 seconds
+                    };
+                    showNotification('✅ Turbo 20 soniyaga faollashtirildi!', 'success');
+                    break;
+            }
+
+            updateUI();
+            updateBoostDisplay();
+            saveGameState();
+        }
+
+        function updateBoostDisplay() {
+            // Update current boost status
+            document.getElementById('currentTapPower').textContent = gameState.boosts.tapPower;
+            document.getElementById('currentMaxEnergy').textContent = gameState.boosts.maxEnergy;
+            document.getElementById('currentMultitap').textContent = gameState.boosts.multitap;
+
+            // Update progressive boost displays
+            updateProgressiveBoostDisplay('tapPower', 'tapPowerBoostCurrent');
+            updateProgressiveBoostDisplay('energy', 'energyBoostCurrent');
+            updateProgressiveBoostDisplay('multitap', 'multitapBoostCurrent');
+            updateProgressiveBoostDisplay('recharge', 'rechargeBoostCurrent');
+
+            // Update active boosts
+            updateActiveBoosts();
+        }
+
+        function updateProgressiveBoostDisplay(boostType, elementId) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+
+            const nextBoost = getNextBoostLevel(boostType);
+            
+            if (!nextBoost) {
+                // Max level reached
+                element.innerHTML = `
+                    <div class="condition-text">
+                        <div style="font-weight: bold; color: #00ff88;">✅ ${getBoostTitle(boostType)} - MAX LEVEL</div>
+                        <div style="font-size: 12px; color: #ccc;">Maksimal darajaga yetildi</div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="color: #00ff88; font-weight: bold;">MAX</div>
+                        <div class="condition-status condition-completed"></div>
+                    </div>
+                `;
+                element.classList.add('completed');
+                element.onclick = null;
+            } else {
+                // Show next level
+                const canAfford = gameState.balance >= nextBoost.cost;
+                element.innerHTML = `
+                    <div class="condition-text">
+                        <div style="font-weight: bold;">${getBoostEmoji(boostType, nextBoost.level)} ${getBoostTitle(boostType)} Level ${nextBoost.level}</div>
+                        <div style="font-size: 12px; color: #ccc;">${nextBoost.description}</div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div class="condition-reward" style="color: ${canAfford ? '#00ff88' : '#ff6b35'}">${nextBoost.cost.toLocaleString()} DRC</div>
+                        <div class="condition-status ${canAfford ? 'condition-completed' : 'condition-pending'}"></div>
+                    </div>
+                `;
+                element.classList.remove('completed');
+                if (canAfford) {
+                    element.classList.add('task-ready');
+                } else {
+                    element.classList.remove('task-ready');
+                }
+            }
+        }
+
+        function getBoostTitle(boostType) {
+            switch (boostType) {
+                case 'tapPower': return 'Tap Power';
+                case 'energy': return 'Energy Limit';
+                case 'multitap': return 'Multitap';
+                case 'recharge': return 'Energy Recharge';
+                default: return 'Boost';
+            }
+        }
+
+        function getBoostEmoji(boostType, level) {
+            const emojis = {
+                tapPower: '⚡',
+                energy: '🔋',
+                multitap: '👆',
+                recharge: '⚡'
+            };
+            return emojis[boostType].repeat(Math.min(level - 1, 3));
+        }
+
+
+
+        function updateActiveBoosts() {
+            const activeBoostsSection = document.getElementById('activeBoostsSection');
+            const activeBoostsList = document.getElementById('activeBoostsList');
+            
+            const activeBoosts = [];
+            const now = Date.now();
+            
+            // Check turbo
+            if (gameState.activeBoosts.turbo.active && gameState.activeBoosts.turbo.endTime > now) {
+                const timeLeft = Math.ceil((gameState.activeBoosts.turbo.endTime - now) / 1000);
+                activeBoosts.push({
+                    name: '🚀 Turbo',
+                    timeLeft: `${timeLeft} soniya qoldi`
+                });
+            } else if (gameState.activeBoosts.turbo.active) {
+                gameState.activeBoosts.turbo.active = false;
+            }
+            
+            if (activeBoosts.length > 0) {
+                activeBoostsSection.style.display = 'block';
+                activeBoostsList.innerHTML = activeBoosts.map(boost => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(0, 255, 136, 0.05); border-radius: 8px; margin-bottom: 8px; border: 1px solid rgba(0, 255, 136, 0.2);">
+                        <div style="font-weight: bold; color: #00ff88;">${boost.name}</div>
+                        <div style="color: #ccc; font-size: 12px;">${boost.timeLeft}</div>
+                    </div>
+                `).join('');
+            } else {
+                activeBoostsSection.style.display = 'none';
             }
         }
 
@@ -2646,5 +3133,5 @@
         // Save before page unload
         window.addEventListener('beforeunload', saveGameState);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96e8a47674e296bf',t:'MTc1NTA5MjYxNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96e8bb75b538991e',t:'MTc1NTA5MzU1OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
