@@ -674,6 +674,8 @@
             <button class="nav-tab" id="tasksTab" onclick="showSection('tasks')">📋 <span data-translate="tasks">Vazifalar</span></button>
             <button class="nav-tab" id="referralTab" onclick="showSection('referral')">👥 <span data-translate="referral">Referral</span></button>
             <button class="nav-tab" id="leaderboardTab" onclick="showSection('leaderboard')">🏆 <span data-translate="leaderboard">Reyting</span></button>
+            <button class="nav-tab" id="boostTab" onclick="showSection('boost')">⚡ <span data-translate="boost">Boostlar</span></button>
+            <button class="nav-tab" id="adminTab" onclick="showSection('admin')" style="display: none;">⚙️ <span data-translate="admin">Admin</span></button>
             <button class="nav-tab" id="profileTab" onclick="showSection('profile')">👤 <span data-translate="profile">Profil</span></button>
         </div>
 
@@ -852,6 +854,19 @@
             </div>
         </div>
 
+        <!-- Boost Section -->
+        <div class="section" id="boostSection" style="display: none;">
+            <div class="conditions-panel">
+                <h3 style="margin-bottom: 15px; color: #ff6b35;">⚡ <span data-translate="boost">Boostlar</span></h3>
+                
+                <div style="text-align: center; padding: 40px; color: #ccc;">
+                    <div style="font-size: 60px; margin-bottom: 20px;">🚀</div>
+                    <h4 style="color: #00ff88; margin-bottom: 10px;" data-translate="comingSoon">Tez Orada!</h4>
+                    <p data-translate="boostComingSoon">Boostlar tizimi tez orada qo'shiladi. Kuting!</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Leaderboard Section -->
         <div class="section" id="leaderboardSection" style="display: none;">
             <div class="conditions-panel">
@@ -935,6 +950,111 @@
                     <button onclick="challengePlayer()" style="flex: 1; background: linear-gradient(45deg, #00ff88, #00cc6a); border: none; color: #000; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s ease;">
                         <span data-translate="challenge">Raqobat</span>
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Section -->
+        <div class="section" id="adminSection" style="display: none;">
+            <div class="conditions-panel">
+                <h3 style="margin-bottom: 15px; color: #ff6b35;">⚙️ <span data-translate="admin">Admin Panel</span></h3>
+                
+                <!-- Player Management -->
+                <div style="background: rgba(255, 107, 53, 0.1); border: 1px solid rgba(255, 107, 53, 0.3); border-radius: 15px; padding: 20px; margin: 20px 0;">
+                    <h4 style="color: #ff6b35; margin-bottom: 15px;">👥 <span data-translate="playerManagement">O'yinchi Boshqaruvi</span></h4>
+                    
+                    <div class="condition-item" style="margin-bottom: 10px;">
+                        <div>
+                            <div style="font-weight: bold;" data-translate="totalPlayers">Jami o'yinchilar</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="registeredUsers">Ro'yxatdan o'tgan foydalanuvchilar</div>
+                        </div>
+                        <div style="color: #ff6b35; font-weight: bold;" id="totalPlayersCount">0</div>
+                    </div>
+
+                    <div class="condition-item" style="margin-bottom: 10px;">
+                        <div>
+                            <div style="font-weight: bold;" data-translate="onlinePlayers">Online o'yinchilar</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="currentlyActive">Hozir faol</div>
+                        </div>
+                        <div style="color: #00ff88; font-weight: bold;" id="onlinePlayersCount">0</div>
+                    </div>
+
+                    <div class="condition-item">
+                        <div>
+                            <div style="font-weight: bold;" data-translate="totalCoins">Jami coinlar</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="systemWide">Tizim bo'ylab</div>
+                        </div>
+                        <div style="color: #FFD700; font-weight: bold;" id="totalCoinsCount">0</div>
+                    </div>
+                </div>
+
+                <!-- System Controls -->
+                <div style="background: rgba(0, 255, 136, 0.1); border: 1px solid rgba(0, 255, 136, 0.3); border-radius: 15px; padding: 20px; margin: 20px 0;">
+                    <h4 style="color: #00ff88; margin-bottom: 15px;">🎮 <span data-translate="systemControls">Tizim Boshqaruvi</span></h4>
+                    
+                    <div class="condition-item task-button" onclick="adminAction('addCoins')" style="margin-bottom: 10px;">
+                        <div class="condition-text">
+                            <div style="font-weight: bold;" data-translate="addCoinsToPlayer">O'yinchiga coin qo'shish</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="addCoinsDesc">Tanlangan o'yinchiga coin berish</div>
+                        </div>
+                        <div style="color: #00ff88; font-weight: bold;">💰</div>
+                    </div>
+
+                    <div class="condition-item task-button" onclick="adminAction('resetPlayer')" style="margin-bottom: 10px;">
+                        <div class="condition-text">
+                            <div style="font-weight: bold;" data-translate="resetPlayer">O'yinchini qayta boshlash</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="resetPlayerDesc">O'yinchi ma'lumotlarini tozalash</div>
+                        </div>
+                        <div style="color: #ff6b35; font-weight: bold;">🔄</div>
+                    </div>
+
+                    <div class="condition-item task-button" onclick="adminAction('broadcastMessage')" style="margin-bottom: 10px;">
+                        <div class="condition-text">
+                            <div style="font-weight: bold;" data-translate="broadcastMessage">Umumiy xabar</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="broadcastDesc">Barcha o'yinchilarga xabar yuborish</div>
+                        </div>
+                        <div style="color: #8A2BE2; font-weight: bold;">📢</div>
+                    </div>
+
+                    <div class="condition-item task-button" onclick="adminAction('systemMaintenance')">
+                        <div class="condition-text">
+                            <div style="font-weight: bold;" data-translate="systemMaintenance">Tizim texnik xizmati</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="maintenanceDesc">Tizimni texnik xizmatga o'tkazish</div>
+                        </div>
+                        <div style="color: #ff6b35; font-weight: bold;">🔧</div>
+                    </div>
+                </div>
+
+                <!-- Game Statistics -->
+                <div style="background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 15px; padding: 20px; margin: 20px 0;">
+                    <h4 style="color: #FFD700; margin-bottom: 15px;">📊 <span data-translate="gameStatistics">O'yin Statistikasi</span></h4>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div style="text-align: center; padding: 15px; background: rgba(255, 215, 0, 0.1); border-radius: 10px;">
+                            <div style="font-size: 24px; font-weight: bold; color: #FFD700;" id="totalTapsSystem">0</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="totalTapsSystem">Jami taplar</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: rgba(138, 43, 226, 0.1); border-radius: 10px;">
+                            <div style="font-size: 24px; font-weight: bold; color: #8A2BE2;" id="totalReferralsSystem">0</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="totalReferralsSystem">Jami referrallar</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: rgba(0, 255, 136, 0.1); border-radius: 10px;">
+                            <div style="font-size: 24px; font-weight: bold; color: #00ff88;" id="completedTasksSystem">0</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="completedTasksSystem">Bajarilgan vazifalar</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: rgba(255, 107, 53, 0.1); border-radius: 10px;">
+                            <div style="font-size: 24px; font-weight: bold; color: #ff6b35;" id="activeBoostsSystem">0</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="activeBoostsSystem">Faol boostlar</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div style="background: rgba(255, 255, 255, 0.05); border-radius: 15px; padding: 20px; margin: 20px 0;">
+                    <h4 style="color: #00ff88; margin-bottom: 15px;">📈 <span data-translate="recentActivity">So'nggi Faollik</span></h4>
+                    <div id="recentActivityList">
+                        <!-- Recent activity will be populated here -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -1112,7 +1232,49 @@
                 lastSeen: "Oxirgi faollik",
                 playerType: "O'yinchi turi",
                 close: "Yopish",
-                challenge: "Raqobat"
+                challenge: "Raqobat",
+                boost: "Boostlar",
+                currentBoosts: "Hozirgi Boostlar",
+                maxEnergy: "Max energiya",
+                tapPowerBoosts: "Tap Kuchi Boostlari",
+                tapPowerDesc: "Har tap uchun 2 coin oling",
+                tapPowerDesc2: "Har tap uchun 3 coin oling",
+                tapPowerDesc3: "Har tap uchun 5 coin oling",
+                tapPowerDesc4: "Har tap uchun 10 coin oling",
+                energyBoosts: "Energiya Boostlari",
+                energyDesc: "Max energiya 1500 ga oshadi",
+                energyDesc2: "Max energiya 2500 ga oshadi",
+                energyDesc3: "Max energiya 5000 ga oshadi",
+                specialBoosts: "Maxsus Boostlar",
+                autoTapDesc: "1 soat davomida avtomatik tap",
+                energyRefillDesc: "Energiyani darhol to'ldiradi",
+                doubleCoinsDesc: "30 daqiqa ikki barobar coin",
+                activeBoosts: "Faol Boostlar",
+                admin: "Admin",
+                playerManagement: "O'yinchi Boshqaruvi",
+                totalPlayers: "Jami o'yinchilar",
+                registeredUsers: "Ro'yxatdan o'tgan foydalanuvchilar",
+                onlinePlayers: "Online o'yinchilar",
+                currentlyActive: "Hozir faol",
+                totalCoins: "Jami coinlar",
+                systemWide: "Tizim bo'ylab",
+                systemControls: "Tizim Boshqaruvi",
+                addCoinsToPlayer: "O'yinchiga coin qo'shish",
+                addCoinsDesc: "Tanlangan o'yinchiga coin berish",
+                resetPlayer: "O'yinchini qayta boshlash",
+                resetPlayerDesc: "O'yinchi ma'lumotlarini tozalash",
+                broadcastMessage: "Umumiy xabar",
+                broadcastDesc: "Barcha o'yinchilarga xabar yuborish",
+                systemMaintenance: "Tizim texnik xizmati",
+                maintenanceDesc: "Tizimni texnik xizmatga o'tkazish",
+                gameStatistics: "O'yin Statistikasi",
+                totalTapsSystem: "Jami taplar",
+                totalReferralsSystem: "Jami referrallar",
+                completedTasksSystem: "Bajarilgan vazifalar",
+                activeBoostsSystem: "Faol boostlar",
+                recentActivity: "So'nggi Faollik",
+                comingSoon: "Tez Orada!",
+                boostComingSoon: "Boostlar tizimi tez orada qo'shiladi. Kuting!"
             },
             en: {
                 tap: "Tapping",
@@ -1169,7 +1331,49 @@
                 lastSeen: "Last Seen",
                 playerType: "Player Type",
                 close: "Close",
-                challenge: "Challenge"
+                challenge: "Challenge",
+                boost: "Boosts",
+                currentBoosts: "Current Boosts",
+                maxEnergy: "Max Energy",
+                tapPowerBoosts: "Tap Power Boosts",
+                tapPowerDesc: "Get 2 coins per tap",
+                tapPowerDesc2: "Get 3 coins per tap",
+                tapPowerDesc3: "Get 5 coins per tap",
+                tapPowerDesc4: "Get 10 coins per tap",
+                energyBoosts: "Energy Boosts",
+                energyDesc: "Max energy increases to 1500",
+                energyDesc2: "Max energy increases to 2500",
+                energyDesc3: "Max energy increases to 5000",
+                specialBoosts: "Special Boosts",
+                autoTapDesc: "Auto tap for 1 hour",
+                energyRefillDesc: "Instantly refill energy",
+                doubleCoinsDesc: "Double coins for 30 minutes",
+                activeBoosts: "Active Boosts",
+                admin: "Admin",
+                playerManagement: "Player Management",
+                totalPlayers: "Total Players",
+                registeredUsers: "Registered Users",
+                onlinePlayers: "Online Players",
+                currentlyActive: "Currently Active",
+                totalCoins: "Total Coins",
+                systemWide: "System Wide",
+                systemControls: "System Controls",
+                addCoinsToPlayer: "Add Coins to Player",
+                addCoinsDesc: "Give coins to selected player",
+                resetPlayer: "Reset Player",
+                resetPlayerDesc: "Clear player data",
+                broadcastMessage: "Broadcast Message",
+                broadcastDesc: "Send message to all players",
+                systemMaintenance: "System Maintenance",
+                maintenanceDesc: "Put system in maintenance mode",
+                gameStatistics: "Game Statistics",
+                totalTapsSystem: "Total Taps",
+                totalReferralsSystem: "Total Referrals",
+                completedTasksSystem: "Completed Tasks",
+                activeBoostsSystem: "Active Boosts",
+                recentActivity: "Recent Activity",
+                comingSoon: "Coming Soon!",
+                boostComingSoon: "Boost system will be added soon. Stay tuned!"
             },
             ru: {
                 tap: "Тапинг",
@@ -1226,7 +1430,49 @@
                 lastSeen: "Последняя активность",
                 playerType: "Тип игрока",
                 close: "Закрыть",
-                challenge: "Вызов"
+                challenge: "Вызов",
+                boost: "Бусты",
+                currentBoosts: "Текущие Бусты",
+                maxEnergy: "Макс Энергия",
+                tapPowerBoosts: "Бусты Силы Тапа",
+                tapPowerDesc: "Получайте 2 монеты за тап",
+                tapPowerDesc2: "Получайте 3 монеты за тап",
+                tapPowerDesc3: "Получайте 5 монет за тап",
+                tapPowerDesc4: "Получайте 10 монет за тап",
+                energyBoosts: "Бусты Энергии",
+                energyDesc: "Макс энергия увеличивается до 1500",
+                energyDesc2: "Макс энергия увеличивается до 2500",
+                energyDesc3: "Макс энергия увеличивается до 5000",
+                specialBoosts: "Специальные Бусты",
+                autoTapDesc: "Авто тап на 1 час",
+                energyRefillDesc: "Мгновенно восстановить энергию",
+                doubleCoinsDesc: "Двойные монеты на 30 минут",
+                activeBoosts: "Активные Бусты",
+                admin: "Админ",
+                playerManagement: "Управление Игроками",
+                totalPlayers: "Всего Игроков",
+                registeredUsers: "Зарегистрированные Пользователи",
+                onlinePlayers: "Онлайн Игроки",
+                currentlyActive: "Сейчас Активны",
+                totalCoins: "Всего Монет",
+                systemWide: "По Всей Системе",
+                systemControls: "Управление Системой",
+                addCoinsToPlayer: "Добавить Монеты Игроку",
+                addCoinsDesc: "Дать монеты выбранному игроку",
+                resetPlayer: "Сбросить Игрока",
+                resetPlayerDesc: "Очистить данные игрока",
+                broadcastMessage: "Общее Сообщение",
+                broadcastDesc: "Отправить сообщение всем игрокам",
+                systemMaintenance: "Техническое Обслуживание",
+                maintenanceDesc: "Перевести систему в режим обслуживания",
+                gameStatistics: "Игровая Статистика",
+                totalTapsSystem: "Всего Тапов",
+                totalReferralsSystem: "Всего Рефералов",
+                completedTasksSystem: "Выполненные Задания",
+                activeBoostsSystem: "Активные Бусты",
+                recentActivity: "Недавняя Активность",
+                comingSoon: "Скоро!",
+                boostComingSoon: "Система бустов будет добавлена в ближайшее время. Ждите!"
             }
         };
 
@@ -1573,11 +1819,14 @@
                 return;
             }
             
-            gameState.balance += gameState.tapPower;
+            const coinsToAdd = gameState.activeBoosts.doubleCoins.active && 
+                             gameState.activeBoosts.doubleCoins.endTime > Date.now() ? 
+                             gameState.tapPower * 2 : gameState.tapPower;
+            gameState.balance += coinsToAdd;
             gameState.energy = Math.max(0, gameState.energy - 1);
             gameState.totalTaps++;
             
-            createTapEffect(event, gameState.tapPower);
+            createTapEffect(event, coinsToAdd);
             animateCoin();
             
             if (!pendingUIUpdate) {
@@ -1670,6 +1919,8 @@
                 updateLeaderboard();
             } else if (sectionName === 'profile') {
                 updateProfileDisplay();
+            } else if (sectionName === 'admin') {
+                updateAdminDisplay();
             }
         }
 
@@ -2201,6 +2452,7 @@
             updateTasksDisplay();
             startEnergyRegeneration();
             initializeFirebaseConnection();
+            checkAdminAccess();
             
             // Process referral if exists
             processReferralFromURL();
@@ -2293,11 +2545,106 @@
             }
         });
 
+
+
+        // Admin functions
+        function checkAdminAccess() {
+            const tgData = getTelegramUserData();
+            const adminIds = ['tg_8100884388']; // Admin Telegram IDs
+            
+            if (tgData && adminIds.includes(tgData.id)) {
+                document.getElementById('adminTab').style.display = 'block';
+                return true;
+            }
+            return false;
+        }
+
+        function updateAdminDisplay() {
+            // Calculate system statistics
+            const allPlayers = [...globalPlayers, {
+                balance: gameState.balance,
+                totalTaps: gameState.totalTaps,
+                referrals: gameState.referrals.length,
+                completedTasks: Object.values(gameState.completedTasks).filter(Boolean).length,
+                isOnline: true
+            }];
+
+            const totalPlayers = allPlayers.length;
+            const onlinePlayers = allPlayers.filter(p => p.isOnline).length;
+            const totalCoins = allPlayers.reduce((sum, p) => sum + (p.balance || 0), 0);
+            const totalTaps = allPlayers.reduce((sum, p) => sum + (p.totalTaps || 0), 0);
+            const totalReferrals = allPlayers.reduce((sum, p) => sum + (p.referrals || 0), 0);
+            const totalCompletedTasks = allPlayers.reduce((sum, p) => sum + (p.completedTasks || 0), 0);
+
+            // Update display
+            document.getElementById('totalPlayersCount').textContent = totalPlayers;
+            document.getElementById('onlinePlayersCount').textContent = onlinePlayers;
+            document.getElementById('totalCoinsCount').textContent = totalCoins.toLocaleString();
+            document.getElementById('totalTapsSystem').textContent = totalTaps.toLocaleString();
+            document.getElementById('totalReferralsSystem').textContent = totalReferrals;
+            document.getElementById('completedTasksSystem').textContent = totalCompletedTasks;
+            document.getElementById('activeBoostsSystem').textContent = '0'; // Placeholder
+
+            // Update recent activity
+            updateRecentActivity();
+        }
+
+        function updateRecentActivity() {
+            const activities = [
+                { time: '2 daqiqa oldin', action: 'Yangi o\'yinchi ro\'yxatdan o\'tdi', player: 'CryptoKing' },
+                { time: '5 daqiqa oldin', action: 'Level 5 ga yetdi', player: 'DragonMaster' },
+                { time: '10 daqiqa oldin', action: 'Referral bonus oldi', player: 'TapLegend' },
+                { time: '15 daqiqa oldin', action: 'Boost sotib oldi', player: 'CoinHunter' },
+                { time: '20 daqiqa oldin', action: 'Vazifa bajardi', player: 'GoldDigger' }
+            ];
+
+            const recentActivityList = document.getElementById('recentActivityList');
+            recentActivityList.innerHTML = activities.map(activity => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; margin-bottom: 8px;">
+                    <div>
+                        <div style="font-weight: bold; color: #00ff88;">${activity.player}</div>
+                        <div style="font-size: 12px; color: #ccc;">${activity.action}</div>
+                    </div>
+                    <div style="font-size: 12px; color: #ccc;">${activity.time}</div>
+                </div>
+            `).join('');
+        }
+
+        function adminAction(action) {
+            switch (action) {
+                case 'addCoins':
+                    const playerName = prompt('O\'yinchi nomini kiriting:');
+                    const coinAmount = prompt('Coin miqdorini kiriting:');
+                    if (playerName && coinAmount && !isNaN(coinAmount)) {
+                        // In a real implementation, this would update the specific player's data
+                        showNotification(`✅ ${playerName} ga ${coinAmount} coin qo'shildi!`, 'success');
+                    }
+                    break;
+                case 'resetPlayer':
+                    const resetPlayerName = prompt('Qayta boshlanadigan o\'yinchi nomini kiriting:');
+                    if (resetPlayerName && confirm(`${resetPlayerName} o'yinchisini qayta boshlashni tasdiqlaysizmi?`)) {
+                        showNotification(`✅ ${resetPlayerName} o'yinchisi qayta boshlandi!`, 'success');
+                    }
+                    break;
+                case 'broadcastMessage':
+                    const message = prompt('Barcha o\'yinchilarga yuboriladigan xabarni kiriting:');
+                    if (message) {
+                        showNotification(`📢 Xabar barcha o'yinchilarga yuborildi: "${message}"`, 'success');
+                    }
+                    break;
+                case 'systemMaintenance':
+                    if (confirm('Tizimni texnik xizmatga o\'tkazishni tasdiqlaysizmi?')) {
+                        showNotification('🔧 Tizim texnik xizmat rejimiga o\'tkazildi!', 'success');
+                    }
+                    break;
+            }
+        }
+
         // Start the game when page loads
         window.addEventListener('load', initGame);
         
         // Save before page unload
         window.addEventListener('beforeunload', saveGameState);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96e88618225c2d6b',t:'MTc1NTA5MTM3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96e8a47674e296bf',t:'MTc1NTA5MjYxNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
