@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https: wss: data: blob:; connect-src 'self' https: wss: *.firebasedatabase.app *.googleapis.com *.gstatic.com; frame-src 'self' https: *.firebasedatabase.app *.googleapis.com *.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: *.gstatic.com *.googleapis.com *.firebasedatabase.app; style-src 'self' 'unsafe-inline' https:;">
     <title>Dragon Coin - Tap to Earn</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script type="module">
@@ -407,6 +408,13 @@
             border-bottom: none;
         }
 
+        .condition-item[style*="cursor: pointer"]:hover {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: rgba(0, 255, 136, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.2);
+        }
+
         .task-button {
             cursor: pointer;
             background: rgba(255, 255, 255, 0.05);
@@ -666,6 +674,7 @@
             <button class="nav-tab" id="tasksTab" onclick="showSection('tasks')">📋 <span data-translate="tasks">Vazifalar</span></button>
             <button class="nav-tab" id="referralTab" onclick="showSection('referral')">👥 <span data-translate="referral">Referral</span></button>
             <button class="nav-tab" id="leaderboardTab" onclick="showSection('leaderboard')">🏆 <span data-translate="leaderboard">Reyting</span></button>
+            <button class="nav-tab" id="profileTab" onclick="showSection('profile')">👤 <span data-translate="profile">Profil</span></button>
         </div>
 
         <div class="balance-display">
@@ -867,6 +876,179 @@
                 </div>
             </div>
         </div>
+
+        <!-- Player Profile Modal -->
+        <div id="playerProfileModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; backdrop-filter: blur(10px);">
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10, 10, 15, 0.95); border-radius: 20px; padding: 30px; max-width: 400px; width: 90%; border: 2px solid rgba(0, 255, 136, 0.3); box-shadow: 0 0 50px rgba(0, 255, 136, 0.3);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="color: #00ff88; margin: 0;">👤 <span data-translate="playerProfile">O'yinchi Profili</span></h3>
+                    <button onclick="closePlayerModal()" style="background: none; border: none; color: #ff6b35; font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">×</button>
+                </div>
+                
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <div style="width: 80px; height: 80px; background: linear-gradient(45deg, #ff6b35, #f7931e); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; margin: 0 auto 15px;">🐉</div>
+                    <h2 style="color: #00ff88; margin-bottom: 5px;" id="modalPlayerName">Player Name</h2>
+                    <div style="color: #ccc; font-size: 14px;" id="modalPlayerCountry">🇺🇿 UZ</div>
+                    <div style="color: #ccc; font-size: 12px; margin-top: 5px;" id="modalPlayerStatus">🟢 Online</div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <div style="text-align: center; padding: 15px; background: rgba(0, 255, 136, 0.1); border-radius: 10px; border: 1px solid rgba(0, 255, 136, 0.3);">
+                        <div style="font-size: 20px; font-weight: bold; color: #00ff88;" id="modalPlayerBalance">0</div>
+                        <div style="font-size: 12px; color: #ccc;">Dragon Coins</div>
+                    </div>
+                    <div style="text-align: center; padding: 15px; background: rgba(255, 107, 53, 0.1); border-radius: 10px; border: 1px solid rgba(255, 107, 53, 0.3);">
+                        <div style="font-size: 20px; font-weight: bold; color: #ff6b35;" id="modalPlayerLevel">1</div>
+                        <div style="font-size: 12px; color: #ccc;" data-translate="level">Level</div>
+                        <div style="font-size: 10px; color: #ff6b35; margin-top: 2px;" id="modalPlayerLevelName">Wood</div>
+                    </div>
+                    <div style="text-align: center; padding: 15px; background: rgba(255, 215, 0, 0.1); border-radius: 10px; border: 1px solid rgba(255, 215, 0, 0.3);">
+                        <div style="font-size: 20px; font-weight: bold; color: #FFD700;" id="modalPlayerTaps">0</div>
+                        <div style="font-size: 12px; color: #ccc;" data-translate="totalTaps">Total Taps</div>
+                    </div>
+                    <div style="text-align: center; padding: 15px; background: rgba(138, 43, 226, 0.1); border-radius: 10px; border: 1px solid rgba(138, 43, 226, 0.3);">
+                        <div style="font-size: 20px; font-weight: bold; color: #8A2BE2;" id="modalPlayerReferrals">0</div>
+                        <div style="font-size: 12px; color: #ccc;" data-translate="referrals">Referrals</div>
+                    </div>
+                </div>
+
+                <div style="background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                    <h4 style="color: #00ff88; margin-bottom: 10px; font-size: 14px;">📊 <span data-translate="playerStats">O'yinchi Statistikasi</span></h4>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #ccc; font-size: 12px;" data-translate="rankPosition">Reyting pozitsiyasi:</span>
+                        <span style="color: #00ff88; font-weight: bold; font-size: 12px;" id="modalPlayerRank">#1</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #ccc; font-size: 12px;" data-translate="lastSeen">Oxirgi faollik:</span>
+                        <span style="color: #ccc; font-size: 12px;" id="modalPlayerLastSeen">Hozir</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #ccc; font-size: 12px;" data-translate="playerType">O'yinchi turi:</span>
+                        <span style="color: #00ff88; font-size: 12px;" id="modalPlayerType">Real Player</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="closePlayerModal()" style="flex: 1; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3); color: #fff; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s ease;">
+                        <span data-translate="close">Yopish</span>
+                    </button>
+                    <button onclick="challengePlayer()" style="flex: 1; background: linear-gradient(45deg, #00ff88, #00cc6a); border: none; color: #000; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s ease;">
+                        <span data-translate="challenge">Raqobat</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Section -->
+        <div class="section" id="profileSection" style="display: none;">
+            <div class="conditions-panel">
+                <h3 style="margin-bottom: 15px; color: #ff6b35;">👤 <span data-translate="profile">Foydalanuvchi Profili</span></h3>
+                
+                <!-- User Avatar and Basic Info -->
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <div style="width: 100px; height: 100px; background: linear-gradient(45deg, #ff6b35, #f7931e); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 50px; margin: 0 auto 15px;">🐉</div>
+                    <h2 style="color: #00ff88; margin-bottom: 5px;" id="profilePlayerName">Dragon Miner</h2>
+                    <div style="color: #ccc; font-size: 14px;" id="profilePlayerId">ID: loading...</div>
+                    <div style="color: #ccc; font-size: 14px; margin-top: 5px;">
+                        <span data-translate="joinedDate">Qo'shilgan sana:</span> <span id="profileJoinDate">2024</span>
+                    </div>
+                </div>
+
+                <!-- Detailed Stats -->
+                <div class="stats-grid" style="margin-bottom: 30px;">
+                    <div class="stat-card">
+                        <div class="stat-value" id="profileBalance">0</div>
+                        <div class="stat-label">Dragon Coins</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="profileLevel">1</div>
+                        <div class="stat-label" data-translate="level">Level</div>
+                        <div class="stat-label" id="profileLevelName" style="color: #00ff88; font-size: 10px; margin-top: 2px;">Wood</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="profileTotalTaps">0</div>
+                        <div class="stat-label" data-translate="totalTaps">Jami taplar</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="profileReferrals">0</div>
+                        <div class="stat-label" data-translate="referrals">Referrallar</div>
+                    </div>
+                </div>
+
+                <!-- Achievements Section -->
+                <div style="background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 15px; padding: 20px; margin: 20px 0;">
+                    <h4 style="color: #FFD700; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                        🏆 <span data-translate="achievements">Yutuqlar</span>
+                        <span style="background: rgba(255, 215, 0, 0.2); color: #FFD700; padding: 4px 8px; border-radius: 12px; font-size: 12px;" id="achievementsCount">0</span>
+                    </h4>
+                    <div id="achievementsList">
+                        <!-- Achievements will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Game Statistics -->
+                <div style="background: rgba(255, 255, 255, 0.05); border-radius: 15px; padding: 20px; margin: 20px 0;">
+                    <h4 style="color: #00ff88; margin-bottom: 15px;">📊 <span data-translate="gameStats">O'yin Statistikasi</span></h4>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div style="text-align: center; padding: 15px; background: rgba(0, 255, 136, 0.1); border-radius: 10px;">
+                            <div style="font-size: 24px; font-weight: bold; color: #00ff88;" id="profileTapPower">1</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="tapPower">Tap kuchi</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: rgba(255, 107, 53, 0.1); border-radius: 10px;">
+                            <div style="font-size: 24px; font-weight: bold; color: #ff6b35;" id="profileEnergy">1000</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="currentEnergy">Hozirgi energiya</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: rgba(255, 215, 0, 0.1); border-radius: 10px;">
+                            <div style="font-size: 24px; font-weight: bold; color: #FFD700;" id="profileCompletedTasks">0</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="completedTasksCount">Bajarilgan vazifalar</div>
+                        </div>
+                        <div style="text-align: center; padding: 15px; background: rgba(138, 43, 226, 0.1); border-radius: 10px;">
+                            <div style="font-size: 24px; font-weight: bold; color: #8A2BE2;" id="profileReferralEarnings">0</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="referralEarnings">Referral daromadi</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Account Settings -->
+                <div style="background: rgba(255, 255, 255, 0.05); border-radius: 15px; padding: 20px; margin: 20px 0;">
+                    <h4 style="color: #00ff88; margin-bottom: 15px;">⚙️ <span data-translate="settings">Sozlamalar</span></h4>
+                    
+                    <div class="condition-item" style="margin-bottom: 10px;">
+                        <div>
+                            <div style="font-weight: bold;" data-translate="language">Til</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="currentLanguage">Hozirgi til</div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span id="currentLanguageDisplay">🇺🇿 UZ</span>
+                            <button onclick="toggleLanguage()" style="background: #00ff88; color: #000; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px;">
+                                <span data-translate="change">O'zgartirish</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="condition-item" style="margin-bottom: 10px;">
+                        <div>
+                            <div style="font-weight: bold;" data-translate="dataStorage">Ma'lumotlar saqlash</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="localStorage">Mahalliy xotira</div>
+                        </div>
+                        <div style="color: #00ff88; font-weight: bold;">
+                            <span data-translate="active">Faol</span> ✅
+                        </div>
+                    </div>
+
+                    <div class="condition-item">
+                        <div>
+                            <div style="font-weight: bold;" data-translate="firebaseSync">Firebase sinxronizatsiya</div>
+                            <div style="font-size: 12px; color: #ccc;" data-translate="cloudSync">Bulut sinxronizatsiya</div>
+                        </div>
+                        <div id="firebaseSyncStatus" style="color: #ff6b35; font-weight: bold;">
+                            <span data-translate="checking">Tekshirilmoqda...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -906,7 +1088,31 @@
                 byCoins: "Coinlar bo'yicha",
                 byReferrals: "Referrallar bo'yicha",
                 yourRank: "Sizning o'rningiz:",
-                completedTasks: "Bajarilgan Vazifalar"
+                completedTasks: "Bajarilgan Vazifalar",
+                profile: "Profil",
+                joinedDate: "Qo'shilgan sana",
+                achievements: "Yutuqlar",
+                gameStats: "O'yin Statistikasi",
+                tapPower: "Tap kuchi",
+                currentEnergy: "Hozirgi energiya",
+                completedTasksCount: "Bajarilgan vazifalar",
+                settings: "Sozlamalar",
+                language: "Til",
+                currentLanguage: "Hozirgi til",
+                change: "O'zgartirish",
+                dataStorage: "Ma'lumotlar saqlash",
+                localStorage: "Mahalliy xotira",
+                active: "Faol",
+                firebaseSync: "Firebase sinxronizatsiya",
+                cloudSync: "Bulut sinxronizatsiya",
+                checking: "Tekshirilmoqda",
+                playerProfile: "O'yinchi Profili",
+                playerStats: "O'yinchi Statistikasi",
+                rankPosition: "Reyting pozitsiyasi",
+                lastSeen: "Oxirgi faollik",
+                playerType: "O'yinchi turi",
+                close: "Yopish",
+                challenge: "Raqobat"
             },
             en: {
                 tap: "Tapping",
@@ -939,7 +1145,31 @@
                 byCoins: "By Coins",
                 byReferrals: "By Referrals",
                 yourRank: "Your Rank:",
-                completedTasks: "Completed Tasks"
+                completedTasks: "Completed Tasks",
+                profile: "Profile",
+                joinedDate: "Joined Date",
+                achievements: "Achievements",
+                gameStats: "Game Statistics",
+                tapPower: "Tap Power",
+                currentEnergy: "Current Energy",
+                completedTasksCount: "Completed Tasks",
+                settings: "Settings",
+                language: "Language",
+                currentLanguage: "Current Language",
+                change: "Change",
+                dataStorage: "Data Storage",
+                localStorage: "Local Storage",
+                active: "Active",
+                firebaseSync: "Firebase Sync",
+                cloudSync: "Cloud Sync",
+                checking: "Checking",
+                playerProfile: "Player Profile",
+                playerStats: "Player Statistics",
+                rankPosition: "Rank Position",
+                lastSeen: "Last Seen",
+                playerType: "Player Type",
+                close: "Close",
+                challenge: "Challenge"
             },
             ru: {
                 tap: "Тапинг",
@@ -972,7 +1202,31 @@
                 byCoins: "По монетам",
                 byReferrals: "По рефералам",
                 yourRank: "Ваше место:",
-                completedTasks: "Выполненные Задания"
+                completedTasks: "Выполненные Задания",
+                profile: "Профиль",
+                joinedDate: "Дата регистрации",
+                achievements: "Достижения",
+                gameStats: "Игровая Статистика",
+                tapPower: "Сила тапа",
+                currentEnergy: "Текущая энергия",
+                completedTasksCount: "Выполненные задания",
+                settings: "Настройки",
+                language: "Язык",
+                currentLanguage: "Текущий язык",
+                change: "Изменить",
+                dataStorage: "Хранение данных",
+                localStorage: "Локальное хранилище",
+                active: "Активно",
+                firebaseSync: "Firebase синхронизация",
+                cloudSync: "Облачная синхронизация",
+                checking: "Проверяется",
+                playerProfile: "Профиль Игрока",
+                playerStats: "Статистика Игрока",
+                rankPosition: "Позиция в рейтинге",
+                lastSeen: "Последняя активность",
+                playerType: "Тип игрока",
+                close: "Закрыть",
+                challenge: "Вызов"
             }
         };
 
@@ -1414,6 +1668,8 @@
                 updateReferralDisplay();
             } else if (sectionName === 'leaderboard') {
                 updateLeaderboard();
+            } else if (sectionName === 'profile') {
+                updateProfileDisplay();
             }
         }
 
@@ -1630,9 +1886,10 @@
             leaderboardList.innerHTML = top10.map((player, index) => {
                 const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : 'rank-other';
                 const isCurrentPlayer = player.isCurrentPlayer ? 'style="border: 2px solid #00ff88;"' : '';
+                const clickable = !player.isCurrentPlayer ? 'onclick="showPlayerProfile(' + JSON.stringify(player).replace(/"/g, '&quot;') + ', ' + (index + 1) + ')" style="cursor: pointer;"' : '';
                 
                 return `
-                    <div class="condition-item" ${isCurrentPlayer}>
+                    <div class="condition-item" ${isCurrentPlayer} ${clickable}>
                         <div style="display: flex; align-items: center; gap: 15px;">
                             <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px;" class="${rankClass}">
                                 ${index + 1}
@@ -1651,6 +1908,118 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        function updateProfileDisplay() {
+            // Update basic profile info
+            const profilePlayerName = document.getElementById('profilePlayerName');
+            const profilePlayerId = document.getElementById('profilePlayerId');
+            const profileJoinDate = document.getElementById('profileJoinDate');
+            
+            if (profilePlayerName) profilePlayerName.textContent = gameState.playerName;
+            if (profilePlayerId) profilePlayerId.textContent = `ID: ${getUniquePlayerId().substring(0, 12)}...`;
+            if (profileJoinDate) {
+                const joinDate = localStorage.getItem('dragonCoinJoinDate') || new Date().toLocaleDateString();
+                if (!localStorage.getItem('dragonCoinJoinDate')) {
+                    localStorage.setItem('dragonCoinJoinDate', joinDate);
+                }
+                profileJoinDate.textContent = joinDate;
+            }
+            
+            // Update detailed stats
+            const profileBalance = document.getElementById('profileBalance');
+            const profileLevel = document.getElementById('profileLevel');
+            const profileLevelName = document.getElementById('profileLevelName');
+            const profileTotalTaps = document.getElementById('profileTotalTaps');
+            const profileReferrals = document.getElementById('profileReferrals');
+            
+            if (profileBalance) profileBalance.textContent = gameState.balance.toLocaleString();
+            if (profileLevel) profileLevel.textContent = gameState.level;
+            if (profileLevelName) profileLevelName.textContent = levelSystem[gameState.level].name;
+            if (profileTotalTaps) profileTotalTaps.textContent = gameState.totalTaps.toLocaleString();
+            if (profileReferrals) profileReferrals.textContent = gameState.referrals.length;
+            
+            // Update game statistics
+            const profileTapPower = document.getElementById('profileTapPower');
+            const profileEnergy = document.getElementById('profileEnergy');
+            const profileCompletedTasks = document.getElementById('profileCompletedTasks');
+            const profileReferralEarnings = document.getElementById('profileReferralEarnings');
+            
+            if (profileTapPower) profileTapPower.textContent = gameState.tapPower;
+            if (profileEnergy) profileEnergy.textContent = `${gameState.energy}/${gameState.maxEnergy}`;
+            
+            const completedTasksCount = Object.values(gameState.completedTasks).filter(Boolean).length;
+            if (profileCompletedTasks) profileCompletedTasks.textContent = completedTasksCount;
+            if (profileReferralEarnings) profileReferralEarnings.textContent = gameState.referralEarnings;
+            
+            // Update achievements
+            updateAchievements();
+            
+            // Update language display
+            const currentLanguageDisplay = document.getElementById('currentLanguageDisplay');
+            if (currentLanguageDisplay) {
+                currentLanguageDisplay.textContent = `${countryFlags[currentLanguage]} ${currentLanguage.toUpperCase()}`;
+            }
+            
+            // Update Firebase sync status
+            const firebaseSyncStatus = document.getElementById('firebaseSyncStatus');
+            if (firebaseSyncStatus) {
+                if (firebaseConnected) {
+                    firebaseSyncStatus.innerHTML = '<span style="color: #00ff88;">Ulandi ✅</span>';
+                } else {
+                    firebaseSyncStatus.innerHTML = '<span style="color: #ff6b35;">O\'chiq ❌</span>';
+                }
+            }
+        }
+
+        function updateAchievements() {
+            const achievementsList = document.getElementById('achievementsList');
+            const achievementsCount = document.getElementById('achievementsCount');
+            
+            const achievements = [];
+            
+            // Level achievements
+            if (gameState.level >= 2) achievements.push({ name: 'Birinchi Level Up', desc: 'Level 2 ga yeting', icon: '🥉' });
+            if (gameState.level >= 5) achievements.push({ name: 'Platina O\'yinchi', desc: 'Level 5 ga yeting', icon: '🥈' });
+            if (gameState.level >= 10) achievements.push({ name: 'Afsonaviy Dragon', desc: 'Level 10 ga yeting', icon: '🥇' });
+            
+            // Tap achievements
+            if (gameState.totalTaps >= 100) achievements.push({ name: 'Yuz Tap', desc: '100 marta tap qiling', icon: '👆' });
+            if (gameState.totalTaps >= 1000) achievements.push({ name: 'Ming Tap', desc: '1000 marta tap qiling', icon: '💪' });
+            if (gameState.totalTaps >= 10000) achievements.push({ name: 'O\'n Ming Tap', desc: '10000 marta tap qiling', icon: '🔥' });
+            
+            // Balance achievements
+            if (gameState.balance >= 1000) achievements.push({ name: 'Birinchi Ming', desc: '1000 coin to\'plang', icon: '💰' });
+            if (gameState.balance >= 10000) achievements.push({ name: 'O\'n Ming Coin', desc: '10000 coin to\'plang', icon: '💎' });
+            if (gameState.balance >= 100000) achievements.push({ name: 'Yuz Ming Coin', desc: '100000 coin to\'plang', icon: '👑' });
+            
+            // Task achievements
+            const completedTasksCount = Object.values(gameState.completedTasks).filter(Boolean).length;
+            if (completedTasksCount >= 1) achievements.push({ name: 'Birinchi Vazifa', desc: 'Birinchi vazifani bajaring', icon: '✅' });
+            if (completedTasksCount >= 3) achievements.push({ name: 'Vazifa Ustasi', desc: '3 ta vazifa bajaring', icon: '🎯' });
+            if (completedTasksCount >= 7) achievements.push({ name: 'Barcha Vazifalar', desc: 'Barcha vazifalarni bajaring', icon: '🏆' });
+            
+            // Referral achievements
+            if (gameState.referrals.length >= 1) achievements.push({ name: 'Birinchi Referral', desc: 'Birinchi do\'stni taklif qiling', icon: '👥' });
+            if (gameState.referrals.length >= 5) achievements.push({ name: 'Do\'stlar Jamoasi', desc: '5 ta do\'st taklif qiling', icon: '🤝' });
+            if (gameState.referrals.length >= 10) achievements.push({ name: 'Referral Qiroli', desc: '10 ta do\'st taklif qiling', icon: '👑' });
+            
+            achievementsCount.textContent = achievements.length;
+            
+            if (achievements.length === 0) {
+                achievementsList.innerHTML = '<div style="text-align: center; color: #ccc; padding: 20px;">Hali yutuqlaringiz yo\'q. O\'ynashda davom eting!</div>';
+            } else {
+                achievementsList.innerHTML = achievements.map(achievement => `
+                    <div style="display: flex; align-items: center; gap: 15px; padding: 12px; background: rgba(255, 215, 0, 0.05); border-radius: 8px; margin-bottom: 8px; border: 1px solid rgba(255, 215, 0, 0.2);">
+                        <div style="font-size: 24px;">${achievement.icon}</div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: bold; color: #FFD700;">${achievement.name}</div>
+                            <div style="font-size: 12px; color: #ccc;">${achievement.desc}</div>
+                        </div>
+                        <div style="color: #FFD700; font-size: 18px;">🏆</div>
+                    </div>
+                `).join('');
+            }
         }
 
         function showLeaderboard(type) {
@@ -1856,11 +2225,79 @@
             }
         }
 
+        // Player profile modal functions
+        function showPlayerProfile(player, rank) {
+            const modal = document.getElementById('playerProfileModal');
+            
+            // Update modal content
+            document.getElementById('modalPlayerName').textContent = player.name;
+            document.getElementById('modalPlayerCountry').textContent = `${countryFlags[player.country?.toLowerCase()] || '🌍'} ${player.country || 'Unknown'}`;
+            document.getElementById('modalPlayerStatus').textContent = player.isOnline ? '🟢 Online' : '🔴 Offline';
+            document.getElementById('modalPlayerBalance').textContent = (player.balance || 0).toLocaleString();
+            document.getElementById('modalPlayerLevel').textContent = player.level || 1;
+            document.getElementById('modalPlayerLevelName').textContent = levelSystem[player.level || 1]?.name || 'Wood';
+            document.getElementById('modalPlayerTaps').textContent = (player.totalTaps || 0).toLocaleString();
+            document.getElementById('modalPlayerReferrals').textContent = player.referrals || 0;
+            document.getElementById('modalPlayerRank').textContent = `#${rank}`;
+            
+            // Calculate last seen
+            const lastSeen = player.lastUpdate ? new Date(player.lastUpdate) : new Date();
+            const timeDiff = Date.now() - lastSeen.getTime();
+            const minutesAgo = Math.floor(timeDiff / (1000 * 60));
+            const hoursAgo = Math.floor(timeDiff / (1000 * 60 * 60));
+            const daysAgo = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+            
+            let lastSeenText = 'Hozir';
+            if (player.isOnline) {
+                lastSeenText = 'Hozir';
+            } else if (minutesAgo < 60) {
+                lastSeenText = `${minutesAgo} daqiqa oldin`;
+            } else if (hoursAgo < 24) {
+                lastSeenText = `${hoursAgo} soat oldin`;
+            } else {
+                lastSeenText = `${daysAgo} kun oldin`;
+            }
+            
+            document.getElementById('modalPlayerLastSeen').textContent = lastSeenText;
+            
+            // Player type
+            const playerType = player.id?.startsWith('tg_') ? 'Telegram User' : 
+                              player.id?.startsWith('demo_') ? 'Demo Player' : 'Real Player';
+            document.getElementById('modalPlayerType').textContent = playerType;
+            
+            // Show modal
+            modal.style.display = 'block';
+            
+            // Store current player for challenge
+            window.currentModalPlayer = player;
+        }
+
+        function closePlayerModal() {
+            document.getElementById('playerProfileModal').style.display = 'none';
+            window.currentModalPlayer = null;
+        }
+
+        function challengePlayer() {
+            if (!window.currentModalPlayer) return;
+            
+            const player = window.currentModalPlayer;
+            showNotification(`🎯 ${player.name} ga raqobat e'lon qilindi! Tez orada raqobat tizimi ishga tushadi.`, 'success');
+            closePlayerModal();
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('playerProfileModal');
+            if (event.target === modal) {
+                closePlayerModal();
+            }
+        });
+
         // Start the game when page loads
         window.addEventListener('load', initGame);
         
         // Save before page unload
         window.addEventListener('beforeunload', saveGameState);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96e0b3ccf5b3fb58',t:'MTc1NTAwOTM1OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96e88618225c2d6b',t:'MTc1NTA5MTM3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
