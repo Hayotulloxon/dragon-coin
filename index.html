@@ -737,6 +737,22 @@
         </div>
 
         <div class="section" id="tasksSection" style="display: none;">
+            <!-- Task Categories Navigation -->
+            <div style="display: flex; gap: 8px; margin-bottom: 20px; justify-content: center; flex-wrap: wrap;">
+                <button class="nav-tab active" id="basicTasksTab" onclick="showTaskCategory('basic')" style="padding: 8px 12px; font-size: 12px;">
+                    📋 <span data-translate="basicTasks">Asosiy Vazifalar</span>
+                </button>
+                <button class="nav-tab" id="levelTasksTab" onclick="showTaskCategory('level')" style="padding: 8px 12px; font-size: 12px;">
+                    🏆 <span data-translate="levelTasks">Level Vazifalari</span>
+                </button>
+                <button class="nav-tab" id="referralTasksTab" onclick="showTaskCategory('referral')" style="padding: 8px 12px; font-size: 12px;">
+                    👥 <span data-translate="referralTasks">Referral Vazifalari</span>
+                </button>
+                <button class="nav-tab" id="customTasksTab" onclick="showTaskCategory('custom')" style="padding: 8px 12px; font-size: 12px;">
+                    ⭐ <span data-translate="customTasks">Maxsus Vazifalar</span>
+                </button>
+            </div>
+
             <!-- Completed Tasks Section -->
             <div class="completed-tasks-section" id="completedTasksSection" style="display: none;">
                 <h3 style="margin-bottom: 15px; color: #00ff88; display: flex; align-items: center; gap: 10px;">
@@ -748,8 +764,9 @@
                 </div>
             </div>
 
-            <div class="conditions-panel" id="conditionsPanel">
-                <h3 style="margin-bottom: 15px; color: #ff6b35;">📋 <span data-translate="tasks">Vazifalar</span></h3>
+            <!-- Basic Tasks Panel -->
+            <div class="conditions-panel" id="basicTasksPanel">
+                <h3 style="margin-bottom: 15px; color: #ff6b35;">📋 <span data-translate="basicTasks">Asosiy Vazifalar</span></h3>
                 <div class="condition-item task-button" onclick="claimTask('taps')" id="tapTask">
                     <div class="condition-text">
                         <div data-translate="task500taps">500 marta tap qiling</div>
@@ -805,6 +822,96 @@
                     </div>
                     <div class="condition-reward">+5000 DRC</div>
                     <div class="condition-status condition-pending" id="codeCondition"></div>
+                </div>
+            </div>
+
+            <!-- Level Tasks Panel -->
+            <div class="conditions-panel" id="levelTasksPanel" style="display: none;">
+                <h3 style="margin-bottom: 15px; color: #FFD700;">🏆 <span data-translate="levelTasks">Level Vazifalari</span></h3>
+                
+                <div class="condition-item task-button" onclick="claimTask('level3')" id="level3Task">
+                    <div class="condition-text">
+                        <div data-translate="taskLevel3">Level 3 ga yeting</div>
+                        <div style="font-size: 12px; color: #ccc;"><span data-translate="currentLevel">Hozirgi level</span>: <span id="currentLevel3">1</span></div>
+                    </div>
+                    <div class="condition-reward">+800 DRC</div>
+                    <div class="condition-status condition-pending" id="level3Condition"></div>
+                </div>
+
+                <div class="condition-item task-button" onclick="claimTask('level')" id="levelTask">
+                    <div class="condition-text">
+                        <div data-translate="taskLevel5">Level 5 ga yeting</div>
+                        <div style="font-size: 12px; color: #ccc;"><span data-translate="currentLevel">Hozirgi level</span>: <span id="currentLevel">1</span></div>
+                    </div>
+                    <div class="condition-reward">+2000 DRC</div>
+                    <div class="condition-status condition-pending" id="levelCondition"></div>
+                </div>
+
+                <div class="condition-item task-button" onclick="claimTask('level7')" id="level7Task">
+                    <div class="condition-text">
+                        <div data-translate="taskLevel7">Level 7 ga yeting</div>
+                        <div style="font-size: 12px; color: #ccc;"><span data-translate="currentLevel">Hozirgi level</span>: <span id="currentLevel7">1</span></div>
+                    </div>
+                    <div class="condition-reward">+4000 DRC</div>
+                    <div class="condition-status condition-pending" id="level7Condition"></div>
+                </div>
+
+                <div class="condition-item task-button" onclick="claimTask('level10')" id="level10Task">
+                    <div class="condition-text">
+                        <div data-translate="taskLevel10">Level 10 ga yeting</div>
+                        <div style="font-size: 12px; color: #ccc;"><span data-translate="currentLevel">Hozirgi level</span>: <span id="currentLevel10">1</span></div>
+                    </div>
+                    <div class="condition-reward">+8000 DRC</div>
+                    <div class="condition-status condition-pending" id="level10Condition"></div>
+                </div>
+            </div>
+
+            <!-- Referral Tasks Panel -->
+            <div class="conditions-panel" id="referralTasksPanel" style="display: none;">
+                <h3 style="margin-bottom: 15px; color: #8A2BE2;">👥 <span data-translate="referralTasks">Referral Vazifalari</span></h3>
+                
+                <div class="condition-item task-button" onclick="claimTask('referral1')" id="referral1Task">
+                    <div class="condition-text">
+                        <div data-translate="taskReferral1">Birinchi do'stni taklif qiling</div>
+                        <div style="font-size: 12px; color: #ccc;"><span data-translate="progress">Progress</span>: <span id="referralProgress1">0</span>/1</div>
+                    </div>
+                    <div class="condition-reward">+500 DRC</div>
+                    <div class="condition-status condition-pending" id="referral1Condition"></div>
+                </div>
+
+                <div class="condition-item task-button" onclick="claimTask('referral3')" id="referral3Task">
+                    <div class="condition-text">
+                        <div data-translate="taskReferral3">3 ta do'st taklif qiling</div>
+                        <div style="font-size: 12px; color: #ccc;"><span data-translate="progress">Progress</span>: <span id="referralProgress3">0</span>/3</div>
+                    </div>
+                    <div class="condition-reward">+1500 DRC</div>
+                    <div class="condition-status condition-pending" id="referral3Condition"></div>
+                </div>
+
+                <div class="condition-item task-button" onclick="claimTask('referral')" id="referralTask">
+                    <div class="condition-text">
+                        <div data-translate="taskReferral">5 ta do'st taklif qiling</div>
+                        <div style="font-size: 12px; color: #ccc;"><span data-translate="progress">Progress</span>: <span id="referralProgress">0</span>/5</div>
+                    </div>
+                    <div class="condition-reward">+3000 DRC</div>
+                    <div class="condition-status condition-pending" id="referralCondition"></div>
+                </div>
+
+                <div class="condition-item task-button" onclick="claimTask('referral10')" id="referral10Task">
+                    <div class="condition-text">
+                        <div data-translate="taskReferral10">10 ta do'st taklif qiling</div>
+                        <div style="font-size: 12px; color: #ccc;"><span data-translate="progress">Progress</span>: <span id="referralProgress10">0</span>/10</div>
+                    </div>
+                    <div class="condition-reward">+6000 DRC</div>
+                    <div class="condition-status condition-pending" id="referral10Condition"></div>
+                </div>
+            </div>
+
+            <!-- Custom Tasks Panel -->
+            <div class="conditions-panel" id="customTasksPanel" style="display: none;">
+                <h3 style="margin-bottom: 15px; color: #00ff88;">⭐ <span data-translate="customTasks">Maxsus Vazifalar</span></h3>
+                <div id="customTasksList">
+                    <!-- Custom tasks will be populated here -->
                 </div>
             </div>
         </div>
@@ -1406,7 +1513,17 @@
                 viewTasksDesc: "Tizimda mavjud barcha vazifalar",
                 multitap: "Multitap",
                 multitapBoosts: "Multitap",
-                rechargeBoosts: "Energy Recharging Speed"
+                rechargeBoosts: "Energy Recharging Speed",
+                basicTasks: "Basic Tasks",
+                levelTasks: "Level Tasks",
+                referralTasks: "Referral Tasks",
+                customTasks: "Custom Tasks",
+                taskLevel3: "Reach Level 3",
+                taskLevel7: "Reach Level 7",
+                taskLevel10: "Reach Level 10",
+                taskReferral1: "Invite first friend",
+                taskReferral3: "Invite 3 friends",
+                taskReferral10: "Invite 10 friends"
             },
             en: {
                 tap: "Tapping",
@@ -1517,7 +1634,17 @@
                 viewTasksDesc: "All tasks in the system",
                 multitap: "Multitap",
                 multitapBoosts: "Multitap",
-                rechargeBoosts: "Energy Recharging Speed"
+                rechargeBoosts: "Energy Recharging Speed",
+                basicTasks: "Basic Tasks",
+                levelTasks: "Level Tasks",
+                referralTasks: "Referral Tasks",
+                customTasks: "Custom Tasks",
+                taskLevel3: "Reach Level 3",
+                taskLevel7: "Reach Level 7",
+                taskLevel10: "Reach Level 10",
+                taskReferral1: "Invite first friend",
+                taskReferral3: "Invite 3 friends",
+                taskReferral10: "Invite 10 friends"
             },
             ru: {
                 tap: "Тапинг",
@@ -1628,7 +1755,17 @@
                 viewTasksDesc: "Все задания в системе",
                 multitap: "Мультитап",
                 multitapBoosts: "Мультитап",
-                rechargeBoosts: "Скорость Восстановления Энергии"
+                rechargeBoosts: "Скорость Восстановления Энергии",
+                basicTasks: "Основные Задания",
+                levelTasks: "Задания по Уровню",
+                referralTasks: "Реферальные Задания",
+                customTasks: "Особые Задания",
+                taskLevel3: "Достигните 3 уровня",
+                taskLevel7: "Достигните 7 уровня",
+                taskLevel10: "Достигните 10 уровня",
+                taskReferral1: "Пригласите первого друга",
+                taskReferral3: "Пригласите 3 друзей",
+                taskReferral10: "Пригласите 10 друзей"
             }
         };
 
@@ -1670,7 +1807,13 @@
                 referral: false,
                 telegram: false,
                 youtube: false,
-                code: false
+                code: false,
+                level3: false,
+                level7: false,
+                level10: false,
+                referral1: false,
+                referral3: false,
+                referral10: false
             },
             lastSaveTime: Date.now(),
             referralCode: generateReferralCode(),
@@ -2105,6 +2248,7 @@
             
             if (sectionName === 'tasks') {
                 updateTasksDisplay();
+                showTaskCategory('basic'); // Show basic tasks by default
             } else if (sectionName === 'referral') {
                 updateReferralDisplay();
             } else if (sectionName === 'leaderboard') {
@@ -2135,6 +2279,18 @@
                     canClaim = gameState.level >= 5;
                     reward = 2000;
                     break;
+                case 'level3':
+                    canClaim = gameState.level >= 3;
+                    reward = 800;
+                    break;
+                case 'level7':
+                    canClaim = gameState.level >= 7;
+                    reward = 4000;
+                    break;
+                case 'level10':
+                    canClaim = gameState.level >= 10;
+                    reward = 8000;
+                    break;
                 case 'coins':
                     canClaim = gameState.balance >= 10000;
                     reward = 5000;
@@ -2142,6 +2298,18 @@
                 case 'referral':
                     canClaim = gameState.referrals.length >= 5;
                     reward = 3000;
+                    break;
+                case 'referral1':
+                    canClaim = gameState.referrals.length >= 1;
+                    reward = 500;
+                    break;
+                case 'referral3':
+                    canClaim = gameState.referrals.length >= 3;
+                    reward = 1500;
+                    break;
+                case 'referral10':
+                    canClaim = gameState.referrals.length >= 10;
+                    reward = 6000;
                     break;
                 case 'telegram':
                     // Open Telegram channel and mark as completed after 3 seconds
@@ -2216,16 +2384,90 @@
             updateTaskStatus('youtube', gameState.completedTasks.youtube);
             updateTaskStatus('code', gameState.completedTasks.code);
             
+            // Update additional level tasks
+            updateTaskStatus('level3', gameState.level >= 3);
+            updateTaskStatus('level7', gameState.level >= 7);
+            updateTaskStatus('level10', gameState.level >= 10);
+            
+            // Update additional referral tasks
+            updateTaskStatus('referral1', gameState.referrals.length >= 1);
+            updateTaskStatus('referral3', gameState.referrals.length >= 3);
+            updateTaskStatus('referral10', gameState.referrals.length >= 10);
+            
             updateCompletedTasksDisplay();
             displayCustomTasks();
         }
 
-        function displayCustomTasks() {
-            const conditionsPanel = document.getElementById('conditionsPanel');
+        function showTaskCategory(category) {
+            // Hide all panels
+            document.getElementById('basicTasksPanel').style.display = 'none';
+            document.getElementById('levelTasksPanel').style.display = 'none';
+            document.getElementById('referralTasksPanel').style.display = 'none';
+            document.getElementById('customTasksPanel').style.display = 'none';
             
-            // Remove existing custom tasks
-            const existingCustomTasks = conditionsPanel.querySelectorAll('[id^="customTask_"]');
-            existingCustomTasks.forEach(task => task.remove());
+            // Remove active class from all tabs
+            document.getElementById('basicTasksTab').classList.remove('active');
+            document.getElementById('levelTasksTab').classList.remove('active');
+            document.getElementById('referralTasksTab').classList.remove('active');
+            document.getElementById('customTasksTab').classList.remove('active');
+            
+            // Show selected panel and activate tab
+            switch(category) {
+                case 'basic':
+                    document.getElementById('basicTasksPanel').style.display = 'block';
+                    document.getElementById('basicTasksTab').classList.add('active');
+                    break;
+                case 'level':
+                    document.getElementById('levelTasksPanel').style.display = 'block';
+                    document.getElementById('levelTasksTab').classList.add('active');
+                    updateLevelTasksProgress();
+                    break;
+                case 'referral':
+                    document.getElementById('referralTasksPanel').style.display = 'block';
+                    document.getElementById('referralTasksTab').classList.add('active');
+                    updateReferralTasksProgress();
+                    break;
+                case 'custom':
+                    document.getElementById('customTasksPanel').style.display = 'block';
+                    document.getElementById('customTasksTab').classList.add('active');
+                    displayCustomTasks();
+                    break;
+            }
+        }
+
+        function updateLevelTasksProgress() {
+            const currentLevel3 = document.getElementById('currentLevel3');
+            const currentLevel7 = document.getElementById('currentLevel7');
+            const currentLevel10 = document.getElementById('currentLevel10');
+            
+            if (currentLevel3) currentLevel3.textContent = gameState.level;
+            if (currentLevel7) currentLevel7.textContent = gameState.level;
+            if (currentLevel10) currentLevel10.textContent = gameState.level;
+        }
+
+        function updateReferralTasksProgress() {
+            const referralProgress1 = document.getElementById('referralProgress1');
+            const referralProgress3 = document.getElementById('referralProgress3');
+            const referralProgress10 = document.getElementById('referralProgress10');
+            
+            if (referralProgress1) referralProgress1.textContent = Math.min(gameState.referrals.length, 1);
+            if (referralProgress3) referralProgress3.textContent = Math.min(gameState.referrals.length, 3);
+            if (referralProgress10) referralProgress10.textContent = Math.min(gameState.referrals.length, 10);
+        }
+
+        function displayCustomTasks() {
+            const customTasksList = document.getElementById('customTasksList');
+            
+            // Clear existing tasks
+            customTasksList.innerHTML = '';
+            
+            // Load latest custom tasks
+            customTasks = JSON.parse(localStorage.getItem('dragonCoinCustomTasks') || '[]');
+            
+            if (customTasks.length === 0) {
+                customTasksList.innerHTML = '<div style="text-align: center; color: #ccc; padding: 20px;">Hali maxsus vazifalar yo\'q. Admin panel orqali qo\'shing!</div>';
+                return;
+            }
             
             // Add custom tasks
             customTasks.forEach(task => {
@@ -2246,7 +2488,7 @@
                         <div class="condition-status condition-pending" id="customCondition_${task.id}"></div>
                     `;
                     
-                    conditionsPanel.appendChild(taskElement);
+                    customTasksList.appendChild(taskElement);
                 }
             });
         }
@@ -2414,8 +2656,14 @@
                 const taskNames = {
                     taps: { name: '500 marta tap qiling', reward: 1000 },
                     level: { name: 'Level 5 ga yeting', reward: 2000 },
+                    level3: { name: 'Level 3 ga yeting', reward: 800 },
+                    level7: { name: 'Level 7 ga yeting', reward: 4000 },
+                    level10: { name: 'Level 10 ga yeting', reward: 8000 },
                     coins: { name: '10000 coin to\'plang', reward: 5000 },
                     referral: { name: '5 ta do\'st taklif qiling', reward: 3000 },
+                    referral1: { name: 'Birinchi do\'stni taklif qiling', reward: 500 },
+                    referral3: { name: '3 ta do\'st taklif qiling', reward: 1500 },
+                    referral10: { name: '10 ta do\'st taklif qiling', reward: 6000 },
                     telegram: { name: 'Telegram kanalga obuna bo\'ling', reward: 1500 },
                     youtube: { name: 'YouTube kanalga obuna bo\'ling', reward: 2000 },
                     code: { name: 'Maxsus kodni kiriting', reward: 5000 }
@@ -3105,14 +3353,20 @@
             customTasks.push(newTask);
             localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
             
-            // Close modal
-            document.querySelector('[style*="position: fixed"]').remove();
+            // Close modal safely
+            const modal = document.querySelector('[style*="position: fixed"][style*="z-index: 2000"]');
+            if (modal) {
+                modal.remove();
+            }
             
             showNotification(`✅ "${taskName}" vazifasi qo'shildi!`, 'success');
             updateTasksDisplay();
         }
 
         function showRemoveTaskModal() {
+            // Load latest custom tasks
+            customTasks = JSON.parse(localStorage.getItem('dragonCoinCustomTasks') || '[]');
+            
             if (customTasks.length === 0) {
                 showNotification('❌ O\'chiriladigan vazifa yo\'q!', 'error');
                 return;
@@ -3235,8 +3489,14 @@
             const names = {
                 taps: '500 marta tap qiling',
                 level: 'Level 5 ga yeting',
+                level3: 'Level 3 ga yeting',
+                level7: 'Level 7 ga yeting',
+                level10: 'Level 10 ga yeting',
                 coins: '10000 coin to\'plang',
                 referral: '5 ta do\'st taklif qiling',
+                referral1: 'Birinchi do\'stni taklif qiling',
+                referral3: '3 ta do\'st taklif qiling',
+                referral10: '10 ta do\'st taklif qiling',
                 telegram: 'Telegram kanalga obuna bo\'ling',
                 youtube: 'YouTube kanalga obuna bo\'ling',
                 code: 'Maxsus kodni kiriting'
@@ -3248,8 +3508,14 @@
             const rewards = {
                 taps: 1000,
                 level: 2000,
+                level3: 800,
+                level7: 4000,
+                level10: 8000,
                 coins: 5000,
                 referral: 3000,
+                referral1: 500,
+                referral3: 1500,
+                referral10: 6000,
                 telegram: 1500,
                 youtube: 2000,
                 code: 5000
@@ -3685,5 +3951,5 @@
         // Save before page unload
         window.addEventListener('beforeunload', saveGameState);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ee06a7a1342382',t:'MTc1NTE0OTA2OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ee1d67e341dd2c',t:'MTc1NTE0OTk5OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
