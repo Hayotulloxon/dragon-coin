@@ -2276,9 +2276,9 @@
 
             let tasksHTML = '';
             basicTasks.forEach(task => {
-                // Check if task is hidden
-                if (localStorage.getItem(`hiddenTask_${task.id}`) === 'true') {
-                    return; // Skip hidden tasks
+                // Check if task is hidden or deleted
+                if (localStorage.getItem(`hiddenTask_${task.id}`) === 'true' || localStorage.getItem(`deletedTask_${task.id}`) === 'true') {
+                    return; // Skip hidden or deleted tasks
                 }
 
                 const canClaim = getTaskCanClaim(task.id);
@@ -2325,9 +2325,9 @@
 
             let tasksHTML = '';
             levelTasks.forEach(task => {
-                // Check if task is hidden
-                if (localStorage.getItem(`hiddenTask_${task.id}`) === 'true') {
-                    return; // Skip hidden tasks
+                // Check if task is hidden or deleted
+                if (localStorage.getItem(`hiddenTask_${task.id}`) === 'true' || localStorage.getItem(`deletedTask_${task.id}`) === 'true') {
+                    return; // Skip hidden or deleted tasks
                 }
 
                 const canClaim = gameState.level >= task.targetLevel;
@@ -2367,9 +2367,9 @@
 
             let tasksHTML = '';
             referralTasks.forEach(task => {
-                // Check if task is hidden
-                if (localStorage.getItem(`hiddenTask_${task.id}`) === 'true') {
-                    return; // Skip hidden tasks
+                // Check if task is hidden or deleted
+                if (localStorage.getItem(`hiddenTask_${task.id}`) === 'true' || localStorage.getItem(`deletedTask_${task.id}`) === 'true') {
+                    return; // Skip hidden or deleted tasks
                 }
 
                 const canClaim = gameState.referrals.length >= task.targetReferrals;
@@ -3570,13 +3570,11 @@
             const tasksList = allTasks.map(task => {
                 const statusText = task.isHidden ? 'Yashirilgan' : 'Ko\'rinmoqda';
                 const statusColor = task.isHidden ? '#ff6b35' : '#00ff88';
-                const buttonText = task.isHidden ? 'Ko\'rsatish' : 'Yashirish';
-                const buttonAction = task.type === 'standard' ? 
-                    (task.isHidden ? 'showStandardTask' : 'hideStandardTask') : 
-                    'removeCustomTask';
-                const buttonColor = task.type === 'standard' ? 
-                    (task.isHidden ? '#00ff88' : '#FFD700') : '#ff6b35';
-                const finalButtonText = task.type === 'standard' ? buttonText : 'O\'chirish';
+                const isDeleted = localStorage.getItem(`deletedTask_${task.id}`) === 'true';
+                
+                if (isDeleted && task.type === 'standard') {
+                    return ''; // Don't show deleted standard tasks
+                }
                 
                 return `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 8px; border-left: 4px solid ${task.type === 'standard' ? '#FFD700' : '#00ff88'};">
@@ -3589,12 +3587,23 @@
                                 ${task.type === 'standard' ? '📋 Standart vazifa' : '⭐ Admin vazifasi'} • ${statusText}
                             </div>
                         </div>
-                        <button onclick="${buttonAction}('${task.id}')" style="background: ${buttonColor}; color: ${task.type === 'standard' && !task.isHidden ? '#000' : '#fff'}; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; min-width: 80px;">
-                            ${finalButtonText}
-                        </button>
+                        <div style="display: flex; gap: 5px;">
+                            ${task.type === 'standard' ? `
+                                <button onclick="${task.isHidden ? 'showStandardTask' : 'hideStandardTask'}('${task.id}')" style="background: ${task.isHidden ? '#00ff88' : '#FFD700'}; color: ${task.isHidden ? '#fff' : '#000'}; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;">
+                                    ${task.isHidden ? 'Ko\'rsatish' : 'Yashirish'}
+                                </button>
+                                <button onclick="deleteStandardTask('${task.id}')" style="background: #ff6b35; color: #fff; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;">
+                                    O'chirish
+                                </button>
+                            ` : `
+                                <button onclick="removeCustomTask('${task.id}')" style="background: #ff6b35; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                                    O'chirish
+                                </button>
+                            `}
+                        </div>
                     </div>
                 `;
-            }).join('');
+            }).filter(html => html !== '').join('');
             
             modal.innerHTML = `
                 <div style="background: rgba(10,10,15,0.95); border-radius: 20px; padding: 30px; max-width: 600px; width: 90%; border: 2px solid rgba(255,107,53,0.3); box-shadow: 0 0 50px rgba(255,107,53,0.3);">
@@ -3617,7 +3626,7 @@
                     </div>
                     
                     <div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <button onclick="resetAllStandardTasks()" style="flex: 1; background: #FFD700; color: #000; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold;">Barcha Standart Vazifalarni Ko'rsatish</button>
+                        <button onclick="resetAllStandardTasks()" style="flex: 1; background: #FFD700; color: #000; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold;">Barcha Standart Vazifalarni Qayta Tiklash</button>
                         <button onclick="closeRemoveTaskModal()" style="flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 12px; border-radius: 8px; cursor: pointer;">Yopish</button>
                     </div>
                 </div>
@@ -3669,16 +3678,44 @@
             updateTasksDisplay();
         }
 
+        function deleteStandardTask(taskId) {
+            const taskNames = {
+                taps: '500 marta tap qiling',
+                level: 'Level 5 ga yeting',
+                level3: 'Level 3 ga yeting',
+                level7: 'Level 7 ga yeting',
+                level10: 'Level 10 ga yeting',
+                coins: '10000 coin to\'plang',
+                referral: '5 ta do\'st taklif qiling',
+                referral1: 'Birinchi do\'stni taklif qiling',
+                referral3: '3 ta do\'st taklif qiling',
+                referral10: '10 ta do\'st taklif qiling',
+                telegram: 'Telegram kanalga obuna bo\'ling',
+                youtube: 'YouTube kanalga obuna bo\'ling',
+                code: 'Maxsus kodni kiriting'
+            };
+            
+            const taskName = taskNames[taskId] || taskId;
+            
+            if (confirm(`"${taskName}" standart vazifasini butunlay o'chirishni tasdiqlaysizmi?\n\nBu vazifa o'yinchilarga ko'rinmaydi va qayta tiklab bo'lmaydi.`)) {
+                localStorage.setItem(`deletedTask_${taskId}`, 'true');
+                closeRemoveTaskModal();
+                showNotification('✅ Standart vazifa o\'chirildi!', 'success');
+                updateTasksDisplay();
+            }
+        }
+
         function resetAllStandardTasks() {
-            if (confirm('Barcha standart vazifalarni ko\'rsatishni tasdiqlaysizmi?')) {
+            if (confirm('Barcha standart vazifalarni qayta tiklashni tasdiqlaysizmi?\n\nBu barcha yashirilgan va o\'chirilgan standart vazifalarni qaytaradi.')) {
                 const standardTaskIds = ['taps', 'level', 'level3', 'level7', 'level10', 'coins', 'referral', 'referral1', 'referral3', 'referral10', 'telegram', 'youtube', 'code'];
                 
                 standardTaskIds.forEach(taskId => {
                     localStorage.removeItem(`hiddenTask_${taskId}`);
+                    localStorage.removeItem(`deletedTask_${taskId}`);
                 });
                 
                 closeRemoveTaskModal();
-                showNotification('✅ Barcha standart vazifalar ko\'rsatildi!', 'success');
+                showNotification('✅ Barcha standart vazifalar qayta tiklandi!', 'success');
                 updateTasksDisplay();
             }
         }
@@ -4325,5 +4362,5 @@
         // Save before page unload
         window.addEventListener('beforeunload', saveGameState);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ee3a14b6b1bc80',t:'MTc1NTE1MTE3NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ee41d55738f430',t:'MTc1NTE1MTQ5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
