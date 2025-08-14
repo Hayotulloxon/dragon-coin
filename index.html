@@ -10,7 +10,7 @@
         // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
-        import { getDatabase, ref, set, get, onValue, push, update } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+        import { getDatabase, ref, set, get, onValue, push, update, remove } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -38,6 +38,7 @@
         window.firebaseOnValue = onValue;
         window.firebasePush = push;
         window.firebaseUpdate = update;
+        window.firebaseRemove = remove;
     </script>
     <style>
         * {
@@ -780,8 +781,6 @@
                     <span style="background: rgba(0, 255, 136, 0.3); color: #00ff88; padding: 2px 6px; border-radius: 8px; font-size: 10px; margin-left: 4px;" id="completedTasksTabCount">0</span>
                 </button>
             </div>
-
-
 
             <!-- Basic Tasks Panel -->
             <div class="conditions-panel" id="basicTasksPanel">
@@ -1848,11 +1847,16 @@
             }
         }
 
-        // Global task management functions
+        // YANGI: Global task management functions - ASOSIY MUAMMO SHU YERDA EMAS
         function saveGlobalTaskSettings() {
-            if (!firebaseConnected || !window.firebaseDatabase) return;
+            if (!firebaseConnected || !window.firebaseDatabase) {
+                console.log('⚠️ Firebase ulanmagan, global vazifa sozlamalari saqlanmadi');
+                return;
+            }
             
             try {
+                console.log('💾 Global vazifa sozlamalarini saqlash...');
+                
                 // Save hidden/deleted standard tasks
                 const hiddenTasks = [];
                 const deletedTasks = [];
@@ -1868,36 +1872,62 @@
                     }
                 });
                 
+                // Save to Firebase with timestamp
                 const taskSettingsRef = window.firebaseRef(window.firebaseDatabase, 'globalTaskSettings');
-                window.firebaseSet(taskSettingsRef, {
+                const taskSettingsData = {
                     hiddenTasks: hiddenTasks,
                     deletedTasks: deletedTasks,
-                    lastUpdate: Date.now()
+                    lastUpdate: Date.now(),
+                    updatedBy: getUniquePlayerId()
+                };
+                
+                window.firebaseSet(taskSettingsRef, taskSettingsData).then(() => {
+                    console.log('✅ Global vazifa sozlamalari Firebase ga saqlandi:', taskSettingsData);
+                }).catch(error => {
+                    console.error('❌ Global vazifa sozlamalarini saqlashda xatolik:', error);
                 });
                 
-                // Save custom tasks globally
+                // Save custom tasks globally with timestamp
                 const customTasksRef = window.firebaseRef(window.firebaseDatabase, 'globalCustomTasks');
-                window.firebaseSet(customTasksRef, {
+                const customTasksData = {
                     tasks: customTasks,
-                    lastUpdate: Date.now()
+                    lastUpdate: Date.now(),
+                    updatedBy: getUniquePlayerId()
+                };
+                
+                window.firebaseSet(customTasksRef, customTasksData).then(() => {
+                    console.log('✅ Global maxsus vazifalar Firebase ga saqlandi:', customTasks.length, 'ta vazifa');
+                }).catch(error => {
+                    console.error('❌ Global maxsus vazifalarni saqlashda xatolik:', error);
                 });
                 
-                console.log('✅ Global vazifa sozlamalari saqlandi');
             } catch (error) {
                 console.error('❌ Global vazifa sozlamalarini saqlashda xatolik:', error);
             }
         }
 
+        // YANGI: Improved global task loading with real-time updates
         function loadGlobalTaskSettings() {
-            if (!firebaseConnected || !window.firebaseDatabase) return;
+            if (!firebaseConnected || !window.firebaseDatabase) {
+                console.log('⚠️ Firebase ulanmagan, global vazifa sozlamalari yuklanmadi');
+                return;
+            }
             
             try {
-                // Load global task settings
+                console.log('📥 Global vazifa sozlamalarini yuklash...');
+                
+                // Load global task settings with real-time updates
                 const taskSettingsRef = window.firebaseRef(window.firebaseDatabase, 'globalTaskSettings');
                 window.firebaseOnValue(taskSettingsRef, (snapshot) => {
                     const data = snapshot.val();
                     if (data) {
                         console.log('📥 Global vazifa sozlamalari yuklandi:', data);
+                        
+                        // Don't apply changes if they were made by this user
+                        if (data.updatedBy === getUniquePlayerId()) {
+                            console.log('🔄 O\'z o\'zgarishlarimni e\'tiborsiz qoldirish');
+                            return;
+                        }
                         
                         // Clear existing settings
                         const standardTaskIds = ['taps', 'level', 'level3', 'level7', 'level10', 'coins', 'referral', 'referral1', 'referral3', 'referral10', 'telegram', 'youtube', 'code'];
@@ -1910,28 +1940,37 @@
                         if (data.hiddenTasks) {
                             data.hiddenTasks.forEach(taskId => {
                                 localStorage.setItem(`hiddenTask_${taskId}`, 'true');
+                                console.log('👁️ Vazifa yashirildi:', taskId);
                             });
                         }
                         
                         if (data.deletedTasks) {
                             data.deletedTasks.forEach(taskId => {
                                 localStorage.setItem(`deletedTask_${taskId}`, 'true');
+                                console.log('🗑️ Vazifa o\'chirildi:', taskId);
                             });
                         }
                         
                         // Update task display immediately
                         setTimeout(() => {
                             updateTasksDisplay();
+                            showNotification('🔄 Admin tomonidan vazifalar yangilandi!', 'success');
                         }, 100);
                     }
                 });
                 
-                // Load global custom tasks
+                // Load global custom tasks with real-time updates
                 const customTasksRef = window.firebaseRef(window.firebaseDatabase, 'globalCustomTasks');
                 window.firebaseOnValue(customTasksRef, (snapshot) => {
                     const data = snapshot.val();
                     if (data && data.tasks) {
                         console.log('📥 Global maxsus vazifalar yuklandi:', data.tasks.length, 'ta vazifa');
+                        
+                        // Don't apply changes if they were made by this user
+                        if (data.updatedBy === getUniquePlayerId()) {
+                            console.log('🔄 O\'z o\'zgarishlarimni e\'tiborsiz qoldirish');
+                            return;
+                        }
                         
                         // Merge with existing completed tasks to preserve user progress
                         const existingCustomTasks = JSON.parse(localStorage.getItem('dragonCoinCustomTasks') || '[]');
@@ -1946,6 +1985,7 @@
                         // Update task display immediately
                         setTimeout(() => {
                             updateTasksDisplay();
+                            showNotification('✨ Yangi vazifalar qo\'shildi!', 'success');
                         }, 100);
                     }
                 });
@@ -3518,8 +3558,6 @@
             }
         });
 
-
-
         // Admin functions
         function checkAdminAccess() {
             const tgData = getTelegramUserData();
@@ -3745,6 +3783,7 @@
             }
         }
 
+        // YANGI: Improved addCustomTask function with better Firebase sync
         function addCustomTask() {
             const taskType = document.getElementById('taskType').value;
             const taskName = document.getElementById('taskName').value;
@@ -3782,19 +3821,33 @@
                 level: taskLevel,
                 referralCount: taskReferralCount,
                 completed: false,
-                dateAdded: new Date().toLocaleDateString()
+                dateAdded: new Date().toLocaleDateString(),
+                createdBy: getUniquePlayerId() // Track who created the task
             };
+            
+            console.log('➕ Yangi vazifa qo\'shilmoqda:', newTask);
             
             customTasks.push(newTask);
             localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
             
-            // Save to Firebase for all players immediately
-            saveGlobalTaskSettings();
+            // Save to Firebase for all players immediately with better error handling
+            if (firebaseConnected) {
+                console.log('🔄 Firebase ga saqlash...');
+                saveGlobalTaskSettings();
+                
+                // Show immediate feedback
+                showNotification(`✅ "${taskName}" vazifasi barcha o'yinchilar uchun qo'shildi!`, 'success');
+                
+                // Additional notification about Firebase sync
+                setTimeout(() => {
+                    showNotification('🌐 Vazifa barcha o\'yinchilarga real-time yuborildi!', 'success');
+                }, 1000);
+            } else {
+                showNotification(`✅ "${taskName}" vazifasi qo'shildi! (Firebase ulanmagan)`, 'success');
+            }
             
             // Close modal safely
             closeAddTaskModal();
-            
-            showNotification(`✅ "${taskName}" vazifasi barcha o'yinchilar uchun qo'shildi!`, 'success');
             
             // Update display immediately
             updateTasksDisplay();
@@ -3957,20 +4010,34 @@
             }
         }
 
+        // YANGI: Improved removeCustomTask function with better Firebase sync
         function removeCustomTask(taskId) {
             const taskToRemove = customTasks.find(task => task.id === taskId);
             if (!taskToRemove) return;
             
             if (confirm(`"${taskToRemove.name}" vazifasini barcha o'yinchilar uchun o'chirishni tasdiqlaysizmi?`)) {
+                console.log('🗑️ Maxsus vazifa o\'chirilmoqda:', taskToRemove);
+                
                 customTasks = customTasks.filter(task => task.id !== taskId);
                 localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
                 
                 // Save to Firebase for all players immediately
-                saveGlobalTaskSettings();
+                if (firebaseConnected) {
+                    console.log('🔄 Firebase dan o\'chirish...');
+                    saveGlobalTaskSettings();
+                    
+                    showNotification('✅ Vazifa barcha o\'yinchilar uchun o\'chirildi!', 'success');
+                    
+                    // Additional notification about Firebase sync
+                    setTimeout(() => {
+                        showNotification('🌐 O\'zgarish barcha o\'yinchilarga real-time yuborildi!', 'success');
+                    }, 1000);
+                } else {
+                    showNotification('✅ Vazifa o\'chirildi! (Firebase ulanmagan)', 'success');
+                }
                 
                 // Close modal and refresh
                 closeRemoveTaskModal();
-                showNotification('✅ Vazifa barcha o\'yinchilar uchun o\'chirildi!', 'success');
                 
                 // Update display immediately
                 updateTasksDisplay();
@@ -3978,26 +4045,38 @@
         }
 
         function hideStandardTask(taskId) {
+            console.log('👁️ Standart vazifa yashirilmoqda:', taskId);
+            
             localStorage.setItem(`hiddenTask_${taskId}`, 'true');
             
             // Save to Firebase for all players immediately
-            saveGlobalTaskSettings();
+            if (firebaseConnected) {
+                saveGlobalTaskSettings();
+                showNotification('✅ Vazifa barcha o\'yinchilar uchun yashirildi!', 'success');
+            } else {
+                showNotification('✅ Vazifa yashirildi! (Firebase ulanmagan)', 'success');
+            }
             
             closeRemoveTaskModal();
-            showNotification('✅ Vazifa barcha o\'yinchilar uchun yashirildi!', 'success');
             
             // Update display immediately
             updateTasksDisplay();
         }
 
         function showStandardTask(taskId) {
+            console.log('👁️ Standart vazifa ko\'rsatilmoqda:', taskId);
+            
             localStorage.removeItem(`hiddenTask_${taskId}`);
             
             // Save to Firebase for all players immediately
-            saveGlobalTaskSettings();
+            if (firebaseConnected) {
+                saveGlobalTaskSettings();
+                showNotification('✅ Vazifa barcha o\'yinchilar uchun ko\'rsatildi!', 'success');
+            } else {
+                showNotification('✅ Vazifa ko\'rsatildi! (Firebase ulanmagan)', 'success');
+            }
             
             closeRemoveTaskModal();
-            showNotification('✅ Vazifa barcha o\'yinchilar uchun ko\'rsatildi!', 'success');
             
             // Update display immediately
             updateTasksDisplay();
@@ -4023,13 +4102,19 @@
             const taskName = taskNames[taskId] || taskId;
             
             if (confirm(`"${taskName}" vazifasini barcha o'yinchilar uchun butunlay o'chirishni tasdiqlaysizmi?\n\nBu vazifa hech kimga ko'rinmaydi.`)) {
+                console.log('🗑️ Standart vazifa o\'chirilmoqda:', taskId);
+                
                 localStorage.setItem(`deletedTask_${taskId}`, 'true');
                 
                 // Save to Firebase for all players immediately
-                saveGlobalTaskSettings();
+                if (firebaseConnected) {
+                    saveGlobalTaskSettings();
+                    showNotification('✅ Vazifa barcha o\'yinchilar uchun o\'chirildi!', 'success');
+                } else {
+                    showNotification('✅ Vazifa o\'chirildi! (Firebase ulanmagan)', 'success');
+                }
                 
                 closeRemoveTaskModal();
-                showNotification('✅ Vazifa barcha o\'yinchilar uchun o\'chirildi!', 'success');
                 
                 // Update display immediately
                 updateTasksDisplay();
@@ -4038,6 +4123,8 @@
 
         function resetAllStandardTasks() {
             if (confirm('Barcha standart vazifalarni barcha o\'yinchilar uchun qayta tiklashni tasdiqlaysizmi?\n\nBu barcha yashirilgan va o\'chirilgan standart vazifalarni qaytaradi.')) {
+                console.log('🔄 Barcha standart vazifalar qayta tiklanmoqda');
+                
                 const standardTaskIds = ['taps', 'level', 'level3', 'level7', 'level10', 'coins', 'referral', 'referral1', 'referral3', 'referral10', 'telegram', 'youtube', 'code'];
                 
                 standardTaskIds.forEach(taskId => {
@@ -4046,10 +4133,14 @@
                 });
                 
                 // Save to Firebase for all players immediately
-                saveGlobalTaskSettings();
+                if (firebaseConnected) {
+                    saveGlobalTaskSettings();
+                    showNotification('✅ Barcha vazifalar barcha o\'yinchilar uchun qayta tiklandi!', 'success');
+                } else {
+                    showNotification('✅ Barcha vazifalar qayta tiklandi! (Firebase ulanmagan)', 'success');
+                }
                 
                 closeRemoveTaskModal();
-                showNotification('✅ Barcha vazifalar barcha o\'yinchilar uchun qayta tiklandi!', 'success');
                 
                 // Update display immediately
                 updateTasksDisplay();
@@ -4148,14 +4239,20 @@
 
         function clearAllCustomTasks() {
             if (confirm('Barcha maxsus vazifalarni barcha o\'yinchilar uchun o\'chirishni tasdiqlaysizmi? Bu amalni bekor qilib bo\'lmaydi!')) {
+                console.log('🗑️ Barcha maxsus vazifalar o\'chirilmoqda');
+                
                 customTasks = [];
                 localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
                 
                 // Save to Firebase for all players
-                saveGlobalTaskSettings();
+                if (firebaseConnected) {
+                    saveGlobalTaskSettings();
+                    showNotification('✅ Barcha maxsus vazifalar barcha o\'yinchilar uchun o\'chirildi!', 'success');
+                } else {
+                    showNotification('✅ Barcha maxsus vazifalar o\'chirildi! (Firebase ulanmagan)', 'success');
+                }
                 
                 closeViewTasksModal();
-                showNotification('✅ Barcha maxsus vazifalar barcha o\'yinchilar uchun o\'chirildi!', 'success');
                 updateTasksDisplay();
             }
         }
@@ -4377,6 +4474,7 @@
             }
         }
 
+        // YANGI: Improved saveEditedTask function with better Firebase sync
         function saveEditedTask(taskId) {
             const taskType = document.getElementById('editTaskType').value;
             const taskName = document.getElementById('editTaskName').value;
@@ -4405,6 +4503,8 @@
             
             const taskIndex = customTasks.findIndex(t => t.id === taskId);
             if (taskIndex !== -1) {
+                console.log('✏️ Maxsus vazifa tahrirlanmoqda:', taskId);
+                
                 customTasks[taskIndex] = {
                     ...customTasks[taskIndex],
                     type: taskType,
@@ -4415,18 +4515,29 @@
                     code: taskCode,
                     level: taskLevel,
                     referralCount: taskReferralCount,
-                    lastEdited: new Date().toLocaleDateString()
+                    lastEdited: new Date().toLocaleDateString(),
+                    editedBy: getUniquePlayerId()
                 };
                 
                 localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
                 
                 // Save to Firebase for all players immediately
-                saveGlobalTaskSettings();
+                if (firebaseConnected) {
+                    console.log('🔄 Firebase ga saqlash...');
+                    saveGlobalTaskSettings();
+                    
+                    showNotification(`✅ "${taskName}" vazifasi barcha o'yinchilar uchun tahrirlandi!`, 'success');
+                    
+                    // Additional notification about Firebase sync
+                    setTimeout(() => {
+                        showNotification('🌐 O\'zgarish barcha o\'yinchilarga real-time yuborildi!', 'success');
+                    }, 1000);
+                } else {
+                    showNotification(`✅ "${taskName}" vazifasi tahrirlandi! (Firebase ulanmagan)`, 'success');
+                }
                 
                 // Close modal
                 closeEditTaskFormModal();
-                
-                showNotification(`✅ "${taskName}" vazifasi barcha o'yinchilar uchun tahrirlandi!`, 'success');
                 
                 // Update display immediately
                 updateTasksDisplay();
@@ -4674,8 +4785,6 @@
             return emojis[boostType].repeat(Math.min(level - 1, 3));
         }
 
-
-
         function updateActiveBoosts() {
             const activeBoostsSection = document.getElementById('activeBoostsSection');
             const activeBoostsList = document.getElementById('activeBoostsList');
@@ -4698,7 +4807,7 @@
                 activeBoostsSection.style.display = 'block';
                 activeBoostsList.innerHTML = activeBoosts.map(boost => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(0, 255, 136, 0.05); border-radius: 8px; margin-bottom: 8px; border: 1px solid rgba(0, 255, 136, 0.2);">
-                        <div style="font-weight: bold; color: #00ff88;">${boost.name}</div>
+                        <div style="font-weight: bold; value: #00ff88;">${boost.name}</div>
                         <div style="color: #ccc; font-size: 12px;">${boost.timeLeft}</div>
                     </div>
                 `).join('');
