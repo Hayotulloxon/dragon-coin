@@ -275,7 +275,7 @@
             justify-content: center;
             font-size: 120px;
             cursor: pointer;
-            transition: all 0.1s ease;
+            transition: transform 0.05s ease;
             position: relative;
             overflow: hidden;
             border: 8px solid #FFA500;
@@ -291,6 +291,9 @@
             -webkit-touch-callout: none;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
+            will-change: transform;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
         }
 
         .main-coin::before {
@@ -310,12 +313,28 @@
         }
 
         .main-coin:active {
-            transform: scale(0.98) !important;
+            transform: scale(0.96) !important;
         }
         
         .main-coin.tap-animation {
-            transform: scale(0.95);
-            transition: transform 0.05s ease;
+            transform: scale(0.94);
+            transition: transform 0.03s ease-out;
+        }
+
+        /* Mobile-specific optimizations */
+        @media (max-width: 768px) {
+            .main-coin {
+                transition: transform 0.03s ease-out;
+            }
+            
+            .main-coin:active {
+                transform: scale(0.95) !important;
+            }
+            
+            .main-coin.tap-animation {
+                transform: scale(0.93);
+                transition: transform 0.02s ease-out;
+            }
         }
 
         .tap-effect {
@@ -686,12 +705,17 @@
 
         <div class="section" id="tapSection">
             <div class="coin-container">
-                <div class="main-coin" id="mainCoin" onclick="tapCoin(event)">
+                <div class="main-coin" id="mainCoin" 
+                     onclick="tapCoin(event)" 
+                     ontouchstart="tapCoin(event)" 
+                     ontouchend="event.preventDefault()"
+                     ontouchmove="event.preventDefault()">
                     <span style="
                         font-size: 120px; 
                         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
                         z-index: 2;
                         position: relative;
+                        pointer-events: none;
                     ">🐉</span>
                 </div>
             </div>
@@ -1760,6 +1784,7 @@
                         updateFirebaseStatus(true);
                         loadPlayersFromFirebase();
                         savePlayerToFirebase();
+                        loadGlobalTaskSettings(); // Load global task settings
                     } else {
                         throw new Error('Firebase not available');
                     }
@@ -1820,6 +1845,101 @@
                 window.firebaseSet(playerRef, playerData);
             } catch (error) {
                 console.error('❌ Firebase ga saqlashda xatolik:', error);
+            }
+        }
+
+        // Global task management functions
+        function saveGlobalTaskSettings() {
+            if (!firebaseConnected || !window.firebaseDatabase) return;
+            
+            try {
+                // Save hidden/deleted standard tasks
+                const hiddenTasks = [];
+                const deletedTasks = [];
+                
+                const standardTaskIds = ['taps', 'level', 'level3', 'level7', 'level10', 'coins', 'referral', 'referral1', 'referral3', 'referral10', 'telegram', 'youtube', 'code'];
+                
+                standardTaskIds.forEach(taskId => {
+                    if (localStorage.getItem(`hiddenTask_${taskId}`) === 'true') {
+                        hiddenTasks.push(taskId);
+                    }
+                    if (localStorage.getItem(`deletedTask_${taskId}`) === 'true') {
+                        deletedTasks.push(taskId);
+                    }
+                });
+                
+                const taskSettingsRef = window.firebaseRef(window.firebaseDatabase, 'globalTaskSettings');
+                window.firebaseSet(taskSettingsRef, {
+                    hiddenTasks: hiddenTasks,
+                    deletedTasks: deletedTasks,
+                    lastUpdate: Date.now()
+                });
+                
+                // Save custom tasks globally
+                const customTasksRef = window.firebaseRef(window.firebaseDatabase, 'globalCustomTasks');
+                window.firebaseSet(customTasksRef, {
+                    tasks: customTasks,
+                    lastUpdate: Date.now()
+                });
+                
+                console.log('✅ Global vazifa sozlamalari saqlandi');
+            } catch (error) {
+                console.error('❌ Global vazifa sozlamalarini saqlashda xatolik:', error);
+            }
+        }
+
+        function loadGlobalTaskSettings() {
+            if (!firebaseConnected || !window.firebaseDatabase) return;
+            
+            try {
+                // Load global task settings
+                const taskSettingsRef = window.firebaseRef(window.firebaseDatabase, 'globalTaskSettings');
+                window.firebaseOnValue(taskSettingsRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        console.log('📥 Global vazifa sozlamalari yuklandi:', data);
+                        
+                        // Clear existing settings
+                        const standardTaskIds = ['taps', 'level', 'level3', 'level7', 'level10', 'coins', 'referral', 'referral1', 'referral3', 'referral10', 'telegram', 'youtube', 'code'];
+                        standardTaskIds.forEach(taskId => {
+                            localStorage.removeItem(`hiddenTask_${taskId}`);
+                            localStorage.removeItem(`deletedTask_${taskId}`);
+                        });
+                        
+                        // Apply global settings
+                        if (data.hiddenTasks) {
+                            data.hiddenTasks.forEach(taskId => {
+                                localStorage.setItem(`hiddenTask_${taskId}`, 'true');
+                            });
+                        }
+                        
+                        if (data.deletedTasks) {
+                            data.deletedTasks.forEach(taskId => {
+                                localStorage.setItem(`deletedTask_${taskId}`, 'true');
+                            });
+                        }
+                        
+                        // Update task display
+                        updateTasksDisplay();
+                    }
+                });
+                
+                // Load global custom tasks
+                const customTasksRef = window.firebaseRef(window.firebaseDatabase, 'globalCustomTasks');
+                window.firebaseOnValue(customTasksRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (data && data.tasks) {
+                        console.log('📥 Global maxsus vazifalar yuklandi:', data.tasks.length, 'ta vazifa');
+                        customTasks = data.tasks;
+                        localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
+                        
+                        // Update task display
+                        updateTasksDisplay();
+                    }
+                });
+                
+            } catch (error) {
+                console.error('❌ Global vazifa sozlamalarini yuklashda xatolik:', error);
             }
         }
 
@@ -2019,12 +2139,19 @@
             });
         }
 
-        // Tap function
+        // Tap function - optimized for mobile
         function tapCoin(event) {
             const now = Date.now();
             
-            if (now - lastTapTime < 50) return;
+            // Prevent too frequent taps but allow faster tapping
+            if (now - lastTapTime < 30) return;
             lastTapTime = now;
+            
+            // Prevent default touch behavior
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
             
             // Check if turbo is active (unlimited energy)
             const isTurboActive = gameState.activeBoosts.turbo.active && gameState.activeBoosts.turbo.endTime > now;
@@ -2048,20 +2175,23 @@
             
             gameState.totalTaps += tapsToProcess;
             
-            createTapEffect(event, totalCoins);
-            animateCoin();
+            // Optimize effects for mobile
+            createTapEffectOptimized(event, totalCoins);
+            animateCoinOptimized();
             
+            // Batch UI updates for better performance
             if (!pendingUIUpdate) {
                 pendingUIUpdate = true;
-                setTimeout(() => {
-                    updateUI();
+                requestAnimationFrame(() => {
+                    updateUIOptimized();
                     pendingUIUpdate = false;
-                }, 16);
+                });
             }
             
             checkLevelUp();
             
-            if (now - gameState.lastSaveTime > 5000) {
+            // Save less frequently to reduce lag
+            if (now - gameState.lastSaveTime > 10000) {
                 saveGameState();
                 gameState.lastSaveTime = now;
             }
@@ -2094,6 +2224,38 @@
             }, 1000);
         }
 
+        // Optimized version for mobile
+        function createTapEffectOptimized(event, coins) {
+            // Limit effects to prevent lag
+            if (tapEffectPool.length > 5) return;
+            
+            const coinContainer = document.querySelector('.coin-container');
+            const rect = coinContainer.getBoundingClientRect();
+            
+            let effect = tapEffectPool.pop();
+            if (!effect) {
+                effect = document.createElement('div');
+                effect.className = 'tap-effect';
+                effect.style.willChange = 'transform, opacity';
+            }
+            
+            const x = (event?.clientX || event?.touches?.[0]?.clientX || rect.left + rect.width/2) - rect.left;
+            const y = (event?.clientY || event?.touches?.[0]?.clientY || rect.top + rect.height/2) - rect.top;
+            
+            effect.style.left = x + 'px';
+            effect.style.top = y + 'px';
+            effect.textContent = '+' + coins;
+            
+            coinContainer.appendChild(effect);
+            
+            setTimeout(() => {
+                if (effect.parentNode) {
+                    effect.parentNode.removeChild(effect);
+                }
+                tapEffectPool.push(effect);
+            }, 800); // Shorter duration
+        }
+
         function animateCoin() {
             const coin = document.getElementById('mainCoin');
             coin.classList.add('tap-animation');
@@ -2101,6 +2263,18 @@
             setTimeout(() => {
                 coin.classList.remove('tap-animation');
             }, 50);
+        }
+
+        // Optimized version for mobile
+        function animateCoinOptimized() {
+            const coin = document.getElementById('mainCoin');
+            if (coin.classList.contains('tap-animation')) return; // Prevent multiple animations
+            
+            coin.classList.add('tap-animation');
+            
+            setTimeout(() => {
+                coin.classList.remove('tap-animation');
+            }, 30); // Shorter animation
         }
 
         function showEnergyWarning() {
@@ -3080,6 +3254,25 @@
             }
         }
 
+        // Optimized UI update for mobile - only updates essential elements during tapping
+        function updateUIOptimized() {
+            // Only update critical elements during rapid tapping
+            const balanceEl = document.getElementById('balance');
+            if (balanceEl) balanceEl.textContent = gameState.balance.toLocaleString();
+            
+            const energyPercentage = (gameState.energy / gameState.maxEnergy) * 100;
+            const energyProgress = document.getElementById('energyProgress');
+            const energyText = document.getElementById('energyText');
+            if (energyProgress) energyProgress.style.width = energyPercentage + '%';
+            if (energyText) energyText.textContent = `${gameState.energy}/${gameState.maxEnergy}`;
+            
+            // Update tap count less frequently
+            const totalTapsEl = document.getElementById('totalTaps');
+            if (totalTapsEl && gameState.totalTaps % 5 === 0) {
+                totalTapsEl.textContent = gameState.totalTaps.toLocaleString();
+            }
+        }
+
         function saveGameState() {
             localStorage.setItem('dragonCoinGameState', JSON.stringify(gameState));
             localStorage.setItem('dragonCoinLanguage', currentLanguage);
@@ -3508,10 +3701,13 @@
             customTasks.push(newTask);
             localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
             
+            // Save to Firebase for all players
+            saveGlobalTaskSettings();
+            
             // Close modal safely
             closeAddTaskModal();
             
-            showNotification(`✅ "${taskName}" vazifasi qo'shildi!`, 'success');
+            showNotification(`✅ "${taskName}" vazifasi barcha o'yinchilar uchun qo'shildi!`, 'success');
             updateTasksDisplay();
         }
 
@@ -3653,28 +3849,39 @@
             const taskToRemove = customTasks.find(task => task.id === taskId);
             if (!taskToRemove) return;
             
-            if (confirm(`"${taskToRemove.name}" vazifasini o'chirishni tasdiqlaysizmi?`)) {
+            if (confirm(`"${taskToRemove.name}" vazifasini barcha o'yinchilar uchun o'chirishni tasdiqlaysizmi?`)) {
                 customTasks = customTasks.filter(task => task.id !== taskId);
                 localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
                 
+                // Save to Firebase for all players
+                saveGlobalTaskSettings();
+                
                 // Close modal and refresh
                 closeRemoveTaskModal();
-                showNotification('✅ Admin vazifasi o\'chirildi!', 'success');
+                showNotification('✅ Vazifa barcha o\'yinchilar uchun o\'chirildi!', 'success');
                 updateTasksDisplay();
             }
         }
 
         function hideStandardTask(taskId) {
             localStorage.setItem(`hiddenTask_${taskId}`, 'true');
+            
+            // Save to Firebase for all players
+            saveGlobalTaskSettings();
+            
             closeRemoveTaskModal();
-            showNotification('✅ Standart vazifa yashirildi!', 'success');
+            showNotification('✅ Vazifa barcha o\'yinchilar uchun yashirildi!', 'success');
             updateTasksDisplay();
         }
 
         function showStandardTask(taskId) {
             localStorage.removeItem(`hiddenTask_${taskId}`);
+            
+            // Save to Firebase for all players
+            saveGlobalTaskSettings();
+            
             closeRemoveTaskModal();
-            showNotification('✅ Standart vazifa ko\'rsatildi!', 'success');
+            showNotification('✅ Vazifa barcha o\'yinchilar uchun ko\'rsatildi!', 'success');
             updateTasksDisplay();
         }
 
@@ -3697,16 +3904,20 @@
             
             const taskName = taskNames[taskId] || taskId;
             
-            if (confirm(`"${taskName}" standart vazifasini butunlay o'chirishni tasdiqlaysizmi?\n\nBu vazifa o'yinchilarga ko'rinmaydi va qayta tiklab bo'lmaydi.`)) {
+            if (confirm(`"${taskName}" vazifasini barcha o'yinchilar uchun butunlay o'chirishni tasdiqlaysizmi?\n\nBu vazifa hech kimga ko'rinmaydi.`)) {
                 localStorage.setItem(`deletedTask_${taskId}`, 'true');
+                
+                // Save to Firebase for all players
+                saveGlobalTaskSettings();
+                
                 closeRemoveTaskModal();
-                showNotification('✅ Standart vazifa o\'chirildi!', 'success');
+                showNotification('✅ Vazifa barcha o\'yinchilar uchun o\'chirildi!', 'success');
                 updateTasksDisplay();
             }
         }
 
         function resetAllStandardTasks() {
-            if (confirm('Barcha standart vazifalarni qayta tiklashni tasdiqlaysizmi?\n\nBu barcha yashirilgan va o\'chirilgan standart vazifalarni qaytaradi.')) {
+            if (confirm('Barcha standart vazifalarni barcha o\'yinchilar uchun qayta tiklashni tasdiqlaysizmi?\n\nBu barcha yashirilgan va o\'chirilgan standart vazifalarni qaytaradi.')) {
                 const standardTaskIds = ['taps', 'level', 'level3', 'level7', 'level10', 'coins', 'referral', 'referral1', 'referral3', 'referral10', 'telegram', 'youtube', 'code'];
                 
                 standardTaskIds.forEach(taskId => {
@@ -3714,8 +3925,11 @@
                     localStorage.removeItem(`deletedTask_${taskId}`);
                 });
                 
+                // Save to Firebase for all players
+                saveGlobalTaskSettings();
+                
                 closeRemoveTaskModal();
-                showNotification('✅ Barcha standart vazifalar qayta tiklandi!', 'success');
+                showNotification('✅ Barcha vazifalar barcha o\'yinchilar uchun qayta tiklandi!', 'success');
                 updateTasksDisplay();
             }
         }
@@ -3811,11 +4025,15 @@
         }
 
         function clearAllCustomTasks() {
-            if (confirm('Barcha maxsus vazifalarni o\'chirishni tasdiqlaysizmi? Bu amalni bekor qilib bo\'lmaydi!')) {
+            if (confirm('Barcha maxsus vazifalarni barcha o\'yinchilar uchun o\'chirishni tasdiqlaysizmi? Bu amalni bekor qilib bo\'lmaydi!')) {
                 customTasks = [];
                 localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
+                
+                // Save to Firebase for all players
+                saveGlobalTaskSettings();
+                
                 closeViewTasksModal();
-                showNotification('✅ Barcha maxsus vazifalar o\'chirildi!', 'success');
+                showNotification('✅ Barcha maxsus vazifalar barcha o\'yinchilar uchun o\'chirildi!', 'success');
                 updateTasksDisplay();
             }
         }
@@ -4080,10 +4298,13 @@
                 
                 localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
                 
+                // Save to Firebase for all players
+                saveGlobalTaskSettings();
+                
                 // Close modal
                 closeEditTaskFormModal();
                 
-                showNotification(`✅ "${taskName}" vazifasi tahrirlandi!`, 'success');
+                showNotification(`✅ "${taskName}" vazifasi barcha o'yinchilar uchun tahrirlandi!`, 'success');
                 updateTasksDisplay();
             }
         }
@@ -4362,5 +4583,5 @@
         // Save before page unload
         window.addEventListener('beforeunload', saveGameState);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ee41d55738f430',t:'MTc1NTE1MTQ5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ee4bd50214c4eb',t:'MTc1NTE1MTkwMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
