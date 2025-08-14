@@ -1919,8 +1919,10 @@
                             });
                         }
                         
-                        // Update task display
-                        updateTasksDisplay();
+                        // Update task display immediately
+                        setTimeout(() => {
+                            updateTasksDisplay();
+                        }, 100);
                     }
                 });
                 
@@ -1930,11 +1932,21 @@
                     const data = snapshot.val();
                     if (data && data.tasks) {
                         console.log('📥 Global maxsus vazifalar yuklandi:', data.tasks.length, 'ta vazifa');
-                        customTasks = data.tasks;
+                        
+                        // Merge with existing completed tasks to preserve user progress
+                        const existingCustomTasks = JSON.parse(localStorage.getItem('dragonCoinCustomTasks') || '[]');
+                        const mergedTasks = data.tasks.map(globalTask => {
+                            const existingTask = existingCustomTasks.find(t => t.id === globalTask.id);
+                            return existingTask ? { ...globalTask, completed: existingTask.completed, completedDate: existingTask.completedDate } : globalTask;
+                        });
+                        
+                        customTasks = mergedTasks;
                         localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
                         
-                        // Update task display
-                        updateTasksDisplay();
+                        // Update task display immediately
+                        setTimeout(() => {
+                            updateTasksDisplay();
+                        }, 100);
                     }
                 });
                 
@@ -2448,7 +2460,14 @@
                 { id: 'code', name: 'Maxsus kodni kiriting', reward: 5000, desc: 'Videoda ko\'rsatilgan kod' }
             ];
 
+            // Add custom tasks that belong to basic category
+            const basicCustomTasks = customTasks.filter(task => 
+                ['telegram', 'youtube', 'code', 'website', 'social'].includes(task.type) && !task.completed
+            );
+
             let tasksHTML = '';
+            
+            // Display standard basic tasks
             basicTasks.forEach(task => {
                 // Check if task is hidden or deleted
                 if (localStorage.getItem(`hiddenTask_${task.id}`) === 'true' || localStorage.getItem(`deletedTask_${task.id}`) === 'true') {
@@ -2479,6 +2498,21 @@
                 `;
             });
 
+            // Display custom basic tasks
+            basicCustomTasks.forEach(task => {
+                const icon = getTaskIcon(task.type);
+                tasksHTML += `
+                    <div class="condition-item task-button" onclick="claimCustomTask('${task.id}')" id="customTask_${task.id}">
+                        <div class="condition-text">
+                            <div>${icon} ${task.name}</div>
+                            <div style="font-size: 12px; color: #ccc;">${task.description || task.link}</div>
+                        </div>
+                        <div class="condition-reward">+${task.reward} DRC</div>
+                        <div class="condition-status condition-pending" id="customCondition_${task.id}"></div>
+                    </div>
+                `;
+            });
+
             if (tasksHTML === '') {
                 tasksHTML = '<div style="text-align: center; color: #ccc; padding: 20px;">Hozircha asosiy vazifalar yo\'q.</div>';
             }
@@ -2497,7 +2531,14 @@
                 { id: 'level10', name: 'Level 10 ga yeting', reward: 8000, targetLevel: 10 }
             ];
 
+            // Add custom level tasks
+            const levelCustomTasks = customTasks.filter(task => 
+                task.type === 'level' && !task.completed
+            );
+
             let tasksHTML = '';
+            
+            // Display standard level tasks
             levelTasks.forEach(task => {
                 // Check if task is hidden or deleted
                 if (localStorage.getItem(`hiddenTask_${task.id}`) === 'true' || localStorage.getItem(`deletedTask_${task.id}`) === 'true') {
@@ -2521,6 +2562,24 @@
                 `;
             });
 
+            // Display custom level tasks
+            levelCustomTasks.forEach(task => {
+                const canClaim = gameState.level >= task.level;
+                const statusClass = canClaim ? 'task-ready' : '';
+                const conditionClass = canClaim ? 'condition-completed' : 'condition-pending';
+
+                tasksHTML += `
+                    <div class="condition-item task-button ${statusClass}" onclick="claimCustomTask('${task.id}')" id="customTask_${task.id}">
+                        <div class="condition-text">
+                            <div>🏆 ${task.name}</div>
+                            <div style="font-size: 12px; color: #ccc;">Kerakli level: ${task.level} • Hozirgi: ${gameState.level}</div>
+                        </div>
+                        <div class="condition-reward">+${task.reward} DRC</div>
+                        <div class="condition-status ${conditionClass}" id="customCondition_${task.id}"></div>
+                    </div>
+                `;
+            });
+
             if (tasksHTML === '') {
                 tasksHTML = '<div style="text-align: center; color: #ccc; padding: 20px;">Hozircha level vazifalari yo\'q.</div>';
             }
@@ -2539,7 +2598,14 @@
                 { id: 'referral10', name: '10 ta do\'st taklif qiling', reward: 6000, targetReferrals: 10 }
             ];
 
+            // Add custom referral tasks
+            const referralCustomTasks = customTasks.filter(task => 
+                task.type === 'referral' && !task.completed
+            );
+
             let tasksHTML = '';
+            
+            // Display standard referral tasks
             referralTasks.forEach(task => {
                 // Check if task is hidden or deleted
                 if (localStorage.getItem(`hiddenTask_${task.id}`) === 'true' || localStorage.getItem(`deletedTask_${task.id}`) === 'true') {
@@ -2559,6 +2625,24 @@
                         </div>
                         <div class="condition-reward">+${task.reward} DRC</div>
                         <div class="condition-status ${conditionClass}" id="${task.id}Condition"></div>
+                    </div>
+                `;
+            });
+
+            // Display custom referral tasks
+            referralCustomTasks.forEach(task => {
+                const canClaim = gameState.referrals.length >= task.referralCount;
+                const statusClass = canClaim ? 'task-ready' : '';
+                const conditionClass = canClaim ? 'condition-completed' : 'condition-pending';
+
+                tasksHTML += `
+                    <div class="condition-item task-button ${statusClass}" onclick="claimCustomTask('${task.id}')" id="customTask_${task.id}">
+                        <div class="condition-text">
+                            <div>👥 ${task.name}</div>
+                            <div style="font-size: 12px; color: #ccc;">Kerakli: ${task.referralCount} • Hozirgi: ${gameState.referrals.length}</div>
+                        </div>
+                        <div class="condition-reward">+${task.reward} DRC</div>
+                        <div class="condition-status ${conditionClass}" id="customCondition_${task.id}"></div>
                     </div>
                 `;
             });
@@ -2662,32 +2746,35 @@
             // Load latest custom tasks
             customTasks = JSON.parse(localStorage.getItem('dragonCoinCustomTasks') || '[]');
             
-            if (customTasks.length === 0) {
-                customTasksList.innerHTML = '<div style="text-align: center; color: #ccc; padding: 20px;">Hali maxsus vazifalar yo\'q. Admin panel orqali qo\'shing!</div>';
+            // Only show tasks that don't belong to other categories
+            const miscCustomTasks = customTasks.filter(task => 
+                !['telegram', 'youtube', 'code', 'website', 'social', 'level', 'referral'].includes(task.type) && !task.completed
+            );
+            
+            if (miscCustomTasks.length === 0) {
+                customTasksList.innerHTML = '<div style="text-align: center; color: #ccc; padding: 20px;">Maxsus vazifalar mos kategoriyalarga joylashtirildi. Boshqa bo\'limlarga qarang!</div>';
                 return;
             }
             
-            // Add custom tasks
-            customTasks.forEach(task => {
-                if (!task.completed) {
-                    const taskElement = document.createElement('div');
-                    taskElement.className = 'condition-item task-button';
-                    taskElement.id = `customTask_${task.id}`;
-                    taskElement.onclick = () => claimCustomTask(task.id);
-                    
-                    const icon = getTaskIcon(task.type);
-                    
-                    taskElement.innerHTML = `
-                        <div class="condition-text">
-                            <div>${icon} ${task.name}</div>
-                            <div style="font-size: 12px; color: #ccc;">${task.description || task.link}</div>
-                        </div>
-                        <div class="condition-reward">+${task.reward} DRC</div>
-                        <div class="condition-status condition-pending" id="customCondition_${task.id}"></div>
-                    `;
-                    
-                    customTasksList.appendChild(taskElement);
-                }
+            // Add miscellaneous custom tasks
+            miscCustomTasks.forEach(task => {
+                const taskElement = document.createElement('div');
+                taskElement.className = 'condition-item task-button';
+                taskElement.id = `customTask_${task.id}`;
+                taskElement.onclick = () => claimCustomTask(task.id);
+                
+                const icon = getTaskIcon(task.type);
+                
+                taskElement.innerHTML = `
+                    <div class="condition-text">
+                        <div>${icon} ${task.name}</div>
+                        <div style="font-size: 12px; color: #ccc;">${task.description || task.link}</div>
+                    </div>
+                    <div class="condition-reward">+${task.reward} DRC</div>
+                    <div class="condition-status condition-pending" id="customCondition_${task.id}"></div>
+                `;
+                
+                customTasksList.appendChild(taskElement);
             });
         }
 
@@ -3701,14 +3788,39 @@
             customTasks.push(newTask);
             localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
             
-            // Save to Firebase for all players
+            // Save to Firebase for all players immediately
             saveGlobalTaskSettings();
             
             // Close modal safely
             closeAddTaskModal();
             
             showNotification(`✅ "${taskName}" vazifasi barcha o'yinchilar uchun qo'shildi!`, 'success');
+            
+            // Update display immediately
             updateTasksDisplay();
+            
+            // Show notification about where the task was added
+            const categoryName = getCategoryName(taskType);
+            setTimeout(() => {
+                showNotification(`📍 Vazifa "${categoryName}" bo'limiga joylashtirildi!`, 'success');
+            }, 2000);
+        }
+        
+        function getCategoryName(taskType) {
+            switch(taskType) {
+                case 'telegram':
+                case 'youtube':
+                case 'code':
+                case 'website':
+                case 'social':
+                    return 'Asosiy Vazifalar';
+                case 'level':
+                    return 'Level Vazifalari';
+                case 'referral':
+                    return 'Referral Vazifalari';
+                default:
+                    return 'Maxsus Vazifalar';
+            }
         }
 
         function showRemoveTaskModal() {
@@ -3853,12 +3965,14 @@
                 customTasks = customTasks.filter(task => task.id !== taskId);
                 localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
                 
-                // Save to Firebase for all players
+                // Save to Firebase for all players immediately
                 saveGlobalTaskSettings();
                 
                 // Close modal and refresh
                 closeRemoveTaskModal();
                 showNotification('✅ Vazifa barcha o\'yinchilar uchun o\'chirildi!', 'success');
+                
+                // Update display immediately
                 updateTasksDisplay();
             }
         }
@@ -3866,22 +3980,26 @@
         function hideStandardTask(taskId) {
             localStorage.setItem(`hiddenTask_${taskId}`, 'true');
             
-            // Save to Firebase for all players
+            // Save to Firebase for all players immediately
             saveGlobalTaskSettings();
             
             closeRemoveTaskModal();
             showNotification('✅ Vazifa barcha o\'yinchilar uchun yashirildi!', 'success');
+            
+            // Update display immediately
             updateTasksDisplay();
         }
 
         function showStandardTask(taskId) {
             localStorage.removeItem(`hiddenTask_${taskId}`);
             
-            // Save to Firebase for all players
+            // Save to Firebase for all players immediately
             saveGlobalTaskSettings();
             
             closeRemoveTaskModal();
             showNotification('✅ Vazifa barcha o\'yinchilar uchun ko\'rsatildi!', 'success');
+            
+            // Update display immediately
             updateTasksDisplay();
         }
 
@@ -3907,11 +4025,13 @@
             if (confirm(`"${taskName}" vazifasini barcha o'yinchilar uchun butunlay o'chirishni tasdiqlaysizmi?\n\nBu vazifa hech kimga ko'rinmaydi.`)) {
                 localStorage.setItem(`deletedTask_${taskId}`, 'true');
                 
-                // Save to Firebase for all players
+                // Save to Firebase for all players immediately
                 saveGlobalTaskSettings();
                 
                 closeRemoveTaskModal();
                 showNotification('✅ Vazifa barcha o\'yinchilar uchun o\'chirildi!', 'success');
+                
+                // Update display immediately
                 updateTasksDisplay();
             }
         }
@@ -3925,11 +4045,13 @@
                     localStorage.removeItem(`deletedTask_${taskId}`);
                 });
                 
-                // Save to Firebase for all players
+                // Save to Firebase for all players immediately
                 saveGlobalTaskSettings();
                 
                 closeRemoveTaskModal();
                 showNotification('✅ Barcha vazifalar barcha o\'yinchilar uchun qayta tiklandi!', 'success');
+                
+                // Update display immediately
                 updateTasksDisplay();
             }
         }
@@ -4298,14 +4420,22 @@
                 
                 localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
                 
-                // Save to Firebase for all players
+                // Save to Firebase for all players immediately
                 saveGlobalTaskSettings();
                 
                 // Close modal
                 closeEditTaskFormModal();
                 
                 showNotification(`✅ "${taskName}" vazifasi barcha o'yinchilar uchun tahrirlandi!`, 'success');
+                
+                // Update display immediately
                 updateTasksDisplay();
+                
+                // Show notification about category change if applicable
+                const categoryName = getCategoryName(taskType);
+                setTimeout(() => {
+                    showNotification(`📍 Vazifa "${categoryName}" bo'limiga ko'chirildi!`, 'success');
+                }, 2000);
             }
         }
 
@@ -4583,5 +4713,5 @@
         // Save before page unload
         window.addEventListener('beforeunload', saveGameState);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ee4bd50214c4eb',t:'MTc1NTE1MTkwMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ee5ea573fe0a27',t:'MTc1NTE1MjY3MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
