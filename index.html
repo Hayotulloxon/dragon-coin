@@ -2217,6 +2217,163 @@
             updateTaskStatus('code', gameState.completedTasks.code);
             
             updateCompletedTasksDisplay();
+            displayCustomTasks();
+        }
+
+        function displayCustomTasks() {
+            const conditionsPanel = document.getElementById('conditionsPanel');
+            
+            // Remove existing custom tasks
+            const existingCustomTasks = conditionsPanel.querySelectorAll('[id^="customTask_"]');
+            existingCustomTasks.forEach(task => task.remove());
+            
+            // Add custom tasks
+            customTasks.forEach(task => {
+                if (!task.completed) {
+                    const taskElement = document.createElement('div');
+                    taskElement.className = 'condition-item task-button';
+                    taskElement.id = `customTask_${task.id}`;
+                    taskElement.onclick = () => claimCustomTask(task.id);
+                    
+                    const icon = getTaskIcon(task.type);
+                    
+                    taskElement.innerHTML = `
+                        <div class="condition-text">
+                            <div>${icon} ${task.name}</div>
+                            <div style="font-size: 12px; color: #ccc;">${task.description || task.link}</div>
+                        </div>
+                        <div class="condition-reward">+${task.reward} DRC</div>
+                        <div class="condition-status condition-pending" id="customCondition_${task.id}"></div>
+                    `;
+                    
+                    conditionsPanel.appendChild(taskElement);
+                }
+            });
+        }
+
+        function getTaskIcon(taskType) {
+            const icons = {
+                telegram: '📱',
+                youtube: '📺',
+                code: '🔐',
+                website: '🌐',
+                social: '📲'
+            };
+            return icons[taskType] || '📋';
+        }
+
+        function claimCustomTask(taskId) {
+            const task = customTasks.find(t => t.id === taskId);
+            if (!task || task.completed) return;
+            
+            switch (task.type) {
+                case 'telegram':
+                    claimTelegramTask(task);
+                    break;
+                case 'youtube':
+                    claimYouTubeTask(task);
+                    break;
+                case 'code':
+                    claimCodeTask(task);
+                    break;
+                case 'website':
+                    claimWebsiteTask(task);
+                    break;
+                case 'social':
+                    claimSocialTask(task);
+                    break;
+            }
+        }
+
+        function claimTelegramTask(task) {
+            // Extract channel username from link
+            let channelUsername = task.link;
+            if (channelUsername.includes('t.me/')) {
+                channelUsername = channelUsername.split('t.me/')[1];
+            }
+            if (channelUsername.startsWith('@')) {
+                channelUsername = channelUsername.substring(1);
+            }
+            
+            // Open Telegram channel
+            const telegramUrl = `https://t.me/${channelUsername}`;
+            window.open(telegramUrl, '_blank');
+            
+            // Show verification dialog after 3 seconds
+            setTimeout(() => {
+                if (confirm(`${task.name} vazifasini bajardingizmi?\n\nAgar kanalga obuna bo'lgan bo'lsangiz, "OK" tugmasini bosing.`)) {
+                    // In a real app, this would verify subscription via Telegram Bot API
+                    // For now, we'll trust the user
+                    completeCustomTask(task);
+                }
+            }, 3000);
+        }
+
+        function claimYouTubeTask(task) {
+            // Open YouTube channel
+            window.open(task.link, '_blank');
+            
+            // Show verification dialog after 3 seconds
+            setTimeout(() => {
+                if (confirm(`${task.name} vazifasini bajardingizmi?\n\nAgar kanalga obuna bo'lgan bo'lsangiz, "OK" tugmasini bosing.`)) {
+                    // In a real app, this would verify subscription via YouTube API
+                    // For now, we'll trust the user
+                    completeCustomTask(task);
+                }
+            }, 3000);
+        }
+
+        function claimCodeTask(task) {
+            const userCode = prompt(`${task.name}\n\nKodni kiriting:`);
+            if (userCode && userCode.toUpperCase() === task.code.toUpperCase()) {
+                completeCustomTask(task);
+            } else if (userCode) {
+                showNotification('❌ Noto\'g\'ri kod! Qaytadan urinib ko\'ring.', 'error');
+            }
+        }
+
+        function claimWebsiteTask(task) {
+            // Open website
+            window.open(task.link, '_blank');
+            
+            // Show verification dialog after 5 seconds
+            setTimeout(() => {
+                if (confirm(`${task.name} vazifasini bajardingizmi?\n\nAgar websitega tashrif buyurgan bo'lsangiz, "OK" tugmasini bosing.`)) {
+                    completeCustomTask(task);
+                }
+            }, 5000);
+        }
+
+        function claimSocialTask(task) {
+            // Open social media link
+            window.open(task.link, '_blank');
+            
+            // Show verification dialog after 3 seconds
+            setTimeout(() => {
+                if (confirm(`${task.name} vazifasini bajardingizmi?\n\nAgar vazifani bajargan bo'lsangiz, "OK" tugmasini bosing.`)) {
+                    completeCustomTask(task);
+                }
+            }, 3000);
+        }
+
+        function completeCustomTask(task) {
+            // Mark task as completed
+            const taskIndex = customTasks.findIndex(t => t.id === task.id);
+            if (taskIndex !== -1) {
+                customTasks[taskIndex].completed = true;
+                customTasks[taskIndex].completedDate = new Date().toLocaleDateString();
+                localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
+                
+                // Give reward
+                gameState.balance += task.reward;
+                
+                showNotification(`✅ ${task.name} bajarildi! +${task.reward} DRC olindi!`, 'success');
+                
+                // Update displays
+                updateTasksDisplay();
+                updateUI();
+                saveGameState();
+            }
         }
 
         function updateTaskStatus(taskType, canClaim) {
@@ -2804,6 +2961,9 @@
             `).join('');
         }
 
+        // Custom tasks system
+        let customTasks = JSON.parse(localStorage.getItem('dragonCoinCustomTasks') || '[]');
+
         function adminAction(action) {
             switch (action) {
                 case 'addCoins':
@@ -2832,30 +2992,422 @@
                     }
                     break;
                 case 'addTask':
-                    const taskName = prompt('Vazifa nomini kiriting:');
-                    const taskReward = prompt('Vazifa mukofotini kiriting (DRC):');
-                    if (taskName && taskReward && !isNaN(taskReward)) {
-                        showNotification(`✅ "${taskName}" vazifasi ${taskReward} DRC mukofot bilan qo'shildi!`, 'success');
-                    }
+                    showAddTaskModal();
                     break;
                 case 'removeTask':
-                    const removeTaskName = prompt('O\'chiriladigan vazifa nomini kiriting:');
-                    if (removeTaskName && confirm(`"${removeTaskName}" vazifasini o'chirishni tasdiqlaysizmi?`)) {
-                        showNotification(`✅ "${removeTaskName}" vazifasi o'chirildi!`, 'success');
-                    }
+                    showRemoveTaskModal();
                     break;
                 case 'editTask':
-                    const editTaskName = prompt('Tahrirlanadigan vazifa nomini kiriting:');
-                    if (editTaskName) {
-                        const newReward = prompt('Yangi mukofot miqdorini kiriting:');
-                        if (newReward && !isNaN(newReward)) {
-                            showNotification(`✅ "${editTaskName}" vazifasi tahrirlandi! Yangi mukofot: ${newReward} DRC`, 'success');
-                        }
-                    }
+                    showEditTaskModal();
                     break;
                 case 'viewTasks':
-                    showNotification('📋 Barcha vazifalar admin panelida ko\'rsatildi!', 'success');
+                    showViewTasksModal();
                     break;
+            }
+        }
+
+        function showAddTaskModal() {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                background: rgba(0,0,0,0.8); z-index: 2000; backdrop-filter: blur(10px);
+                display: flex; align-items: center; justify-content: center;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background: rgba(10,10,15,0.95); border-radius: 20px; padding: 30px; max-width: 500px; width: 90%; border: 2px solid rgba(0,255,136,0.3); box-shadow: 0 0 50px rgba(0,255,136,0.3);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #00ff88; margin: 0;">➕ Yangi Vazifa Qo'shish</h3>
+                        <button onclick="this.closest('div').parentElement.remove()" style="background: none; border: none; color: #ff6b35; font-size: 24px; cursor: pointer;">×</button>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; color: #ccc; margin-bottom: 5px;">Vazifa turi:</label>
+                        <select id="taskType" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff;">
+                            <option value="telegram">📱 Telegram kanalga obuna</option>
+                            <option value="youtube">📺 YouTube kanalga obuna</option>
+                            <option value="code">🔐 Maxsus kod kiritish</option>
+                            <option value="website">🌐 Websitega tashrif</option>
+                            <option value="social">📲 Ijtimoiy tarmoq</option>
+                        </select>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; color: #ccc; margin-bottom: 5px;">Vazifa nomi:</label>
+                        <input type="text" id="taskName" placeholder="Masalan: Dragon Coin kanalga obuna bo'ling" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff;">
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; color: #ccc; margin-bottom: 5px;">Tavsif:</label>
+                        <input type="text" id="taskDesc" placeholder="Qo'shimcha ma'lumot" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff;">
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; color: #ccc; margin-bottom: 5px;">Link/Kanal nomi:</label>
+                        <input type="text" id="taskLink" placeholder="@DragonCoinChannel yoki https://..." style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff;">
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; color: #ccc; margin-bottom: 5px;">Mukofot (DRC):</label>
+                        <input type="number" id="taskReward" placeholder="1500" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff;">
+                    </div>
+                    
+                    <div id="codeSection" style="margin-bottom: 15px; display: none;">
+                        <label style="display: block; color: #ccc; margin-bottom: 5px;">To'g'ri kod:</label>
+                        <input type="text" id="taskCode" placeholder="DRAGON2024" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff;">
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button onclick="this.closest('div').parentElement.remove()" style="flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 12px; border-radius: 8px; cursor: pointer;">Bekor qilish</button>
+                        <button onclick="addCustomTask()" style="flex: 1; background: linear-gradient(45deg, #00ff88, #00cc6a); border: none; color: #000; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold;">Qo'shish</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Show/hide code section based on task type
+            document.getElementById('taskType').addEventListener('change', function() {
+                const codeSection = document.getElementById('codeSection');
+                if (this.value === 'code') {
+                    codeSection.style.display = 'block';
+                } else {
+                    codeSection.style.display = 'none';
+                }
+            });
+        }
+
+        function addCustomTask() {
+            const taskType = document.getElementById('taskType').value;
+            const taskName = document.getElementById('taskName').value;
+            const taskDesc = document.getElementById('taskDesc').value;
+            const taskLink = document.getElementById('taskLink').value;
+            const taskReward = parseInt(document.getElementById('taskReward').value);
+            const taskCode = document.getElementById('taskCode').value;
+            
+            if (!taskName || !taskReward || isNaN(taskReward)) {
+                showNotification('❌ Barcha maydonlarni to\'ldiring!', 'error');
+                return;
+            }
+            
+            const newTask = {
+                id: 'custom_' + Date.now(),
+                type: taskType,
+                name: taskName,
+                description: taskDesc,
+                link: taskLink,
+                reward: taskReward,
+                code: taskCode,
+                completed: false,
+                dateAdded: new Date().toLocaleDateString()
+            };
+            
+            customTasks.push(newTask);
+            localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
+            
+            // Close modal
+            document.querySelector('[style*="position: fixed"]').remove();
+            
+            showNotification(`✅ "${taskName}" vazifasi qo'shildi!`, 'success');
+            updateTasksDisplay();
+        }
+
+        function showRemoveTaskModal() {
+            if (customTasks.length === 0) {
+                showNotification('❌ O\'chiriladigan vazifa yo\'q!', 'error');
+                return;
+            }
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                background: rgba(0,0,0,0.8); z-index: 2000; backdrop-filter: blur(10px);
+                display: flex; align-items: center; justify-content: center;
+            `;
+            
+            const tasksList = customTasks.map(task => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 8px;">
+                    <div>
+                        <div style="font-weight: bold; color: #00ff88;">${task.name}</div>
+                        <div style="font-size: 12px; color: #ccc;">${task.reward} DRC • ${task.dateAdded}</div>
+                    </div>
+                    <button onclick="removeCustomTask('${task.id}')" style="background: #ff6b35; color: #fff; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">O'chirish</button>
+                </div>
+            `).join('');
+            
+            modal.innerHTML = `
+                <div style="background: rgba(10,10,15,0.95); border-radius: 20px; padding: 30px; max-width: 500px; width: 90%; border: 2px solid rgba(255,107,53,0.3); box-shadow: 0 0 50px rgba(255,107,53,0.3);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #ff6b35; margin: 0;">🗑️ Vazifalarni O'chirish</h3>
+                        <button onclick="this.closest('div').parentElement.remove()" style="background: none; border: none; color: #ff6b35; font-size: 24px; cursor: pointer;">×</button>
+                    </div>
+                    
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        ${tasksList}
+                    </div>
+                    
+                    <button onclick="this.closest('div').parentElement.remove()" style="width: 100%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 12px; border-radius: 8px; cursor: pointer; margin-top: 15px;">Yopish</button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        function removeCustomTask(taskId) {
+            customTasks = customTasks.filter(task => task.id !== taskId);
+            localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
+            
+            // Close modal and refresh
+            document.querySelector('[style*="position: fixed"]').remove();
+            showNotification('✅ Vazifa o\'chirildi!', 'success');
+            updateTasksDisplay();
+        }
+
+        function showViewTasksModal() {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                background: rgba(0,0,0,0.8); z-index: 2000; backdrop-filter: blur(10px);
+                display: flex; align-items: center; justify-content: center;
+            `;
+            
+            const allTasks = [
+                ...Object.entries(gameState.completedTasks).map(([key, completed]) => ({
+                    name: getTaskName(key),
+                    type: 'Standart',
+                    completed: completed,
+                    reward: getTaskReward(key)
+                })),
+                ...customTasks.map(task => ({
+                    name: task.name,
+                    type: 'Maxsus',
+                    completed: task.completed,
+                    reward: task.reward
+                }))
+            ];
+            
+            const tasksList = allTasks.map(task => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 8px; border-left: 4px solid ${task.completed ? '#00ff88' : '#ff6b35'};">
+                    <div>
+                        <div style="font-weight: bold; color: ${task.completed ? '#00ff88' : '#fff'};">${task.name}</div>
+                        <div style="font-size: 12px; color: #ccc;">${task.type} vazifa • ${task.reward} DRC</div>
+                    </div>
+                    <div style="color: ${task.completed ? '#00ff88' : '#ff6b35'}; font-size: 18px;">
+                        ${task.completed ? '✅' : '⏳'}
+                    </div>
+                </div>
+            `).join('');
+            
+            modal.innerHTML = `
+                <div style="background: rgba(10,10,15,0.95); border-radius: 20px; padding: 30px; max-width: 600px; width: 90%; border: 2px solid rgba(255,215,0,0.3); box-shadow: 0 0 50px rgba(255,215,0,0.3);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #FFD700; margin: 0;">📋 Barcha Vazifalar</h3>
+                        <button onclick="this.closest('div').parentElement.remove()" style="background: none; border: none; color: #ff6b35; font-size: 24px; cursor: pointer;">×</button>
+                    </div>
+                    
+                    <div style="display: flex; gap: 20px; margin-bottom: 20px; text-align: center;">
+                        <div style="flex: 1; padding: 15px; background: rgba(0,255,136,0.1); border-radius: 10px;">
+                            <div style="font-size: 24px; font-weight: bold; color: #00ff88;">${allTasks.filter(t => t.completed).length}</div>
+                            <div style="font-size: 12px; color: #ccc;">Bajarilgan</div>
+                        </div>
+                        <div style="flex: 1; padding: 15px; background: rgba(255,107,53,0.1); border-radius: 10px;">
+                            <div style="font-size: 24px; font-weight: bold; color: #ff6b35;">${allTasks.filter(t => !t.completed).length}</div>
+                            <div style="font-size: 12px; color: #ccc;">Kutilmoqda</div>
+                        </div>
+                        <div style="flex: 1; padding: 15px; background: rgba(255,215,0,0.1); border-radius: 10px;">
+                            <div style="font-size: 24px; font-weight: bold; color: #FFD700;">${allTasks.length}</div>
+                            <div style="font-size: 12px; color: #ccc;">Jami</div>
+                        </div>
+                    </div>
+                    
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        ${tasksList}
+                    </div>
+                    
+                    <button onclick="this.closest('div').parentElement.remove()" style="width: 100%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 12px; border-radius: 8px; cursor: pointer; margin-top: 15px;">Yopish</button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        function getTaskName(taskKey) {
+            const names = {
+                taps: '500 marta tap qiling',
+                level: 'Level 5 ga yeting',
+                coins: '10000 coin to\'plang',
+                referral: '5 ta do\'st taklif qiling',
+                telegram: 'Telegram kanalga obuna bo\'ling',
+                youtube: 'YouTube kanalga obuna bo\'ling',
+                code: 'Maxsus kodni kiriting'
+            };
+            return names[taskKey] || taskKey;
+        }
+
+        function getTaskReward(taskKey) {
+            const rewards = {
+                taps: 1000,
+                level: 2000,
+                coins: 5000,
+                referral: 3000,
+                telegram: 1500,
+                youtube: 2000,
+                code: 5000
+            };
+            return rewards[taskKey] || 0;
+        }
+
+        function showEditTaskModal() {
+            if (customTasks.length === 0) {
+                showNotification('❌ Tahrirlanadigan vazifa yo\'q!', 'error');
+                return;
+            }
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                background: rgba(0,0,0,0.8); z-index: 2000; backdrop-filter: blur(10px);
+                display: flex; align-items: center; justify-content: center;
+            `;
+            
+            const tasksList = customTasks.map(task => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 8px;">
+                    <div>
+                        <div style="font-weight: bold; color: #00ff88;">${task.name}</div>
+                        <div style="font-size: 12px; color: #ccc;">${task.reward} DRC • ${task.type}</div>
+                    </div>
+                    <button onclick="editCustomTask('${task.id}')" style="background: #00ff88; color: #000; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Tahrirlash</button>
+                </div>
+            `).join('');
+            
+            modal.innerHTML = `
+                <div style="background: rgba(10,10,15,0.95); border-radius: 20px; padding: 30px; max-width: 500px; width: 90%; border: 2px solid rgba(0,255,136,0.3); box-shadow: 0 0 50px rgba(0,255,136,0.3);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #00ff88; margin: 0;">✏️ Vazifalarni Tahrirlash</h3>
+                        <button onclick="this.closest('div').parentElement.remove()" style="background: none; border: none; color: #ff6b35; font-size: 24px; cursor: pointer;">×</button>
+                    </div>
+                    
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        ${tasksList}
+                    </div>
+                    
+                    <button onclick="this.closest('div').parentElement.remove()" style="width: 100%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 12px; border-radius: 8px; cursor: pointer; margin-top: 15px;">Yopish</button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        function editCustomTask(taskId) {
+            const task = customTasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            // Close current modal
+            document.querySelector('[style*="position: fixed"]').remove();
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                background: rgba(0,0,0,0.8); z-index: 2000; backdrop-filter: blur(10px);
+                display: flex; align-items: center; justify-content: center;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background: rgba(10,10,15,0.95); border-radius: 20px; padding: 30px; max-width: 500px; width: 90%; border: 2px solid rgba(0,255,136,0.3); box-shadow: 0 0 50px rgba(0,255,136,0.3);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: #00ff88; margin: 0;">✏️ Vazifani Tahrirlash</h3>
+                        <button onclick="this.closest('div').parentElement.remove()" style="background: none; border: none; color: #ff6b35; font-size: 24px; cursor: pointer;">×</button>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; color: #ccc; margin-bottom: 5px;">Vazifa turi:</label>
+                        <select id="editTaskType" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff;">
+                            <option value="telegram" ${task.type === 'telegram' ? 'selected' : ''}>📱 Telegram kanalga obuna</option>
+                            <option value="youtube" ${task.type === 'youtube' ? 'selected' : ''}>📺 YouTube kanalga obuna</option>
+                            <option value="code" ${task.type === 'code' ? 'selected' : ''}>🔐 Maxsus kod kiritish</option>
+                            <option value="website" ${task.type === 'website' ? 'selected' : ''}>🌐 Websitega tashrif</option>
+                            <option value="social" ${task.type === 'social' ? 'selected' : ''}>📲 Ijtimoiy tarmoq</option>
+                        </select>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; color: #ccc; margin-bottom: 5px;">Vazifa nomi:</label>
+                        <input type="text" id="editTaskName" value="${task.name}" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff;">
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; color: #ccc; margin-bottom: 5px;">Tavsif:</label>
+                        <input type="text" id="editTaskDesc" value="${task.description || ''}" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff;">
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; color: #ccc; margin-bottom: 5px;">Link/Kanal nomi:</label>
+                        <input type="text" id="editTaskLink" value="${task.link || ''}" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff;">
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; color: #ccc; margin-bottom: 5px;">Mukofot (DRC):</label>
+                        <input type="number" id="editTaskReward" value="${task.reward}" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff;">
+                    </div>
+                    
+                    <div id="editCodeSection" style="margin-bottom: 15px; display: ${task.type === 'code' ? 'block' : 'none'};">
+                        <label style="display: block; color: #ccc; margin-bottom: 5px;">To'g'ri kod:</label>
+                        <input type="text" id="editTaskCode" value="${task.code || ''}" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff;">
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button onclick="this.closest('div').parentElement.remove()" style="flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 12px; border-radius: 8px; cursor: pointer;">Bekor qilish</button>
+                        <button onclick="saveEditedTask('${taskId}')" style="flex: 1; background: linear-gradient(45deg, #00ff88, #00cc6a); border: none; color: #000; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold;">Saqlash</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Show/hide code section based on task type
+            document.getElementById('editTaskType').addEventListener('change', function() {
+                const codeSection = document.getElementById('editCodeSection');
+                if (this.value === 'code') {
+                    codeSection.style.display = 'block';
+                } else {
+                    codeSection.style.display = 'none';
+                }
+            });
+        }
+
+        function saveEditedTask(taskId) {
+            const taskType = document.getElementById('editTaskType').value;
+            const taskName = document.getElementById('editTaskName').value;
+            const taskDesc = document.getElementById('editTaskDesc').value;
+            const taskLink = document.getElementById('editTaskLink').value;
+            const taskReward = parseInt(document.getElementById('editTaskReward').value);
+            const taskCode = document.getElementById('editTaskCode').value;
+            
+            if (!taskName || !taskReward || isNaN(taskReward)) {
+                showNotification('❌ Barcha maydonlarni to\'ldiring!', 'error');
+                return;
+            }
+            
+            const taskIndex = customTasks.findIndex(t => t.id === taskId);
+            if (taskIndex !== -1) {
+                customTasks[taskIndex] = {
+                    ...customTasks[taskIndex],
+                    type: taskType,
+                    name: taskName,
+                    description: taskDesc,
+                    link: taskLink,
+                    reward: taskReward,
+                    code: taskCode,
+                    lastEdited: new Date().toLocaleDateString()
+                };
+                
+                localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
+                
+                // Close modal
+                document.querySelector('[style*="position: fixed"]').remove();
+                
+                showNotification(`✅ "${taskName}" vazifasi tahrirlandi!`, 'success');
+                updateTasksDisplay();
             }
         }
 
@@ -3133,5 +3685,5 @@
         // Save before page unload
         window.addEventListener('beforeunload', saveGameState);
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96e8bb75b538991e',t:'MTc1NTA5MzU1OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96ee06a7a1342382',t:'MTc1NTE0OTA2OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
