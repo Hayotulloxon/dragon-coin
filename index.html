@@ -2232,62 +2232,54 @@ onAuthStateChanged(auth, (user) => {
         }
 
         // Tap function - optimized for mobile
-        function tapCoin(event) {
-            const now = Date.now();
-            
-            // Prevent too frequent taps but allow faster tapping
-            if (now - lastTapTime < 30) return;
-            lastTapTime = now;
-            
-            // Prevent default touch behavior
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            
-            // Check if turbo is active (unlimited energy)
-            const isTurboActive = gameState.activeBoosts.turbo.active && gameState.activeBoosts.turbo.endTime > now;
-            
-            if (!isTurboActive && gameState.energy <= 0) {
-                showEnergyWarning();
-                return;
-            }
-            
-            // Apply multitap
-            const tapsToProcess = gameState.multitap;
-            const coinsPerTap = gameState.tapPower;
-            const totalCoins = coinsPerTap * tapsToProcess;
-            
-            gameState.balance += totalCoins;
-            
-            // Only consume energy if turbo is not active
-            if (!isTurboActive) {
-                gameState.energy = Math.max(0, gameState.energy - tapsToProcess);
-            }
-            
-            gameState.totalTaps += tapsToProcess;
-            
-            // Optimize effects for mobile
-            createTapEffectOptimized(event, totalCoins);
-            animateCoinOptimized();
-            
-            // Batch UI updates for better performance
-            if (!pendingUIUpdate) {
-                pendingUIUpdate = true;
-                requestAnimationFrame(() => {
-                    updateUIOptimized();
-                    pendingUIUpdate = false;
-                });
-            }
-            
-            checkLevelUp();
-            
-            // Save less frequently to reduce lag
-            if (now - gameState.lastSaveTime > 10000) {
-                saveGameState();
-                gameState.lastSaveTime = now;
-            }
-        }
+        window.tapCoin = function(event) {
+    const now = Date.now();
+    if (now - lastTapTime < 30) return;
+    lastTapTime = now;
+
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    const isTurboActive = gameState.activeBoosts.turbo.active && gameState.activeBoosts.turbo.endTime > now;
+
+    if (!isTurboActive && gameState.energy <= 0) {
+        showEnergyWarning();
+        return;
+    }
+
+    const tapsToProcess = gameState.multitap;
+    const coinsPerTap = gameState.tapPower;
+    const totalCoins = coinsPerTap * tapsToProcess;
+
+    gameState.balance += totalCoins;
+
+    if (!isTurboActive) {
+        gameState.energy = Math.max(0, gameState.energy - tapsToProcess);
+    }
+
+    gameState.totalTaps += tapsToProcess;
+
+    createTapEffectOptimized(event, totalCoins);
+    animateCoinOptimized();
+
+    if (!pendingUIUpdate) {
+        pendingUIUpdate = true;
+        requestAnimationFrame(() => {
+            updateUIOptimized();
+            pendingUIUpdate = false;
+        });
+    }
+
+    checkLevelUp();
+
+    if (now - gameState.lastSaveTime > 10000) {
+        saveGameState();
+        gameState.lastSaveTime = now;
+    }
+};
+
 
         function createTapEffect(event, coins) {
             const coinContainer = document.querySelector('.coin-container');
