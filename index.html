@@ -7,56 +7,56 @@
     <title>Dragon Coin - Tap to Earn</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
-    <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
-    import { getDatabase, ref, set, get, onValue, push, update, remove } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-    
-    const firebaseConfig = {
-      apiKey: "AIzaSyDShZAo9lg-SxpQViCT27uXVni1UK7TGYU",
-      authDomain: "dragon-92897.firebaseapp.com",
-      databaseURL: "https://dragon-92897-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "dragon-92897",
-      storageBucket: "dragon-92897.firebasestorage.app",
-      messagingSenderId: "40351345340",
-      appId: "1:40351345340:web:632388a9b45d3c7905feb9",
-      measurementId: "G-FXT1F3NPCD"
-    };
-    
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-    const database = getDatabase(app);
-    const auth = getAuth(app);
-    
-    signInAnonymously(auth)
-      .then(() => console.log("✅ Anonymous login yuborildi"))
-      .catch((error) => console.error("❌ Login xatosi:", error));
-    
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        console.log("👤 Auth UID:", user.uid);
-    
-        // Global Firebase obyektlari
-        window.firebaseApp = app;
-        window.firebaseDatabase = database;
-        window.firebaseRef = ref;
-        window.firebaseSet = set;
-        window.firebaseGet = get;
-        window.firebaseOnValue = onValue;
-        window.firebasePush = push;
-        window.firebaseUpdate = update;
-        window.firebaseRemove = remove;
-        window.firebaseAuthUid = user.uid;
-    
-        // Rules bilan mos keladigan yo‘l
-        const playerRef = ref(database, "players/" + user.uid);
-        set(playerRef, { name: "Dragon Miner", coins: 0, level: 1 })
-          .then(() => console.log("✅ Player ma'lumotlari yozildi"))
-          .catch((err) => console.error("❌ Player yozishda xato:", err));
-      }
-    });
-    </script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
+import { getDatabase, ref, set, get, onValue, push, update, remove } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDShZAo9lg-SxpQViCT27uXVni1UK7TGYU",
+  authDomain: "dragon-92897.firebaseapp.com",
+  databaseURL: "https://dragon-92897-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "dragon-92897",
+  storageBucket: "dragon-92897.firebasestorage.app",
+  messagingSenderId: "40351345340",
+  appId: "1:40351345340:web:632388a9b45d3c7905feb9",
+  measurementId: "G-FXT1F3NPCD"
+};
+
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const database = getDatabase(app);
+const auth = getAuth(app);
+
+signInAnonymously(auth)
+  .then(() => console.log("✅ Anonymous login yuborildi"))
+  .catch((error) => console.error("❌ Login xatosi:", error));
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    console.log("👤 Auth UID:", user.uid);
+
+    // Global Firebase obyektlari
+    window.firebaseApp = app;
+    window.firebaseDatabase = database;
+    window.firebaseRef = ref;
+    window.firebaseSet = set;
+    window.firebaseGet = get;
+    window.firebaseOnValue = onValue;
+    window.firebasePush = push;
+    window.firebaseUpdate = update;
+    window.firebaseRemove = remove;
+    window.firebaseAuthUid = user.uid;
+
+    // Rules bilan mos keladigan yo‘l
+    const playerRef = ref(database, "players/" + user.uid);
+    set(playerRef, { name: "Dragon Miner", coins: 0, level: 1 })
+      .then(() => console.log("✅ Player ma'lumotlari yozildi"))
+      .catch((err) => console.error("❌ Player yozishda xato:", err));
+  }
+});
+</script>
 
     <style>
         * {
@@ -1866,42 +1866,41 @@
 
         // YANGI: Global task management functions - ASOSIY MUAMMO SHU YERDA EMAS
         function saveGlobalTaskSettings() {
-    console.log('💾 Global vazifa sozlamalarini saqlash boshlanmoqda...');
-    
-    if (!firebaseConnected || !window.firebaseDatabase) {
-        console.log('⚠️ Firebase ulanmagan, mahalliy saqlash');
-        return false;
-    }
-    
-    try {
-        // Save hidden/deleted standard tasks
-        const hiddenTasks = [];
-        const deletedTasks = [];
-        
-        const standardTaskIds = ['taps', 'level', 'level3', 'level7', 'level10', 'coins', 'referral', 'referral1', 'referral3', 'referral10', 'telegram', 'youtube', 'code'];
-        
-        standardTaskIds.forEach(taskId => {
-            if (localStorage.getItem(`hiddenTask_${taskId}`) {
-                hiddenTasks.push(taskId);
+            console.log('💾 Global vazifa sozlamalarini saqlash boshlanmoqda...');
+            
+            if (!firebaseConnected || !window.firebaseDatabase) {
+                console.log('⚠️ Firebase ulanmagan, mahalliy saqlash');
+                return false;
             }
-            if (localStorage.getItem(`deletedTask_${taskId}`)) {
-                deletedTasks.push(taskId);
-            }
-        });
-        
-        // Save to Firebase with timestamp
-        const taskSettingsRef = window.firebaseRef(window.firebaseDatabase, 'globalTaskSettings');
-        const taskSettingsData = {
-            hiddenTasks: hiddenTasks,
-            deletedTasks: deletedTasks,
-            lastUpdate: Date.now(),
-            updatedBy: getUniquePlayerId(),
-            version: Date.now()
-        };
-        
-        // Use set with error handling
-        return window.firebaseSet(taskSettingsRef, taskSettingsData)
-            .then(() => {
+            
+            try {
+                // Save hidden/deleted standard tasks
+                const hiddenTasks = [];
+                const deletedTasks = [];
+                
+                const standardTaskIds = ['taps', 'level', 'level3', 'level7', 'level10', 'coins', 'referral', 'referral1', 'referral3', 'referral10', 'telegram', 'youtube', 'code'];
+                
+                standardTaskIds.forEach(taskId => {
+                    if (localStorage.getItem(`hiddenTask_${taskId}`) === 'true') {
+                        hiddenTasks.push(taskId);
+                    }
+                    if (localStorage.getItem(`deletedTask_${taskId}`) === 'true') {
+                        deletedTasks.push(taskId);
+                    }
+                });
+                
+                // Save to Firebase with timestamp
+                const taskSettingsRef = window.firebaseRef(window.firebaseDatabase, 'globalTaskSettings');
+                const taskSettingsData = {
+                    hiddenTasks: hiddenTasks,
+                    deletedTasks: deletedTasks,
+                    lastUpdate: Date.now(),
+                    updatedBy: getUniquePlayerId(),
+                    version: Date.now() // Add version for conflict resolution
+                };
+                
+                // Use synchronous approach
+                window.firebaseSet(taskSettingsRef, taskSettingsData);
                 console.log('✅ Global vazifa sozlamalari Firebase ga saqlandi:', taskSettingsData);
                 
                 // Save custom tasks globally with timestamp
@@ -1910,25 +1909,20 @@
                     tasks: customTasks,
                     lastUpdate: Date.now(),
                     updatedBy: getUniquePlayerId(),
-                    version: Date.now()
+                    version: Date.now() // Add version for conflict resolution
                 };
                 
-                return window.firebaseSet(customTasksRef, customTasksData)
-                    .then(() => {
-                        console.log('✅ Global maxsus vazifalar Firebase ga saqlandi:', customTasks.length, 'ta vazifa');
-                        return true;
-                    });
-            })
-            .catch(error => {
-                console.error('❌ Firebase ga saqlashda xatolik:', error);
+                // Use synchronous approach
+                window.firebaseSet(customTasksRef, customTasksData);
+                console.log('✅ Global maxsus vazifalar Firebase ga saqlandi:', customTasks.length, 'ta vazifa');
+                
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Global vazifa sozlamalarini saqlashda xatolik:', error);
                 return false;
-            });
-        
-    } catch (error) {
-        console.error('❌ Global vazifa sozlamalarini saqlashda xatolik:', error);
-        return false;
-    }
-}
+            }
+        }
 
         // YANGI: Improved global task loading with real-time updates
         function loadGlobalTaskSettings() {
@@ -2232,38 +2226,46 @@
         }
 
         // Tap function - optimized for mobile
-        window.tapCoin = function(event) {
+        function tapCoin(event) {
             const now = Date.now();
+            
+            // Prevent too frequent taps but allow faster tapping
             if (now - lastTapTime < 30) return;
             lastTapTime = now;
-        
+            
+            // Prevent default touch behavior
             if (event) {
                 event.preventDefault();
                 event.stopPropagation();
             }
-        
+            
+            // Check if turbo is active (unlimited energy)
             const isTurboActive = gameState.activeBoosts.turbo.active && gameState.activeBoosts.turbo.endTime > now;
-        
+            
             if (!isTurboActive && gameState.energy <= 0) {
                 showEnergyWarning();
                 return;
             }
-        
+            
+            // Apply multitap
             const tapsToProcess = gameState.multitap;
             const coinsPerTap = gameState.tapPower;
             const totalCoins = coinsPerTap * tapsToProcess;
-        
+            
             gameState.balance += totalCoins;
-        
+            
+            // Only consume energy if turbo is not active
             if (!isTurboActive) {
                 gameState.energy = Math.max(0, gameState.energy - tapsToProcess);
             }
-        
+            
             gameState.totalTaps += tapsToProcess;
-        
+            
+            // Optimize effects for mobile
             createTapEffectOptimized(event, totalCoins);
             animateCoinOptimized();
-        
+            
+            // Batch UI updates for better performance
             if (!pendingUIUpdate) {
                 pendingUIUpdate = true;
                 requestAnimationFrame(() => {
@@ -2271,15 +2273,15 @@
                     pendingUIUpdate = false;
                 });
             }
-        
+            
             checkLevelUp();
-        
+            
+            // Save less frequently to reduce lag
             if (now - gameState.lastSaveTime > 10000) {
                 saveGameState();
                 gameState.lastSaveTime = now;
             }
-        };
-
+        }
 
         function createTapEffect(event, coins) {
             const coinContainer = document.querySelector('.coin-container');
@@ -3822,63 +3824,64 @@
 
         // YANGI: Improved addCustomTask function with better Firebase sync
         function addCustomTask() {
-    const taskType = document.getElementById('taskType').value;
-    const taskName = document.getElementById('taskName').value;
-    const taskDesc = document.getElementById('taskDesc').value;
-    const taskLink = document.getElementById('taskLink').value;
-    const taskReward = parseInt(document.getElementById('taskReward').value);
-    const taskCode = document.getElementById('taskCode').value;
-    const taskLevel = document.getElementById('taskLevel') ? parseInt(document.getElementById('taskLevel').value) : null;
-    const taskReferralCount = document.getElementById('taskReferralCount') ? parseInt(document.getElementById('taskReferralCount').value) : null;
-    
-    if (!taskName || !taskReward || isNaN(taskReward)) {
-        showNotification('❌ Barcha maydonlarni to\'ldiring!', 'error');
-        return;
-    }
-    
-    // Additional validation for level and referral tasks
-    if (taskType === 'level' && (!taskLevel || isNaN(taskLevel) || taskLevel < 1)) {
-        showNotification('❌ Level raqamini to\'g\'ri kiriting!', 'error');
-        return;
-    }
-    
-    if (taskType === 'referral' && (!taskReferralCount || isNaN(taskReferralCount) || taskReferralCount < 1)) {
-        showNotification('❌ Referral sonini to\'g\'ri kiriting!', 'error');
-        return;
-    }
-    
-    const newTask = {
-        id: 'custom_' + Date.now(),
-        type: taskType,
-        name: taskName,
-        description: taskDesc,
-        link: taskLink,
-        reward: taskReward,
-        code: taskCode,
-        level: taskLevel,
-        referralCount: taskReferralCount,
-        completed: false,
-        dateAdded: new Date().toLocaleDateString(),
-        createdBy: getUniquePlayerId()
-    };
-    
-    console.log('➕ Yangi vazifa qo\'shilmoqda:', newTask);
-    
-    customTasks.push(newTask);
-    localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
-    
-    // Close modal first
-    closeAddTaskModal();
-    
-    // Save to Firebase with retry mechanism
-    saveGlobalTaskSettings()
-        .then(success => {
-            if (success) {
+            const taskType = document.getElementById('taskType').value;
+            const taskName = document.getElementById('taskName').value;
+            const taskDesc = document.getElementById('taskDesc').value;
+            const taskLink = document.getElementById('taskLink').value;
+            const taskReward = parseInt(document.getElementById('taskReward').value);
+            const taskCode = document.getElementById('taskCode').value;
+            const taskLevel = document.getElementById('taskLevel') ? parseInt(document.getElementById('taskLevel').value) : null;
+            const taskReferralCount = document.getElementById('taskReferralCount') ? parseInt(document.getElementById('taskReferralCount').value) : null;
+            
+            if (!taskName || !taskReward || isNaN(taskReward)) {
+                showNotification('❌ Barcha maydonlarni to\'ldiring!', 'error');
+                return;
+            }
+            
+            // Additional validation for level and referral tasks
+            if (taskType === 'level' && (!taskLevel || isNaN(taskLevel) || taskLevel < 1)) {
+                showNotification('❌ Level raqamini to\'g\'ri kiriting!', 'error');
+                return;
+            }
+            
+            if (taskType === 'referral' && (!taskReferralCount || isNaN(taskReferralCount) || taskReferralCount < 1)) {
+                showNotification('❌ Referral sonini to\'g\'ri kiriting!', 'error');
+                return;
+            }
+            
+            const newTask = {
+                id: 'custom_' + Date.now(),
+                type: taskType,
+                name: taskName,
+                description: taskDesc,
+                link: taskLink,
+                reward: taskReward,
+                code: taskCode,
+                level: taskLevel,
+                referralCount: taskReferralCount,
+                completed: false,
+                dateAdded: new Date().toLocaleDateString(),
+                createdBy: getUniquePlayerId() // Track who created the task
+            };
+            
+            console.log('➕ Yangi vazifa qo\'shilmoqda:', newTask);
+            
+            customTasks.push(newTask);
+            localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
+            
+            // Close modal first
+            closeAddTaskModal();
+            
+            // Save to Firebase with retry mechanism
+            const saveSuccess = saveGlobalTaskSettings();
+            
+            if (saveSuccess !== false) {
                 showNotification(`✅ "${taskName}" vazifasi barcha o'yinchilar uchun qo'shildi!`, 'success');
                 
                 // Force immediate sync check for other players
                 setTimeout(() => {
                     if (firebaseConnected) {
+                        // Trigger immediate update check
                         checkForGlobalTaskUpdates();
                         showNotification('🌐 Vazifa barcha o\'yinchilarga yuborildi!', 'success');
                     }
@@ -3895,8 +3898,7 @@
             setTimeout(() => {
                 showNotification(`📍 Vazifa "${categoryName}" bo'limiga joylashtirildi!`, 'success');
             }, 2000);
-        });
-}
+        }
         
         function getCategoryName(taskType) {
             switch(taskType) {
@@ -4026,7 +4028,7 @@
                     </div>
                     
                     <div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <button onclick="()" style="flex: 1; background: #FFD700; color: #000; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold;">Barcha Standart Vazifalarni Qayta Tiklash</button>
+                        <button onclick="resetAllStandardTasks()" style="flex: 1; background: #FFD700; color: #000; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold;">Barcha Standart Vazifalarni Qayta Tiklash</button>
                         <button onclick="closeRemoveTaskModal()" style="flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 12px; border-radius: 8px; cursor: pointer;">Yopish</button>
                     </div>
                 </div>
@@ -4051,22 +4053,22 @@
 
         // YANGI: Improved removeCustomTask function with better Firebase sync
         function removeCustomTask(taskId) {
-    const taskToRemove = customTasks.find(task => task.id === taskId);
-    if (!taskToRemove) return;
-    
-    if (confirm(`"${taskToRemove.name}" vazifasini barcha o'yinchilar uchun o'chirishni tasdiqlaysizmi?`)) {
-        console.log('🗑️ Maxsus vazifa o\'chirilmoqda:', taskToRemove);
-        
-        customTasks = customTasks.filter(task => task.id !== taskId);
-        localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
-        
-        // Close modal first
-        closeRemoveTaskModal();
-        
-        // Save to Firebase with retry mechanism
-        saveGlobalTaskSettings()
-            .then(success => {
-                if (success) {
+            const taskToRemove = customTasks.find(task => task.id === taskId);
+            if (!taskToRemove) return;
+            
+            if (confirm(`"${taskToRemove.name}" vazifasini barcha o'yinchilar uchun o'chirishni tasdiqlaysizmi?`)) {
+                console.log('🗑️ Maxsus vazifa o\'chirilmoqda:', taskToRemove);
+                
+                customTasks = customTasks.filter(task => task.id !== taskId);
+                localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
+                
+                // Close modal first
+                closeRemoveTaskModal();
+                
+                // Save to Firebase with retry mechanism
+                const saveSuccess = saveGlobalTaskSettings();
+                
+                if (saveSuccess !== false) {
                     showNotification('✅ Vazifa barcha o\'yinchilar uchun o\'chirildi!', 'success');
                     
                     // Force immediate sync check for other players
@@ -4082,9 +4084,8 @@
                 
                 // Update display immediately
                 updateTasksDisplay();
-            });
-    }
-}
+            }
+        }
 
         function hideStandardTask(taskId) {
             console.log('👁️ Standart vazifa yashirilmoqda:', taskId);
@@ -4191,42 +4192,39 @@
         }
 
         function resetAllStandardTasks() {
-    if (confirm('Barcha standart vazifalarni barcha o\'yinchilar uchun qayta tiklashni tasdiqlaysizmi?\n\nBu barcha yashirilgan va o\'chirilgan standart vazifalarni qaytaradi.')) {
-        console.log('🔄 Barcha standart vazifalar qayta tiklanmoqda');
-        
-        const standardTaskIds = ['taps', 'level', 'level3', 'level7', 'level10', 'coins', 
-                               'referral', 'referral1', 'referral3', 'referral10', 
-                               'telegram', 'youtube', 'code'];
-        
-        // Remove all hidden/deleted flags
-        standardTaskIds.forEach(taskId => {
-            localStorage.removeItem(`hiddenTask_${taskId}`);
-            localStorage.removeItem(`deletedTask_${taskId}`);
-        });
-        
-        // Close modal first
-        closeRemoveTaskModal();
-        
-        // Save to Firebase
-        const saveSuccess = saveGlobalTaskSettings();
-        
-        if (saveSuccess !== false) {
-            showNotification('✅ Barcha standart vazifalar qayta tiklandi!', 'success');
-            
-            // Force sync
-            setTimeout(() => {
-                if (firebaseConnected) {
-                    checkForGlobalTaskUpdates();
+            if (confirm('Barcha standart vazifalarni barcha o\'yinchilar uchun qayta tiklashni tasdiqlaysizmi?\n\nBu barcha yashirilgan va o\'chirilgan standart vazifalarni qaytaradi.')) {
+                console.log('🔄 Barcha standart vazifalar qayta tiklanmoqda');
+                
+                const standardTaskIds = ['taps', 'level', 'level3', 'level7', 'level10', 'coins', 'referral', 'referral1', 'referral3', 'referral10', 'telegram', 'youtube', 'code'];
+                
+                standardTaskIds.forEach(taskId => {
+                    localStorage.removeItem(`hiddenTask_${taskId}`);
+                    localStorage.removeItem(`deletedTask_${taskId}`);
+                });
+                
+                // Close modal first
+                closeRemoveTaskModal();
+                
+                // Save to Firebase
+                const saveSuccess = saveGlobalTaskSettings();
+                
+                if (saveSuccess !== false) {
+                    showNotification('✅ Barcha vazifalar barcha o\'yinchilar uchun qayta tiklandi!', 'success');
+                    
+                    // Force sync
+                    setTimeout(() => {
+                        if (firebaseConnected) {
+                            checkForGlobalTaskUpdates();
+                        }
+                    }, 500);
+                } else {
+                    showNotification('✅ Barcha vazifalar qayta tiklandi! (Faqat mahalliy)', 'success');
                 }
-            }, 500);
-        } else {
-            showNotification('✅ Vazifalar qayta tiklandi! (Faqat mahalliy)', 'success');
+                
+                // Update display immediately
+                updateTasksDisplay();
+            }
         }
-        
-        // Update display immediately
-        updateTasksDisplay();
-    }
-}
 
         function showViewTasksModal() {
             // Remove any existing modals first
