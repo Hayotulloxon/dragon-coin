@@ -7,56 +7,56 @@
     <title>Dragon Coin - Tap to Earn</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
-import { getDatabase, ref, set, get, onValue, push, update, remove } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDShZAo9lg-SxpQViCT27uXVni1UK7TGYU",
-  authDomain: "dragon-92897.firebaseapp.com",
-  databaseURL: "https://dragon-92897-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "dragon-92897",
-  storageBucket: "dragon-92897.firebasestorage.app",
-  messagingSenderId: "40351345340",
-  appId: "1:40351345340:web:632388a9b45d3c7905feb9",
-  measurementId: "G-FXT1F3NPCD"
-};
-
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const database = getDatabase(app);
-const auth = getAuth(app);
-
-signInAnonymously(auth)
-  .then(() => console.log("✅ Anonymous login yuborildi"))
-  .catch((error) => console.error("❌ Login xatosi:", error));
-
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    console.log("👤 Auth UID:", user.uid);
-
-    // Global Firebase obyektlari
-    window.firebaseApp = app;
-    window.firebaseDatabase = database;
-    window.firebaseRef = ref;
-    window.firebaseSet = set;
-    window.firebaseGet = get;
-    window.firebaseOnValue = onValue;
-    window.firebasePush = push;
-    window.firebaseUpdate = update;
-    window.firebaseRemove = remove;
-    window.firebaseAuthUid = user.uid;
-
-    // Rules bilan mos keladigan yo‘l
-    const playerRef = ref(database, "players/" + user.uid);
-    set(playerRef, { name: "Dragon Miner", coins: 0, level: 1 })
-      .then(() => console.log("✅ Player ma'lumotlari yozildi"))
-      .catch((err) => console.error("❌ Player yozishda xato:", err));
-  }
-});
-</script>
+    <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
+    import { getDatabase, ref, set, get, onValue, push, update, remove } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+    
+    const firebaseConfig = {
+      apiKey: "AIzaSyDShZAo9lg-SxpQViCT27uXVni1UK7TGYU",
+      authDomain: "dragon-92897.firebaseapp.com",
+      databaseURL: "https://dragon-92897-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "dragon-92897",
+      storageBucket: "dragon-92897.firebasestorage.app",
+      messagingSenderId: "40351345340",
+      appId: "1:40351345340:web:632388a9b45d3c7905feb9",
+      measurementId: "G-FXT1F3NPCD"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const database = getDatabase(app);
+    const auth = getAuth(app);
+    
+    signInAnonymously(auth)
+      .then(() => console.log("✅ Anonymous login yuborildi"))
+      .catch((error) => console.error("❌ Login xatosi:", error));
+    
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        console.log("👤 Auth UID:", user.uid);
+    
+        // Global Firebase obyektlari
+        window.firebaseApp = app;
+        window.firebaseDatabase = database;
+        window.firebaseRef = ref;
+        window.firebaseSet = set;
+        window.firebaseGet = get;
+        window.firebaseOnValue = onValue;
+        window.firebasePush = push;
+        window.firebaseUpdate = update;
+        window.firebaseRemove = remove;
+        window.firebaseAuthUid = user.uid;
+    
+        // Rules bilan mos keladigan yo‘l
+        const playerRef = ref(database, "players/" + user.uid);
+        set(playerRef, { name: "Dragon Miner", coins: 0, level: 1 })
+          .then(() => console.log("✅ Player ma'lumotlari yozildi"))
+          .catch((err) => console.error("❌ Player yozishda xato:", err));
+      }
+    });
+    </script>
 
     <style>
         * {
@@ -2233,52 +2233,52 @@ onAuthStateChanged(auth, (user) => {
 
         // Tap function - optimized for mobile
         window.tapCoin = function(event) {
-    const now = Date.now();
-    if (now - lastTapTime < 30) return;
-    lastTapTime = now;
-
-    if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
-
-    const isTurboActive = gameState.activeBoosts.turbo.active && gameState.activeBoosts.turbo.endTime > now;
-
-    if (!isTurboActive && gameState.energy <= 0) {
-        showEnergyWarning();
-        return;
-    }
-
-    const tapsToProcess = gameState.multitap;
-    const coinsPerTap = gameState.tapPower;
-    const totalCoins = coinsPerTap * tapsToProcess;
-
-    gameState.balance += totalCoins;
-
-    if (!isTurboActive) {
-        gameState.energy = Math.max(0, gameState.energy - tapsToProcess);
-    }
-
-    gameState.totalTaps += tapsToProcess;
-
-    createTapEffectOptimized(event, totalCoins);
-    animateCoinOptimized();
-
-    if (!pendingUIUpdate) {
-        pendingUIUpdate = true;
-        requestAnimationFrame(() => {
-            updateUIOptimized();
-            pendingUIUpdate = false;
-        });
-    }
-
-    checkLevelUp();
-
-    if (now - gameState.lastSaveTime > 10000) {
-        saveGameState();
-        gameState.lastSaveTime = now;
-    }
-};
+            const now = Date.now();
+            if (now - lastTapTime < 30) return;
+            lastTapTime = now;
+        
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        
+            const isTurboActive = gameState.activeBoosts.turbo.active && gameState.activeBoosts.turbo.endTime > now;
+        
+            if (!isTurboActive && gameState.energy <= 0) {
+                showEnergyWarning();
+                return;
+            }
+        
+            const tapsToProcess = gameState.multitap;
+            const coinsPerTap = gameState.tapPower;
+            const totalCoins = coinsPerTap * tapsToProcess;
+        
+            gameState.balance += totalCoins;
+        
+            if (!isTurboActive) {
+                gameState.energy = Math.max(0, gameState.energy - tapsToProcess);
+            }
+        
+            gameState.totalTaps += tapsToProcess;
+        
+            createTapEffectOptimized(event, totalCoins);
+            animateCoinOptimized();
+        
+            if (!pendingUIUpdate) {
+                pendingUIUpdate = true;
+                requestAnimationFrame(() => {
+                    updateUIOptimized();
+                    pendingUIUpdate = false;
+                });
+            }
+        
+            checkLevelUp();
+        
+            if (now - gameState.lastSaveTime > 10000) {
+                saveGameState();
+                gameState.lastSaveTime = now;
+            }
+        };
 
 
         function createTapEffect(event, coins) {
