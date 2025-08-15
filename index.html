@@ -4034,7 +4034,7 @@ onAuthStateChanged(auth, (user) => {
                     </div>
                     
                     <div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <button onclick="resetAllStandardTasks()" style="flex: 1; background: #FFD700; color: #000; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold;">Barcha Standart Vazifalarni Qayta Tiklash</button>
+                        <button onclick="()" style="flex: 1; background: #FFD700; color: #000; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold;">Barcha Standart Vazifalarni Qayta Tiklash</button>
                         <button onclick="closeRemoveTaskModal()" style="flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 12px; border-radius: 8px; cursor: pointer;">Yopish</button>
                     </div>
                 </div>
@@ -4199,39 +4199,42 @@ onAuthStateChanged(auth, (user) => {
         }
 
         function resetAllStandardTasks() {
-            if (confirm('Barcha standart vazifalarni barcha o\'yinchilar uchun qayta tiklashni tasdiqlaysizmi?\n\nBu barcha yashirilgan va o\'chirilgan standart vazifalarni qaytaradi.')) {
-                console.log('🔄 Barcha standart vazifalar qayta tiklanmoqda');
-                
-                const standardTaskIds = ['taps', 'level', 'level3', 'level7', 'level10', 'coins', 'referral', 'referral1', 'referral3', 'referral10', 'telegram', 'youtube', 'code'];
-                
-                standardTaskIds.forEach(taskId => {
-                    localStorage.removeItem(`hiddenTask_${taskId}`);
-                    localStorage.removeItem(`deletedTask_${taskId}`);
-                });
-                
-                // Close modal first
-                closeRemoveTaskModal();
-                
-                // Save to Firebase
-                const saveSuccess = saveGlobalTaskSettings();
-                
-                if (saveSuccess !== false) {
-                    showNotification('✅ Barcha vazifalar barcha o\'yinchilar uchun qayta tiklandi!', 'success');
-                    
-                    // Force sync
-                    setTimeout(() => {
-                        if (firebaseConnected) {
-                            checkForGlobalTaskUpdates();
-                        }
-                    }, 500);
-                } else {
-                    showNotification('✅ Barcha vazifalar qayta tiklandi! (Faqat mahalliy)', 'success');
+    if (confirm('Barcha standart vazifalarni barcha o\'yinchilar uchun qayta tiklashni tasdiqlaysizmi?\n\nBu barcha yashirilgan va o\'chirilgan standart vazifalarni qaytaradi.')) {
+        console.log('🔄 Barcha standart vazifalar qayta tiklanmoqda');
+        
+        const standardTaskIds = ['taps', 'level', 'level3', 'level7', 'level10', 'coins', 
+                               'referral', 'referral1', 'referral3', 'referral10', 
+                               'telegram', 'youtube', 'code'];
+        
+        // Remove all hidden/deleted flags
+        standardTaskIds.forEach(taskId => {
+            localStorage.removeItem(`hiddenTask_${taskId}`);
+            localStorage.removeItem(`deletedTask_${taskId}`);
+        });
+        
+        // Close modal first
+        closeRemoveTaskModal();
+        
+        // Save to Firebase
+        const saveSuccess = saveGlobalTaskSettings();
+        
+        if (saveSuccess !== false) {
+            showNotification('✅ Barcha standart vazifalar qayta tiklandi!', 'success');
+            
+            // Force sync
+            setTimeout(() => {
+                if (firebaseConnected) {
+                    checkForGlobalTaskUpdates();
                 }
-                
-                // Update display immediately
-                updateTasksDisplay();
-            }
+            }, 500);
+        } else {
+            showNotification('✅ Vazifalar qayta tiklandi! (Faqat mahalliy)', 'success');
         }
+        
+        // Update display immediately
+        updateTasksDisplay();
+    }
+}
 
         function showViewTasksModal() {
             // Remove any existing modals first
