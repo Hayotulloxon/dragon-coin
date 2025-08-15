@@ -1866,41 +1866,42 @@ onAuthStateChanged(auth, (user) => {
 
         // YANGI: Global task management functions - ASOSIY MUAMMO SHU YERDA EMAS
         function saveGlobalTaskSettings() {
-            console.log('💾 Global vazifa sozlamalarini saqlash boshlanmoqda...');
-            
-            if (!firebaseConnected || !window.firebaseDatabase) {
-                console.log('⚠️ Firebase ulanmagan, mahalliy saqlash');
-                return false;
+    console.log('💾 Global vazifa sozlamalarini saqlash boshlanmoqda...');
+    
+    if (!firebaseConnected || !window.firebaseDatabase) {
+        console.log('⚠️ Firebase ulanmagan, mahalliy saqlash');
+        return false;
+    }
+    
+    try {
+        // Save hidden/deleted standard tasks
+        const hiddenTasks = [];
+        const deletedTasks = [];
+        
+        const standardTaskIds = ['taps', 'level', 'level3', 'level7', 'level10', 'coins', 'referral', 'referral1', 'referral3', 'referral10', 'telegram', 'youtube', 'code'];
+        
+        standardTaskIds.forEach(taskId => {
+            if (localStorage.getItem(`hiddenTask_${taskId}`) {
+                hiddenTasks.push(taskId);
             }
-            
-            try {
-                // Save hidden/deleted standard tasks
-                const hiddenTasks = [];
-                const deletedTasks = [];
-                
-                const standardTaskIds = ['taps', 'level', 'level3', 'level7', 'level10', 'coins', 'referral', 'referral1', 'referral3', 'referral10', 'telegram', 'youtube', 'code'];
-                
-                standardTaskIds.forEach(taskId => {
-                    if (localStorage.getItem(`hiddenTask_${taskId}`) === 'true') {
-                        hiddenTasks.push(taskId);
-                    }
-                    if (localStorage.getItem(`deletedTask_${taskId}`) === 'true') {
-                        deletedTasks.push(taskId);
-                    }
-                });
-                
-                // Save to Firebase with timestamp
-                const taskSettingsRef = window.firebaseRef(window.firebaseDatabase, 'globalTaskSettings');
-                const taskSettingsData = {
-                    hiddenTasks: hiddenTasks,
-                    deletedTasks: deletedTasks,
-                    lastUpdate: Date.now(),
-                    updatedBy: getUniquePlayerId(),
-                    version: Date.now() // Add version for conflict resolution
-                };
-                
-                // Use synchronous approach
-                window.firebaseSet(taskSettingsRef, taskSettingsData);
+            if (localStorage.getItem(`deletedTask_${taskId}`)) {
+                deletedTasks.push(taskId);
+            }
+        });
+        
+        // Save to Firebase with timestamp
+        const taskSettingsRef = window.firebaseRef(window.firebaseDatabase, 'globalTaskSettings');
+        const taskSettingsData = {
+            hiddenTasks: hiddenTasks,
+            deletedTasks: deletedTasks,
+            lastUpdate: Date.now(),
+            updatedBy: getUniquePlayerId(),
+            version: Date.now()
+        };
+        
+        // Use set with error handling
+        return window.firebaseSet(taskSettingsRef, taskSettingsData)
+            .then(() => {
                 console.log('✅ Global vazifa sozlamalari Firebase ga saqlandi:', taskSettingsData);
                 
                 // Save custom tasks globally with timestamp
@@ -1909,20 +1910,25 @@ onAuthStateChanged(auth, (user) => {
                     tasks: customTasks,
                     lastUpdate: Date.now(),
                     updatedBy: getUniquePlayerId(),
-                    version: Date.now() // Add version for conflict resolution
+                    version: Date.now()
                 };
                 
-                // Use synchronous approach
-                window.firebaseSet(customTasksRef, customTasksData);
-                console.log('✅ Global maxsus vazifalar Firebase ga saqlandi:', customTasks.length, 'ta vazifa');
-                
-                return true;
-                
-            } catch (error) {
-                console.error('❌ Global vazifa sozlamalarini saqlashda xatolik:', error);
+                return window.firebaseSet(customTasksRef, customTasksData)
+                    .then(() => {
+                        console.log('✅ Global maxsus vazifalar Firebase ga saqlandi:', customTasks.length, 'ta vazifa');
+                        return true;
+                    });
+            })
+            .catch(error => {
+                console.error('❌ Firebase ga saqlashda xatolik:', error);
                 return false;
-            }
-        }
+            });
+        
+    } catch (error) {
+        console.error('❌ Global vazifa sozlamalarini saqlashda xatolik:', error);
+        return false;
+    }
+}
 
         // YANGI: Improved global task loading with real-time updates
         function loadGlobalTaskSettings() {
@@ -3824,64 +3830,63 @@ onAuthStateChanged(auth, (user) => {
 
         // YANGI: Improved addCustomTask function with better Firebase sync
         function addCustomTask() {
-            const taskType = document.getElementById('taskType').value;
-            const taskName = document.getElementById('taskName').value;
-            const taskDesc = document.getElementById('taskDesc').value;
-            const taskLink = document.getElementById('taskLink').value;
-            const taskReward = parseInt(document.getElementById('taskReward').value);
-            const taskCode = document.getElementById('taskCode').value;
-            const taskLevel = document.getElementById('taskLevel') ? parseInt(document.getElementById('taskLevel').value) : null;
-            const taskReferralCount = document.getElementById('taskReferralCount') ? parseInt(document.getElementById('taskReferralCount').value) : null;
-            
-            if (!taskName || !taskReward || isNaN(taskReward)) {
-                showNotification('❌ Barcha maydonlarni to\'ldiring!', 'error');
-                return;
-            }
-            
-            // Additional validation for level and referral tasks
-            if (taskType === 'level' && (!taskLevel || isNaN(taskLevel) || taskLevel < 1)) {
-                showNotification('❌ Level raqamini to\'g\'ri kiriting!', 'error');
-                return;
-            }
-            
-            if (taskType === 'referral' && (!taskReferralCount || isNaN(taskReferralCount) || taskReferralCount < 1)) {
-                showNotification('❌ Referral sonini to\'g\'ri kiriting!', 'error');
-                return;
-            }
-            
-            const newTask = {
-                id: 'custom_' + Date.now(),
-                type: taskType,
-                name: taskName,
-                description: taskDesc,
-                link: taskLink,
-                reward: taskReward,
-                code: taskCode,
-                level: taskLevel,
-                referralCount: taskReferralCount,
-                completed: false,
-                dateAdded: new Date().toLocaleDateString(),
-                createdBy: getUniquePlayerId() // Track who created the task
-            };
-            
-            console.log('➕ Yangi vazifa qo\'shilmoqda:', newTask);
-            
-            customTasks.push(newTask);
-            localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
-            
-            // Close modal first
-            closeAddTaskModal();
-            
-            // Save to Firebase with retry mechanism
-            const saveSuccess = saveGlobalTaskSettings();
-            
-            if (saveSuccess !== false) {
+    const taskType = document.getElementById('taskType').value;
+    const taskName = document.getElementById('taskName').value;
+    const taskDesc = document.getElementById('taskDesc').value;
+    const taskLink = document.getElementById('taskLink').value;
+    const taskReward = parseInt(document.getElementById('taskReward').value);
+    const taskCode = document.getElementById('taskCode').value;
+    const taskLevel = document.getElementById('taskLevel') ? parseInt(document.getElementById('taskLevel').value) : null;
+    const taskReferralCount = document.getElementById('taskReferralCount') ? parseInt(document.getElementById('taskReferralCount').value) : null;
+    
+    if (!taskName || !taskReward || isNaN(taskReward)) {
+        showNotification('❌ Barcha maydonlarni to\'ldiring!', 'error');
+        return;
+    }
+    
+    // Additional validation for level and referral tasks
+    if (taskType === 'level' && (!taskLevel || isNaN(taskLevel) || taskLevel < 1)) {
+        showNotification('❌ Level raqamini to\'g\'ri kiriting!', 'error');
+        return;
+    }
+    
+    if (taskType === 'referral' && (!taskReferralCount || isNaN(taskReferralCount) || taskReferralCount < 1)) {
+        showNotification('❌ Referral sonini to\'g\'ri kiriting!', 'error');
+        return;
+    }
+    
+    const newTask = {
+        id: 'custom_' + Date.now(),
+        type: taskType,
+        name: taskName,
+        description: taskDesc,
+        link: taskLink,
+        reward: taskReward,
+        code: taskCode,
+        level: taskLevel,
+        referralCount: taskReferralCount,
+        completed: false,
+        dateAdded: new Date().toLocaleDateString(),
+        createdBy: getUniquePlayerId()
+    };
+    
+    console.log('➕ Yangi vazifa qo\'shilmoqda:', newTask);
+    
+    customTasks.push(newTask);
+    localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
+    
+    // Close modal first
+    closeAddTaskModal();
+    
+    // Save to Firebase with retry mechanism
+    saveGlobalTaskSettings()
+        .then(success => {
+            if (success) {
                 showNotification(`✅ "${taskName}" vazifasi barcha o'yinchilar uchun qo'shildi!`, 'success');
                 
                 // Force immediate sync check for other players
                 setTimeout(() => {
                     if (firebaseConnected) {
-                        // Trigger immediate update check
                         checkForGlobalTaskUpdates();
                         showNotification('🌐 Vazifa barcha o\'yinchilarga yuborildi!', 'success');
                     }
@@ -3898,7 +3903,8 @@ onAuthStateChanged(auth, (user) => {
             setTimeout(() => {
                 showNotification(`📍 Vazifa "${categoryName}" bo'limiga joylashtirildi!`, 'success');
             }, 2000);
-        }
+        });
+}
         
         function getCategoryName(taskType) {
             switch(taskType) {
@@ -4053,22 +4059,22 @@ onAuthStateChanged(auth, (user) => {
 
         // YANGI: Improved removeCustomTask function with better Firebase sync
         function removeCustomTask(taskId) {
-            const taskToRemove = customTasks.find(task => task.id === taskId);
-            if (!taskToRemove) return;
-            
-            if (confirm(`"${taskToRemove.name}" vazifasini barcha o'yinchilar uchun o'chirishni tasdiqlaysizmi?`)) {
-                console.log('🗑️ Maxsus vazifa o\'chirilmoqda:', taskToRemove);
-                
-                customTasks = customTasks.filter(task => task.id !== taskId);
-                localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
-                
-                // Close modal first
-                closeRemoveTaskModal();
-                
-                // Save to Firebase with retry mechanism
-                const saveSuccess = saveGlobalTaskSettings();
-                
-                if (saveSuccess !== false) {
+    const taskToRemove = customTasks.find(task => task.id === taskId);
+    if (!taskToRemove) return;
+    
+    if (confirm(`"${taskToRemove.name}" vazifasini barcha o'yinchilar uchun o'chirishni tasdiqlaysizmi?`)) {
+        console.log('🗑️ Maxsus vazifa o\'chirilmoqda:', taskToRemove);
+        
+        customTasks = customTasks.filter(task => task.id !== taskId);
+        localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
+        
+        // Close modal first
+        closeRemoveTaskModal();
+        
+        // Save to Firebase with retry mechanism
+        saveGlobalTaskSettings()
+            .then(success => {
+                if (success) {
                     showNotification('✅ Vazifa barcha o\'yinchilar uchun o\'chirildi!', 'success');
                     
                     // Force immediate sync check for other players
@@ -4084,8 +4090,9 @@ onAuthStateChanged(auth, (user) => {
                 
                 // Update display immediately
                 updateTasksDisplay();
-            }
-        }
+            });
+    }
+}
 
         function hideStandardTask(taskId) {
             console.log('👁️ Standart vazifa yashirilmoqda:', taskId);
