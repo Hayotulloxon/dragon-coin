@@ -128,12 +128,6 @@
             border: 1px solid #ff6b35;
         }
 
-        .firebase-error {
-            background: rgba(255, 0, 0, 0.2);
-            color: #ff4444;
-            border: 1px solid #ff4444;
-        }
-
         .user-info {
             display: flex;
             align-items: center;
@@ -561,8 +555,6 @@
             font-weight: bold;
             z-index: 1000;
             animation: slideIn 0.3s ease;
-            max-width: 350px;
-            word-wrap: break-word;
         }
 
         .notification.success {
@@ -575,12 +567,6 @@
             background: rgba(255, 107, 53, 0.2);
             border: 1px solid #ff6b35;
             color: #ff6b35;
-        }
-
-        .notification.warning {
-            background: rgba(255, 215, 0, 0.2);
-            border: 1px solid #FFD700;
-            color: #FFD700;
         }
 
         @keyframes slideIn {
@@ -1632,7 +1618,7 @@
                 tapPowerBoosts: "Бусты Силы Тапа",
                 tapPowerDesc: "Получайте 2 монеты за тап",
                 tapPowerDesc2: "Получайте 3 монеты за тап",
-                tapPowerDesc3: "Получайте 5 монеты за тап",
+                tapPowerDesc3: "Получайте 5 монет за тап",
                 tapPowerDesc4: "Получайте 10 монет за тап",
                 energyBoosts: "Бусты Энергии",
                 energyDesc: "Макс энергия увеличивается до 1500",
@@ -1774,8 +1760,6 @@
 
         let globalPlayers = [];
         let firebaseConnected = false;
-        let firebaseRetryCount = 0;
-        let maxFirebaseRetries = 3;
         let tapEffectPool = [];
         let lastUIUpdate = 0;
         let pendingUIUpdate = false;
@@ -1786,103 +1770,54 @@
             return Math.random().toString(36).substring(2, 8).toUpperCase();
         }
 
-        // Improved Firebase connection with better error handling
+        // Firebase connection
         function initializeFirebaseConnection() {
             console.log('🔄 Firebase ulanishni tekshirish...');
-            updateFirebaseStatus('connecting');
+            updateFirebaseStatus(false);
             
             setTimeout(() => {
                 try {
                     if (window.firebaseDatabase) {
                         console.log('✅ Firebase muvaffaqiyatli ulandi');
                         firebaseConnected = true;
-                        firebaseRetryCount = 0;
-                        updateFirebaseStatus('connected');
+                        updateFirebaseStatus(true);
                         loadPlayersFromFirebase();
                         savePlayerToFirebase();
-                        
-                        // Test Firebase permissions with better error handling
-                        testFirebasePermissions();
+                        loadGlobalTaskSettings(); // Load global task settings
                     } else {
                         throw new Error('Firebase not available');
                     }
                 } catch (error) {
-                    console.error('❌ Firebase ulanishda xatolik:', error);
+                    console.log('⚠️ Firebase mavjud emas, mahalliy rejimda ishlash');
                     firebaseConnected = false;
-                    updateFirebaseStatus('error');
+                    updateFirebaseStatus(false);
                     generateDemoPlayers();
-                    
-                    // Show user-friendly message
-                    showNotification('🔒 Firebase ruxsatlari cheklangan. Mahalliy rejimda ishlayapmiz.', 'warning');
                 }
             }, 2000);
         }
 
-        function updateFirebaseStatus(status) {
+        function updateFirebaseStatus(connected) {
             const statusElement = document.getElementById('firebaseStatus');
-            
-            switch (status) {
-                case 'connecting':
-                    statusElement.textContent = '🔄 Firebase ulanmoqda...';
-                    statusElement.className = 'firebase-status firebase-disconnected';
-                    statusElement.style.display = 'block';
-                    statusElement.style.opacity = '1';
-                    break;
-                    
-                case 'connected':
-                    statusElement.textContent = '🔥 Firebase Ulandi - Real-time sinxronizatsiya';
-                    statusElement.className = 'firebase-status firebase-connected';
-                    
+            if (connected) {
+                statusElement.textContent = '🔥 Firebase Ulandi - Real-time sinxronizatsiya';
+                statusElement.className = 'firebase-status firebase-connected';
+                
+                setTimeout(() => {
+                    statusElement.style.opacity = '0';
                     setTimeout(() => {
-                        statusElement.style.opacity = '0';
-                        setTimeout(() => {
-                            statusElement.style.display = 'none';
-                        }, 500);
-                    }, 3000);
-                    break;
-                    
-                case 'error':
-                    statusElement.textContent = '🚫 Firebase ruxsat berilmadi - Mahalliy rejim';
-                    statusElement.className = 'firebase-status firebase-error';
-                    
+                        statusElement.style.display = 'none';
+                    }, 500);
+                }, 3000);
+            } else {
+                statusElement.textContent = '📱 Mahalliy rejim - Firebase mavjud emas';
+                statusElement.className = 'firebase-status firebase-disconnected';
+                
+                setTimeout(() => {
+                    statusElement.style.opacity = '0';
                     setTimeout(() => {
-                        statusElement.style.opacity = '0';
-                        setTimeout(() => {
-                            statusElement.style.display = 'none';
-                        }, 4000);
-                    }, 3000);
-                    break;
-                    
-                default:
-                    statusElement.textContent = '📱 Mahalliy rejim - Firebase mavjud emas';
-                    statusElement.className = 'firebase-status firebase-disconnected';
-                    
-                    setTimeout(() => {
-                        statusElement.style.opacity = '0';
-                        setTimeout(() => {
-                            statusElement.style.display = 'none';
-                        }, 2000);
-                    }, 2000);
-            }
-        }
-
-        // Test Firebase permissions to provide better error messages
-        function testFirebasePermissions() {
-            if (!firebaseConnected || !window.firebaseDatabase) return;
-            
-            try {
-                // Test read permission on a simple path
-                const testRef = window.firebaseRef(window.firebaseDatabase, 'test');
-                window.firebaseGet(testRef).then(() => {
-                    console.log('✅ Firebase read permissions OK');
-                }).catch(error => {
-                    console.warn('⚠️ Firebase read permissions limited:', error.code);
-                    if (error.code === 'PERMISSION_DENIED') {
-                        showNotification('🔒 Firebase ma\'lumotlar bazasiga kirish cheklangan. Mahalliy saqlash foydalanilmoqda.', 'warning');
-                    }
-                });
-            } catch (error) {
-                console.error('❌ Firebase permission test failed:', error);
+                        statusElement.style.display = 'none';
+                    }, 500);
+                }, 2000);
             }
         }
 
@@ -1909,11 +1844,10 @@
                 window.firebaseSet(playerRef, playerData);
             } catch (error) {
                 console.error('❌ Firebase ga saqlashda xatolik:', error);
-                // Don't show error to user, just log it
             }
         }
 
-        // Improved global task management with better error handling
+        // YANGI: Global task management functions - ASOSIY MUAMMO SHU YERDA EMAS
         function saveGlobalTaskSettings() {
             console.log('💾 Global vazifa sozlamalarini saqlash boshlanmoqda...');
             
@@ -1945,9 +1879,10 @@
                     deletedTasks: deletedTasks,
                     lastUpdate: Date.now(),
                     updatedBy: getUniquePlayerId(),
-                    version: Date.now()
+                    version: Date.now() // Add version for conflict resolution
                 };
                 
+                // Use synchronous approach
                 window.firebaseSet(taskSettingsRef, taskSettingsData);
                 console.log('✅ Global vazifa sozlamalari Firebase ga saqlandi:', taskSettingsData);
                 
@@ -1957,9 +1892,10 @@
                     tasks: customTasks,
                     lastUpdate: Date.now(),
                     updatedBy: getUniquePlayerId(),
-                    version: Date.now()
+                    version: Date.now() // Add version for conflict resolution
                 };
                 
+                // Use synchronous approach
                 window.firebaseSet(customTasksRef, customTasksData);
                 console.log('✅ Global maxsus vazifalar Firebase ga saqlandi:', customTasks.length, 'ta vazifa');
                 
@@ -1967,41 +1903,30 @@
                 
             } catch (error) {
                 console.error('❌ Global vazifa sozlamalarini saqlashda xatolik:', error);
-                if (error.code === 'PERMISSION_DENIED') {
-                    showNotification('🔒 Admin huquqlaringiz cheklangan. Mahalliy o\'zgarishlar faqat sizga ko\'rinadi.', 'warning');
-                } else {
-                    showNotification('❌ Tarmoq xatosi. Qaytadan urinib ko\'ring.', 'error');
-                }
                 return false;
             }
         }
 
-        // Improved global task loading with better error handling
+        // YANGI: Improved global task loading with real-time updates
         function loadGlobalTaskSettings() {
             console.log('📥 Global vazifa sozlamalarini yuklash boshlanmoqda...');
             
-            // Skip if Firebase is not connected
-            if (!firebaseConnected || !window.firebaseDatabase) {
-                console.log('⚠️ Firebase ulanmagan, mahalliy vazifalardan foydalanish');
-                return;
-            }
-            
-            // Set up periodic checking with reduced frequency
+            // Set up periodic checking instead of onValue (which might not work properly)
             setInterval(() => {
                 if (firebaseConnected && window.firebaseDatabase) {
                     checkForGlobalTaskUpdates();
                 }
-            }, 10000); // Check every 10 seconds instead of 5
+            }, 5000); // Check every 5 seconds
             
-            // Initial check after delay
-            setTimeout(() => {
-                if (firebaseConnected && window.firebaseDatabase) {
+            // Also check immediately if Firebase is connected
+            if (firebaseConnected && window.firebaseDatabase) {
+                setTimeout(() => {
                     checkForGlobalTaskUpdates();
-                }
-            }, 3000);
+                }, 1000);
+            }
         }
         
-        // Improved checking function with better error handling
+        // YANGI: Manual checking function instead of onValue
         function checkForGlobalTaskUpdates() {
             try {
                 // Check task settings
@@ -2011,6 +1936,7 @@
                     if (data) {
                         const lastLocalUpdate = localStorage.getItem('lastGlobalTaskUpdate') || '0';
                         
+                        // Only apply if this is a newer update and not from this user
                         if (data.version > parseInt(lastLocalUpdate) && data.updatedBy !== getUniquePlayerId()) {
                             console.log('📥 Yangi global vazifa sozlamalari topildi:', data);
                             
@@ -2025,27 +1951,27 @@
                             if (data.hiddenTasks) {
                                 data.hiddenTasks.forEach(taskId => {
                                     localStorage.setItem(`hiddenTask_${taskId}`, 'true');
+                                    console.log('👁️ Vazifa yashirildi:', taskId);
                                 });
                             }
                             
                             if (data.deletedTasks) {
                                 data.deletedTasks.forEach(taskId => {
                                     localStorage.setItem(`deletedTask_${taskId}`, 'true');
+                                    console.log('🗑️ Vazifa o\'chirildi:', taskId);
                                 });
                             }
                             
+                            // Save the update timestamp
                             localStorage.setItem('lastGlobalTaskUpdate', data.version.toString());
+                            
+                            // Update task display
                             updateTasksDisplay();
                             showNotification('🔄 Admin tomonidan vazifalar yangilandi!', 'success');
                         }
                     }
                 }).catch(error => {
-                    // Only log permission denied errors, ignore others
-                    if (error.code === 'PERMISSION_DENIED') {
-                        console.warn('🔒 Global vazifa sozlamalariga kirish ruxsati yo\'q');
-                    } else {
-                        console.error('❌ Global vazifa sozlamalarini yuklashda xatolik:', error.code, error.message);
-                    }
+                    console.error('❌ Global vazifa sozlamalarini yuklashda xatolik:', error);
                 });
                 
                 // Check custom tasks
@@ -2055,9 +1981,11 @@
                     if (data && data.tasks) {
                         const lastLocalCustomUpdate = localStorage.getItem('lastGlobalCustomTaskUpdate') || '0';
                         
+                        // Only apply if this is a newer update and not from this user
                         if (data.version > parseInt(lastLocalCustomUpdate) && data.updatedBy !== getUniquePlayerId()) {
                             console.log('📥 Yangi global maxsus vazifalar topildi:', data.tasks.length, 'ta vazifa');
                             
+                            // Merge with existing completed tasks to preserve user progress
                             const existingCustomTasks = JSON.parse(localStorage.getItem('dragonCoinCustomTasks') || '[]');
                             const mergedTasks = data.tasks.map(globalTask => {
                                 const existingTask = existingCustomTasks.find(t => t.id === globalTask.id);
@@ -2066,19 +1994,17 @@
                             
                             customTasks = mergedTasks;
                             localStorage.setItem('dragonCoinCustomTasks', JSON.stringify(customTasks));
+                            
+                            // Save the update timestamp
                             localStorage.setItem('lastGlobalCustomTaskUpdate', data.version.toString());
                             
+                            // Update task display
                             updateTasksDisplay();
                             showNotification('✨ Yangi vazifalar qo\'shildi!', 'success');
                         }
                     }
                 }).catch(error => {
-                    // Only log permission denied errors, ignore others
-                    if (error.code === 'PERMISSION_DENIED') {
-                        console.warn('🔒 Global maxsus vazifalaraga kirish ruxsati yo\'q');
-                    } else {
-                        console.error('❌ Global maxsus vazifalarni yuklashda xatolik:', error.code, error.message);
-                    }
+                    console.error('❌ Global maxsus vazifalarni yuklashda xatolik:', error);
                 });
                 
             } catch (error) {
@@ -3303,7 +3229,7 @@
                 if (firebaseConnected) {
                     firebaseSyncStatus.innerHTML = '<span style="color: #00ff88;">Ulandi ✅</span>';
                 } else {
-                    firebaseSyncStatus.innerHTML = '<span style="color: #ff6b35;">Cheklangan 🔒</span>';
+                    firebaseSyncStatus.innerHTML = '<span style="color: #ff6b35;">O\'chiq ❌</span>';
                 }
             }
         }
@@ -3401,7 +3327,7 @@
             
             setTimeout(() => {
                 notification.remove();
-            }, 4000);
+            }, 3000);
         }
 
         function checkLevelUp() {
@@ -3564,12 +3490,10 @@
             // Auto-save every 30 seconds
             setInterval(saveGameState, 30000);
             
-            // Start periodic Firebase sync checking with proper error handling
+            // Start periodic Firebase sync checking
             setTimeout(() => {
-                if (firebaseConnected) {
-                    loadGlobalTaskSettings();
-                }
-            }, 5000); // Start checking after 5 seconds to allow Firebase to fully connect
+                loadGlobalTaskSettings();
+            }, 3000); // Start checking after 3 seconds
         }
         
         function processReferralFromURL() {
@@ -3881,7 +3805,7 @@
             }
         }
 
-        // Improved addCustomTask function with better Firebase sync
+        // YANGI: Improved addCustomTask function with better Firebase sync
         function addCustomTask() {
             const taskType = document.getElementById('taskType').value;
             const taskName = document.getElementById('taskName').value;
@@ -3931,7 +3855,7 @@
             // Close modal first
             closeAddTaskModal();
             
-            // Save to Firebase with improved error handling
+            // Save to Firebase with retry mechanism
             const saveSuccess = saveGlobalTaskSettings();
             
             if (saveSuccess !== false) {
@@ -3942,10 +3866,11 @@
                     if (firebaseConnected) {
                         // Trigger immediate update check
                         checkForGlobalTaskUpdates();
+                        showNotification('🌐 Vazifa barcha o\'yinchilarga yuborildi!', 'success');
                     }
-                }, 1000);
+                }, 500);
             } else {
-                showNotification(`✅ "${taskName}" vazifasi qo'shildi! (Faqat mahalliy)`, 'warning');
+                showNotification(`✅ "${taskName}" vazifasi qo'shildi! (Faqat mahalliy)`, 'success');
             }
             
             // Update display immediately
@@ -4109,7 +4034,7 @@
             }
         }
 
-        // Improved removeCustomTask function with better Firebase sync
+        // YANGI: Improved removeCustomTask function with better Firebase sync
         function removeCustomTask(taskId) {
             const taskToRemove = customTasks.find(task => task.id === taskId);
             if (!taskToRemove) return;
@@ -4123,7 +4048,7 @@
                 // Close modal first
                 closeRemoveTaskModal();
                 
-                // Save to Firebase with improved error handling
+                // Save to Firebase with retry mechanism
                 const saveSuccess = saveGlobalTaskSettings();
                 
                 if (saveSuccess !== false) {
@@ -4133,10 +4058,11 @@
                     setTimeout(() => {
                         if (firebaseConnected) {
                             checkForGlobalTaskUpdates();
+                            showNotification('🌐 O\'zgarish barcha o\'yinchilarga yuborildi!', 'success');
                         }
-                    }, 1000);
+                    }, 500);
                 } else {
-                    showNotification('✅ Vazifa o\'chirildi! (Faqat mahalliy)', 'warning');
+                    showNotification('✅ Vazifa o\'chirildi! (Faqat mahalliy)', 'success');
                 }
                 
                 // Update display immediately
@@ -4163,9 +4089,9 @@
                     if (firebaseConnected) {
                         checkForGlobalTaskUpdates();
                     }
-                }, 1000);
+                }, 500);
             } else {
-                showNotification('✅ Vazifa yashirildi! (Faqat mahalliy)', 'warning');
+                showNotification('✅ Vazifa yashirildi! (Faqat mahalliy)', 'success');
             }
             
             // Update display immediately
@@ -4191,9 +4117,9 @@
                     if (firebaseConnected) {
                         checkForGlobalTaskUpdates();
                     }
-                }, 1000);
+                }, 500);
             } else {
-                showNotification('✅ Vazifa ko\'rsatildi! (Faqat mahalliy)', 'warning');
+                showNotification('✅ Vazifa ko\'rsatildi! (Faqat mahalliy)', 'success');
             }
             
             // Update display immediately
@@ -4238,9 +4164,9 @@
                         if (firebaseConnected) {
                             checkForGlobalTaskUpdates();
                         }
-                    }, 1000);
+                    }, 500);
                 } else {
-                    showNotification('✅ Vazifa o\'chirildi! (Faqat mahalliy)', 'warning');
+                    showNotification('✅ Vazifa o\'chirildi! (Faqat mahalliy)', 'success');
                 }
                 
                 // Update display immediately
@@ -4273,9 +4199,9 @@
                         if (firebaseConnected) {
                             checkForGlobalTaskUpdates();
                         }
-                    }, 1000);
+                    }, 500);
                 } else {
-                    showNotification('✅ Barcha vazifalar qayta tiklandi! (Faqat mahalliy)', 'warning');
+                    showNotification('✅ Barcha vazifalar qayta tiklandi! (Faqat mahalliy)', 'success');
                 }
                 
                 // Update display immediately
@@ -4394,9 +4320,9 @@
                         if (firebaseConnected) {
                             checkForGlobalTaskUpdates();
                         }
-                    }, 1000);
+                    }, 500);
                 } else {
-                    showNotification('✅ Barcha maxsus vazifalar o\'chirildi! (Faqat mahalliy)', 'warning');
+                    showNotification('✅ Barcha maxsus vazifalar o\'chirildi! (Faqat mahalliy)', 'success');
                 }
                 
                 updateTasksDisplay();
@@ -4595,7 +4521,7 @@
                 
                 // Show relevant section
                 if (this.value === 'code') {
-                    code Section.style.display = 'block';
+                    codeSection.style.display = 'block';
                 } else if (this.value === 'level') {
                     levelSection.style.display = 'block';
                     linkSection.style.display = 'none';
@@ -4620,7 +4546,7 @@
             }
         }
 
-        // Improved saveEditedTask function with better Firebase sync
+        // YANGI: Improved saveEditedTask function with better Firebase sync
         function saveEditedTask(taskId) {
             const taskType = document.getElementById('editTaskType').value;
             const taskName = document.getElementById('editTaskName').value;
@@ -4680,10 +4606,11 @@
                     setTimeout(() => {
                         if (firebaseConnected) {
                             checkForGlobalTaskUpdates();
+                            showNotification('🌐 O\'zgarish barcha o\'yinchilarga yuborildi!', 'success');
                         }
-                    }, 1000);
+                    }, 500);
                 } else {
-                    showNotification(`✅ "${taskName}" vazifasi tahrirlandi! (Faqat mahalliy)`, 'warning');
+                    showNotification(`✅ "${taskName}" vazifasi tahrirlandi! (Faqat mahalliy)`, 'success');
                 }
                 
                 // Update display immediately
@@ -4954,7 +4881,7 @@
                 activeBoostsSection.style.display = 'block';
                 activeBoostsList.innerHTML = activeBoosts.map(boost => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(0, 255, 136, 0.05); border-radius: 8px; margin-bottom: 8px; border: 1px solid rgba(0, 255, 136, 0.2);">
-                        <div style="font-weight: bold; color: #00ff88;">${boost.name}</div>
+                        <div style="font-weight: bold; value: #00ff88;">${boost.name}</div>
                         <div style="color: #ccc; font-size: 12px;">${boost.timeLeft}</div>
                     </div>
                 `).join('');
@@ -4969,5 +4896,5 @@
         // Save before page unload
         window.addEventListener('beforeunload', saveGameState);
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96f07e57d328aa08',t:'MTc1NTE3NDk0MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
