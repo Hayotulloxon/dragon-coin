@@ -1855,11 +1855,12 @@
 
         function savePlayerToFirebase() {
             if (!firebaseConnected || !window.firebaseDatabase) return;
-            
+
             try {
-                const playerId = getUniquePlayerId();
+                // Faqat Firebase Auth UID ni ishlatamiz
+                const playerId = window.firebaseAuthUid;
                 const playerRef = window.firebaseRef(window.firebaseDatabase, `players/${playerId}`);
-                
+
                 const playerData = {
                     id: playerId,
                     name: gameState.playerName,
@@ -1872,7 +1873,7 @@
                     isOnline: true,
                     referralCode: gameState.referralCode
                 };
-                
+
                 window.firebaseSet(playerRef, playerData);
             } catch (error) {
                 console.error('❌ Firebase ga saqlashda xatolik:', error);
