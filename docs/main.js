@@ -1,6 +1,19 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+case "removeTask":
+        const removeId = prompt("O'chiriladigan vazifa ID (to'liq):");
+        if (removeId && confirm("Rostdan ham bu vazifani o'chirasizmi?")) {
+          const taskRef = ref(database, "globalCustomTasks/" + removeId);
+          await remove(taskRef);
+          
+          // Success feedback
+          const removeMsg = document.createElement('div');
+          removeMsg.style.cssText = `
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #ff4444, #aa0000); 
+            color: white; padding: 15px 25px; border-radius: 10px; 
+            z-index: 10000; font-size: 16px; font-weight: bold;
+            box-shadowimport { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
-import { getDatabase, ref, set, get, push, update, remove } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+import { getDatabase, ref, set, get, push, update, remove, onValue, off } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -16,6 +29,9 @@ const firebaseConfig = {
 
 // Global o'zgaruvchilar
 let app, database, auth, currentUser = null;
+let leaderboardListener = null;
+let tasksListener = null;
+let playerDataListener = null;
 
 // Firebase initializatsiyasi
 function initializeFirebase() {
@@ -75,8 +91,8 @@ async function initializePlayer(user) {
       console.log("✅ Mavjud player topildi");
     }
     
-    // UI ni yangilash
-    updatePlayerDisplay();
+    // Real-time player data listener o'rnatish
+    setupPlayerDataListener(user.uid);
     
   } catch (error) {
     console.error("❌ Player initializatsiya xatosi:", error);
@@ -84,28 +100,40 @@ async function initializePlayer(user) {
   }
 }
 
-// Foydalanuvchi ma'lumotlarini UI da ko'rsatish
-async function updatePlayerDisplay() {
-  if (!currentUser) return;
+// Real-time player data listener
+function setupPlayerDataListener(userId) {
+  // Eski listenerni o'chirish
+  if (playerDataListener) {
+    off(playerDataListener);
+  }
   
-  try {
-    const playerRef = ref(database, "players/" + currentUser.uid);
-    const snapshot = await get(playerRef);
-    
+  const playerRef = ref(database, "players/" + userId);
+  playerDataListener = onValue(playerRef, (snapshot) => {
     if (snapshot.exists()) {
       const playerData = snapshot.val();
-      
-      // Coins va boshqa ma'lumotlarni yangilash
-      const coinsElement = document.getElementById("playerCoins");
-      const levelElement = document.getElementById("playerLevel");
-      const referralsElement = document.getElementById("playerReferrals");
-      
-      if (coinsElement) coinsElement.textContent = playerData.coins || 0;
-      if (levelElement) levelElement.textContent = playerData.level || 1;
-      if (referralsElement) referralsElement.textContent = playerData.referrals || 0;
+      updatePlayerDisplayUI(playerData);
     }
+  }, (error) => {
+    console.error("❌ Player data listener xatosi:", error);
+  });
+  
+  console.log("✅ Player data real-time listener o'rnatildi");
+}
+
+// UI ni yangilash (ma'lumotlarni olmasdan)
+function updatePlayerDisplayUI(playerData) {
+  try {
+    const coinsElement = document.getElementById("playerCoins");
+    const levelElement = document.getElementById("playerLevel");
+    const referralsElement = document.getElementById("playerReferrals");
+    
+    if (coinsElement) coinsElement.textContent = playerData.coins || 0;
+    if (levelElement) levelElement.textContent = playerData.level || 1;
+    if (referralsElement) referralsElement.textContent = playerData.referrals || 0;
+    
+    console.log("🔄 Player UI yangilandi:", playerData.coins);
   } catch (error) {
-    console.error("❌ Player ma'lumotlarini yangilashda xato:", error);
+    console.error("❌ Player UI yangilashda xato:", error);
   }
 }
 
@@ -168,9 +196,6 @@ async function tapCoin() {
       
       await update(playerRef, { coins: newCoins });
       
-      // UI ni yangilash
-      updatePlayerDisplay();
-      
       // Animatsiya yoki feedback
       const tapButton = document.getElementById("tapButton");
       if (tapButton) {
@@ -181,6 +206,8 @@ async function tapCoin() {
       }
       
       console.log("🐉 Coin tapped! Yangi coins:", newCoins);
+      
+      // UI real-time listener orqali avtomatik yangilanadi
     }
   } catch (error) {
     console.error("❌ Coin tap xatosi:", error);
@@ -188,10 +215,15 @@ async function tapCoin() {
   }
 }
 
-// Leaderboard yuklash funksiyasi
-async function loadLeaderboard(type = "coins") {
+// Leaderboard yuklash funksiyasi (real-time)
+function loadLeaderboard(type = "coins") {
   try {
-    console.log("🔄 Leaderboard yuklanmoqda:", type);
+    console.log("🔄 Real-time leaderboard o'rnatilmoqda:", type);
+    
+    // Eski listenerni o'chirish
+    if (leaderboardListener) {
+      off(leaderboardListener);
+    }
     
     // Leaderboard list elementini topish yoki yaratish
     let list = document.getElementById("leaderboardList");
@@ -220,69 +252,88 @@ async function loadLeaderboard(type = "coins") {
     }
     
     // Loading ko'rsatish
-    list.innerHTML = "<div style='text-align:center; color:#666; padding:20px;'>Yuklanmoqda...</div>";
+    list.innerHTML = "<div style='text-align:center; color:#666; padding:20px;'>🔄 Real-time ma'lumotlar yuklanmoqda...</div>";
     
+    // Real-time listener o'rnatish
     const playersRef = ref(database, "players");
-    const snapshot = await get(playersRef);
-    
-    if (snapshot.exists()) {
-      const data = snapshot.val();
-      let players = Object.keys(data).map(key => ({
-        id: key,
-        ...data[key]
-      }));
-      
-      // Sorting
-      if (type === "coins") {
-        players.sort((a, b) => (b.coins || 0) - (a.coins || 0));
-      } else if (type === "referrals") {
-        players.sort((a, b) => (b.referrals || 0) - (a.referrals || 0));
+    leaderboardListener = onValue(playersRef, (snapshot) => {
+      try {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          let players = Object.keys(data).map(key => ({
+            id: key,
+            ...data[key]
+          }));
+          
+          // Sorting
+          if (type === "coins") {
+            players.sort((a, b) => (b.coins || 0) - (a.coins || 0));
+          } else if (type === "referrals") {
+            players.sort((a, b) => (b.referrals || 0) - (a.referrals || 0));
+          }
+          
+          // Top 50 ni olish
+          players = players.slice(0, 50);
+          
+          // HTML yaratish
+          list.innerHTML = `
+            <div style='text-align:center; color:#0f0; font-size:12px; margin-bottom:10px;'>
+              🟢 Real-time yangilanmoqda
+            </div>
+            ${players.map((p, i) => {
+              const isCurrentUser = currentUser && p.id === currentUser.uid;
+              const backgroundColor = isCurrentUser ? "#2a2a2a" : "transparent";
+              
+              return `
+                <div style='
+                  padding: 12px; 
+                  border-bottom: 1px solid #333; 
+                  color: #fff;
+                  background: ${backgroundColor};
+                  border-radius: 4px;
+                  margin-bottom: 2px;
+                  transition: background-color 0.3s ease;
+                '>
+                  <span style='color: #ffd700; font-weight: bold;'>#${i+1}</span> - 
+                  <span style='color: #00ff00;'>${p.name || 'Dragon Miner'}</span> 
+                  <span style='color: #00bfff; float: right;'>
+                    ${type === "coins" ? (p.coins || 0) + " 🪙" : (p.referrals || 0) + " 👥"}
+                  </span>
+                  ${isCurrentUser ? '<span style="color: #ff6b6b; font-size: 12px;"> (Siz)</span>' : ''}
+                </div>
+              `;
+            }).join("")}
+          `;
+          
+          console.log("✅ Real-time leaderboard yangilandi, players:", players.length);
+        } else {
+          list.innerHTML = "<div style='padding:20px; text-align:center; color:#666;'>Hozircha ma'lumot yo'q</div>";
+        }
+      } catch (error) {
+        console.error("❌ Leaderboard listener ichida xato:", error);
+        list.innerHTML = "<div style='padding:20px; text-align:center; color:red;'>Xato yuz berdi</div>";
       }
-      
-      // Top 50 ni olish
-      players = players.slice(0, 50);
-      
-      // HTML yaratish
-      list.innerHTML = players.map((p, i) => {
-        const isCurrentUser = currentUser && p.id === currentUser.uid;
-        const backgroundColor = isCurrentUser ? "#2a2a2a" : "transparent";
-        
-        return `
-          <div style='
-            padding: 12px; 
-            border-bottom: 1px solid #333; 
-            color: #fff;
-            background: ${backgroundColor};
-            border-radius: 4px;
-            margin-bottom: 2px;
-          '>
-            <span style='color: #ffd700; font-weight: bold;'>#${i+1}</span> - 
-            <span style='color: #00ff00;'>${p.name || 'Dragon Miner'}</span> 
-            <span style='color: #00bfff; float: right;'>
-              ${type === "coins" ? (p.coins || 0) + " 🪙" : (p.referrals || 0) + " 👥"}
-            </span>
-            ${isCurrentUser ? '<span style="color: #ff6b6b; font-size: 12px;"> (Siz)</span>' : ''}
-          </div>
-        `;
-      }).join("");
-      
-      console.log("✅ Leaderboard yuklandi, players:", players.length);
-    } else {
-      list.innerHTML = "<div style='padding:20px; text-align:center; color:#666;'>Hozircha ma'lumot yo'q</div>";
-    }
+    }, (error) => {
+      console.error("❌ Leaderboard listener xatosi:", error);
+      const list = document.getElementById("leaderboardList");
+      if (list) {
+        list.innerHTML = "<div style='padding:20px; text-align:center; color:red;'>Ma'lumotlarni yuklashda xato</div>";
+      }
+    });
     
   } catch (error) {
-    console.error("❌ Leaderboard yuklashda xato:", error);
-    const list = document.getElementById("leaderboardList");
-    if (list) {
-      list.innerHTML = "<div style='padding:20px; text-align:center; color:red;'>Xato yuz berdi: " + error.message + "</div>";
-    }
+    console.error("❌ Leaderboard o'rnatishda xato:", error);
   }
 }
 
-// Vazifalarni ko'rsatish funksiyasi
-async function displayTasks() {
+// Vazifalarni ko'rsatish funksiyasi (real-time)
+function displayTasks() {
   try {
+    // Eski listenerni o'chirish
+    if (tasksListener) {
+      off(tasksListener);
+    }
+    
     let tasksList = document.getElementById("tasksList");
     
     if (!tasksList) {
@@ -308,38 +359,84 @@ async function displayTasks() {
     
     if (!tasksList) return;
     
-    tasksList.innerHTML = "<div style='text-align:center; color:#666; padding:10px;'>Yuklanmoqda...</div>";
+    tasksList.innerHTML = "<div style='text-align:center; color:#666; padding:10px;'>🔄 Real-time vazifalar yuklanmoqda...</div>";
     
+    // Real-time listener o'rnatish
     const tasksRef = ref(database, "globalCustomTasks");
-    const snapshot = await get(tasksRef);
+    tasksListener = onValue(tasksRef, (snapshot) => {
+      try {
+        if (snapshot.exists()) {
+          const tasks = snapshot.val();
+          const currentTime = Date.now();
+          
+          tasksList.innerHTML = `
+            <div style='text-align:center; color:#0f0; font-size:12px; margin-bottom:10px;'>
+              🟢 Real-time yangilanmoqda
+            </div>
+            ${Object.keys(tasks).map(key => {
+              const task = tasks[key];
+              const createdTime = task.createdAt || 0;
+              const isNew = (currentTime - createdTime) < 5000; // 5 soniya ichida yaratilgan
+              
+              return `
+                <div style='
+                  padding:12px; 
+                  border-bottom:1px solid #444; 
+                  display:flex; 
+                  justify-content:space-between;
+                  align-items:center;
+                  color: #fff;
+                  background: ${isNew ? '#1e4d2b' : 'transparent'};
+                  border-radius: 4px;
+                  margin-bottom: 4px;
+                  transition: background-color 0.5s ease;
+                '>
+                  <div>
+                    <div style="display:flex; align-items:center;">
+                      <span>🎯 ${task.name}</span>
+                      ${isNew ? '<span style="color:#0f0; font-size:10px; margin-left:8px;">YANGI!</span>' : ''}
+                    </div>
+                    <div style="font-size:12px; color:#00bfff; margin-top:4px;">
+                      💰 ${task.reward || 100} coin mukofot
+                    </div>
+                    ${task.createdAt ? `<div style="font-size:10px; color:#666; margin-top:2px;">
+                      📅 ${new Date(task.createdAt).toLocaleString()}
+                    </div>` : ''}
+                  </div>
+                  <div style="text-align:right;">
+                    <div style='font-size:10px; color:#666;'>ID: ${key.substring(0, 8)}...</div>
+                    ${task.createdBy ? `<div style='font-size:9px; color:#888; margin-top:2px;'>
+                      👤 ${task.createdBy.substring(0, 8)}...
+                    </div>` : ''}
+                  </div>
+                </div>
+              `;
+            }).join("")}
+          `;
+          
+          console.log("✅ Real-time vazifalar yangilandi:", Object.keys(tasks).length);
+        } else {
+          tasksList.innerHTML = `
+            <div style='text-align:center; color:#0f0; font-size:12px; margin-bottom:10px;'>
+              🟢 Real-time yangilanmoqda
+            </div>
+            <div style='text-align:center; color:#666; padding:20px;'>Hozircha vazifalar yo'q</div>
+          `;
+        }
+      } catch (error) {
+        console.error("❌ Tasks listener ichida xato:", error);
+        tasksList.innerHTML = "<div style='text-align:center; color:red; padding:10px;'>Xato yuz berdi</div>";
+      }
+    }, (error) => {
+      console.error("❌ Tasks listener xatosi:", error);
+      const tasksList = document.getElementById("tasksList");
+      if (tasksList) {
+        tasksList.innerHTML = "<div style='text-align:center; color:red; padding:10px;'>Ma'lumotlarni yuklashda xato</div>";
+      }
+    });
     
-    if (snapshot.exists()) {
-      const tasks = snapshot.val();
-      tasksList.innerHTML = Object.keys(tasks).map(key => 
-        `<div style='
-          padding:10px; 
-          border-bottom:1px solid #444; 
-          display:flex; 
-          justify-content:space-between;
-          align-items:center;
-          color: #fff;
-        '>
-          <div>
-            <span>🎯 ${tasks[key].name}</span>
-            <div style="font-size:12px; color:#00bfff;">${tasks[key].reward || 100} coin mukofot</div>
-          </div>
-          <span style='font-size:10px; color:#666;'>ID: ${key.substring(0, 8)}...</span>
-        </div>`
-      ).join("");
-    } else {
-      tasksList.innerHTML = "<div style='text-align:center; color:#666; padding:20px;'>Hozircha vazifalar yo'q</div>";
-    }
   } catch (error) {
-    console.error("❌ Vazifalarni yuklashda xato:", error);
-    const tasksList = document.getElementById("tasksList");
-    if (tasksList) {
-      tasksList.innerHTML = "<div style='text-align:center; color:red; padding:10px;'>Xato: " + error.message + "</div>";
-    }
+    console.error("❌ Vazifalar listenerini o'rnatishda xato:", error);
   }
 }
 
@@ -400,8 +497,38 @@ async function adminAction(action) {
             createdAt: Date.now(),
             createdBy: currentUser.uid
           });
-          alert("➕ Vazifa qo'shildi!");
-          await displayTasks();
+          
+          // Success feedback with animation
+          const successMsg = document.createElement('div');
+          successMsg.style.cssText = `
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #00ff00, #00aa00); 
+            color: white; padding: 15px 25px; border-radius: 10px; 
+            z-index: 10000; font-size: 16px; font-weight: bold;
+            box-shadow: 0 4px 20px rgba(0,255,0,0.4);
+            animation: successPulse 0.6s ease-in-out;
+          `;
+          successMsg.innerHTML = "✅ Vazifa muvaffaqiyatli qo'shildi!<br>🔄 Real-time yangilanmoqda...";
+          
+          // CSS animation qo'shish
+          const style = document.createElement('style');
+          style.textContent = `
+            @keyframes successPulse {
+              0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+              50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+              100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            }
+          `;
+          document.head.appendChild(style);
+          
+          document.body.appendChild(successMsg);
+          setTimeout(() => {
+            successMsg.remove();
+            style.remove();
+          }, 3000);
+          
+          console.log("➕ Yangi vazifa qo'shildi:", taskName);
+          // Real-time listener avtomatik yangilaydi
         } else {
           alert("❌ Noto'g'ri ma'lumot kiritildi");
         }
