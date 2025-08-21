@@ -1,17 +1,4 @@
-case "removeTask":
-        const removeId = prompt("O'chiriladigan vazifa ID (to'liq):");
-        if (removeId && confirm("Rostdan ham bu vazifani o'chirasizmi?")) {
-          const taskRef = ref(database, "globalCustomTasks/" + removeId);
-          await remove(taskRef);
-          
-          // Success feedback
-          const removeMsg = document.createElement('div');
-          removeMsg.style.cssText = `
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: linear-gradient(45deg, #ff4444, #aa0000); 
-            color: white; padding: 15px 25px; border-radius: 10px; 
-            z-index: 10000; font-size: 16px; font-weight: bold;
-            box-shadowimport { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
 import { getDatabase, ref, set, get, push, update, remove, onValue, off } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
@@ -64,7 +51,6 @@ function initializeFirebase() {
       } else {
         console.log("👤 Foydalanuvchi tizimdan chiqdi");
         currentUser = null;
-        // Barcha listenerlarni o'chirish
         clearAllListeners();
       }
     });
@@ -82,7 +68,6 @@ async function initializePlayer(user) {
     const snapshot = await get(playerRef);
     
     if (!snapshot.exists()) {
-      // Yangi foydalanuvchi yaratish
       await set(playerRef, { 
         name: "Dragon Miner", 
         coins: 0, 
@@ -95,7 +80,6 @@ async function initializePlayer(user) {
       console.log("✅ Mavjud player topildi");
     }
     
-    // Real-time player data listener o'rnatish
     setupPlayerDataListener(user.uid);
     
   } catch (error) {
@@ -106,7 +90,6 @@ async function initializePlayer(user) {
 
 // Real-time player data listener
 function setupPlayerDataListener(userId) {
-  // Eski listenerni o'chirish
   if (playerDataListener) {
     off(playerDataListener);
   }
@@ -126,7 +109,7 @@ function setupPlayerDataListener(userId) {
   console.log("✅ Player data real-time listener o'rnatildi");
 }
 
-// UI ni yangilash (ma'lumotlarni olmasdan)
+// UI ni yangilash
 function updatePlayerDisplayUI(playerData) {
   try {
     const coinsElement = document.getElementById("playerCoins");
@@ -169,11 +152,11 @@ function clearAllListeners() {
     console.log("🔇 Task settings listener o'chirildi");
   }
   
-  // Cache ni tozalash
   processedTaskUpdates.clear();
 }
+
+// Xato xabarini ko'rsatish
 function showError(message) {
-  // Xato xabarini ko'rsatish uchun element yaratish
   let errorDiv = document.getElementById("errorMessage");
   if (!errorDiv) {
     errorDiv = document.createElement("div");
@@ -194,7 +177,7 @@ function showError(message) {
   }, 5000);
 }
 
-// Section ko'rsatish funksiyasi
+// Section ko'rsatish
 function showSection(id) {
   try {
     document.querySelectorAll(".section").forEach(sec => {
@@ -230,7 +213,6 @@ async function tapCoin() {
       
       await update(playerRef, { coins: newCoins });
       
-      // Animatsiya yoki feedback
       const tapButton = document.getElementById("tapButton");
       if (tapButton) {
         tapButton.style.transform = "scale(0.95)";
@@ -240,8 +222,6 @@ async function tapCoin() {
       }
       
       console.log("🐉 Coin tapped! Yangi coins:", newCoins);
-      
-      // UI real-time listener orqali avtomatik yangilanadi
     }
   } catch (error) {
     console.error("❌ Coin tap xatosi:", error);
@@ -249,17 +229,15 @@ async function tapCoin() {
   }
 }
 
-// Leaderboard yuklash funksiyasi (real-time)
+// Leaderboard yuklash funksiyasi
 function loadLeaderboard(type = "coins") {
   try {
     console.log("🔄 Real-time leaderboard o'rnatilmoqda:", type);
     
-    // Eski listenerni o'chirish
     if (leaderboardListener) {
       off(leaderboardListener);
     }
     
-    // Leaderboard list elementini topish yoki yaratish
     let list = document.getElementById("leaderboardList");
     if (!list) {
       const leaderboardSection = document.getElementById("leaderboardSection");
@@ -285,10 +263,8 @@ function loadLeaderboard(type = "coins") {
       return;
     }
     
-    // Loading ko'rsatish
     list.innerHTML = "<div style='text-align:center; color:#666; padding:20px;'>🔄 Real-time ma'lumotlar yuklanmoqda...</div>";
     
-    // Real-time listener o'rnatish
     const playersRef = ref(database, "players");
     leaderboardListener = onValue(playersRef, (snapshot) => {
       try {
@@ -299,17 +275,23 @@ function loadLeaderboard(type = "coins") {
             ...data[key]
           }));
           
-          // Sorting
           if (type === "coins") {
             players.sort((a, b) => (b.coins || 0) - (a.coins || 0));
           } else if (type === "referrals") {
             players.sort((a, b) => (b.referrals || 0) - (a.referrals || 0));
           }
           
-          // Top 50 ni olish
+          // Foydalanuvchi o'rnini hisoblash
+          let userRank = "-";
+          if (currentUser) {
+            const userIndex = players.findIndex(p => p.id === currentUser.uid);
+            if (userIndex !== -1) {
+              userRank = userIndex + 1;
+            }
+          }
+          
           players = players.slice(0, 50);
           
-          // HTML yaratish
           list.innerHTML = `
             <div style='text-align:center; color:#0f0; font-size:12px; margin-bottom:10px;'>
               🟢 Real-time yangilanmoqda
@@ -339,86 +321,58 @@ function loadLeaderboard(type = "coins") {
             }).join("")}
           `;
           
-          console.log("✅ Real-time leaderboard yangilandi, players:", players.length);
+          const rankElement = document.getElementById("playerRank");
+          if (rankElement) {
+            rankElement.textContent = `#${userRank}`;
+          } else {
+            console.error("❌ playerRank elementi topilmadi");
+          }
+          
+          console.log("✅ Real-time leaderboard yangilandi, players:", players.length, "Sizning o'rningiz:", userRank);
         } else {
           list.innerHTML = "<div style='padding:20px; text-align:center; color:#666;'>Hozircha ma'lumot yo'q</div>";
+          const rankElement = document.getElementById("playerRank");
+          if (rankElement) {
+            rankElement.textContent = "#-";
+          }
         }
       } catch (error) {
         console.error("❌ Leaderboard listener ichida xato:", error);
-        list.innerHTML = "<div style='padding:20px; text-align:center; color:red;'>Xato yuz berdi</div>";
+        list.innerHTML = "<div style='padding:20px; text-align:center; color:red;'>Ma'lumotlarni yuklashda xato</div>";
+        showError("Reyting jadvalini yuklashda xato");
       }
     }, (error) => {
       console.error("❌ Leaderboard listener xatosi:", error);
-      const list = document.getElementById("leaderboardList");
-      if (list) {
-        list.innerHTML = "<div style='padding:20px; text-align:center; color:red;'>Ma'lumotlarni yuklashda xato</div>";
-      }
+      list.innerHTML = "<div style='padding:20px; text-align:center; color:red;'>Ma'lumotlarni yuklashda xato</div>";
+      showError("Reyting jadvalini yuklashda xato");
     });
-    
   } catch (error) {
     console.error("❌ Leaderboard o'rnatishda xato:", error);
+    showError("Reyting jadvalini yuklashda xato");
   }
 }
 
-// Vazifalarni ko'rsatish funksiyasi (real-time, optimized)
-function displayTasks() {
+// Vazifalarni ko'rsatish
+async function displayTasks() {
   try {
-    // Eski listenerni o'chirish
+    const tasksList = document.getElementById("tasksList");
+    if (!tasksList) {
+      console.error("❌ tasksList elementi topilmadi");
+      return;
+    }
+    
     if (tasksListener) {
       off(tasksListener);
     }
     
-    let tasksList = document.getElementById("tasksList");
+    tasksList.innerHTML = "<div style='text-align:center; color:#666; padding:20px;'>🔄 Vazifalar yuklanmoqda...</div>";
     
-    if (!tasksList) {
-      const adminSection = document.getElementById("adminSection");
-      if (adminSection) {
-        const tasksDiv = document.createElement("div");
-        tasksDiv.innerHTML = `
-          <h3 style="margin-top:20px; color: #fff;">📋 Mavjud Vazifalar:</h3>
-          <div id="tasksList" style="
-            max-height:300px; 
-            overflow-y:auto; 
-            border:1px solid #333; 
-            padding:10px; 
-            margin:10px 0;
-            background:#1a1a1a;
-            border-radius:8px;
-          "></div>
-        `;
-        adminSection.appendChild(tasksDiv);
-        tasksList = document.getElementById("tasksList");
-      }
-    }
-    
-    if (!tasksList) return;
-    
-    tasksList.innerHTML = "<div style='text-align:center; color:#666; padding:10px;'>🔄 Real-time vazifalar yuklanmoqda...</div>";
-    
-    // Real-time listener o'rnatish (throttled)
     const tasksRef = ref(database, "globalCustomTasks");
-    let lastUpdate = 0;
-    
     tasksListener = onValue(tasksRef, (snapshot) => {
       try {
-        const now = Date.now();
-        // 500ms throttling - juda tez yangilanishlarni oldini olish
-        if (now - lastUpdate < 500) {
-          return;
-        }
-        lastUpdate = now;
-        
         if (snapshot.exists()) {
           const tasks = snapshot.val();
           const taskCount = Object.keys(tasks).length;
-          
-          // Faqat o'zgarish bo'lsa yangilash
-          const currentTasksHash = JSON.stringify(tasks);
-          if (tasksList.dataset.lastHash === currentTasksHash) {
-            return;
-          }
-          tasksList.dataset.lastHash = currentTasksHash;
-          
           const currentTime = Date.now();
           
           tasksList.innerHTML = `
@@ -428,7 +382,7 @@ function displayTasks() {
             ${Object.keys(tasks).map(key => {
               const task = tasks[key];
               const createdTime = task.createdAt || 0;
-              const isNew = (currentTime - createdTime) < 10000; // 10 soniya ichida yaratilgan
+              const isNew = (currentTime - createdTime) < 10000;
               
               return `
                 <div style='
@@ -469,7 +423,6 @@ function displayTasks() {
           
           console.log("✅ Vazifalar yangilandi:", taskCount);
           
-          // Yangi vazifalar uchun animatsiyani o'chirish
           setTimeout(() => {
             const newItems = tasksList.querySelectorAll('[style*="1e4d2b"]');
             newItems.forEach(item => {
@@ -492,10 +445,7 @@ function displayTasks() {
       }
     }, (error) => {
       console.error("❌ Tasks listener xatosi:", error);
-      const tasksList = document.getElementById("tasksList");
-      if (tasksList) {
-        tasksList.innerHTML = "<div style='text-align:center; color:red; padding:10px;'>Ma'lumotlarni yuklashda xato</div>";
-      }
+      tasksList.innerHTML = "<div style='text-align:center; color:red; padding:10px;'>Ma'lumotlarni yuklashda xato</div>";
     });
     
   } catch (error) {
@@ -561,7 +511,6 @@ async function adminAction(action) {
             createdBy: currentUser.uid
           });
           
-          // Success feedback with animation
           const successMsg = document.createElement('div');
           successMsg.style.cssText = `
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -573,14 +522,12 @@ async function adminAction(action) {
           `;
           successMsg.innerHTML = "✅ Vazifa muvaffaqiyatli qo'shildi!<br>🔄 Real-time yangilanmoqda...";
           
-          // CSS animation qo'shish (endi kerak emas, yuqorida qo'shilgan)
           document.body.appendChild(successMsg);
           setTimeout(() => {
             successMsg.remove();
           }, 3000);
           
           console.log("➕ Yangi vazifa qo'shildi:", taskName);
-          // Real-time listener avtomatik yangilaydi
         } else {
           alert("❌ Noto'g'ri ma'lumot kiritildi");
         }
@@ -592,7 +539,6 @@ async function adminAction(action) {
           const taskRef = ref(database, "globalCustomTasks/" + removeId);
           await remove(taskRef);
           
-          // Success feedback
           const removeMsg = document.createElement('div');
           removeMsg.style.cssText = `
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -609,7 +555,6 @@ async function adminAction(action) {
           }, 3000);
           
           console.log("➖ Vazifa o'chirildi:", removeId);
-          // Real-time listener avtomatik yangilaydi
         }
         break;
 
@@ -630,7 +575,6 @@ async function adminAction(action) {
 function setupEventListeners() {
   console.log("🔗 Event listenerlar o'rnatilmoqda...");
 
-  // Navigation tabs
   const tabTap = document.getElementById("tab-tap");
   const tabLeaderboard = document.getElementById("tab-leaderboard");
   const tabAdmin = document.getElementById("tab-admin");
@@ -638,17 +582,20 @@ function setupEventListeners() {
   if (tabTap) {
     tabTap.addEventListener("click", () => showSection("tap"));
     console.log("✅ Tab Tap listener qo'shildi");
+  } else {
+    console.error("❌ tab-tap elementi topilmadi");
   }
 
   if (tabLeaderboard) {
     tabLeaderboard.addEventListener("click", async () => { 
       showSection("leaderboard");
-      // Kichik kechikish qo'shib, DOM element yaratilishini kutamiz
       setTimeout(() => {
         loadLeaderboard("coins");
       }, 200);
     });
     console.log("✅ Tab Leaderboard listener qo'shildi");
+  } else {
+    console.error("❌ tab-leaderboard elementi topilmadi");
   }
 
   if (tabAdmin) {
@@ -657,30 +604,35 @@ function setupEventListeners() {
       await displayTasks();
     });
     console.log("✅ Tab Admin listener qo'shildi");
+  } else {
+    console.error("❌ tab-admin elementi topilmadi");
   }
 
-  // Tap button
   const tapButton = document.getElementById("tapButton");
   if (tapButton) {
     tapButton.addEventListener("click", tapCoin);
     console.log("✅ Tap button listener qo'shildi");
+  } else {
+    console.error("❌ tapButton elementi topilmadi");
   }
 
-  // Leaderboard buttons
   const btnCoins = document.getElementById("btn-leaderboard-coins");
   const btnReferrals = document.getElementById("btn-leaderboard-referrals");
 
   if (btnCoins) {
     btnCoins.addEventListener("click", () => loadLeaderboard("coins"));
     console.log("✅ Coins button listener qo'shildi");
+  } else {
+    console.error("❌ btn-leaderboard-coins elementi topilmadi");
   }
 
   if (btnReferrals) {
     btnReferrals.addEventListener("click", () => loadLeaderboard("referrals"));
     console.log("✅ Referrals button listener qo'shildi");
+  } else {
+    console.error("❌ btn-leaderboard-referrals elementi topilmadi");
   }
 
-  // Admin buttons
   const adminButtons = document.querySelectorAll("#adminSection button[data-action]");
   console.log("🔧 Admin buttons topildi:", adminButtons.length);
 
@@ -697,7 +649,6 @@ function setupEventListeners() {
 document.addEventListener("DOMContentLoaded", function() {
   console.log("🚀 DOM yuklandi, ilovani ishga tushiryapman...");
   
-  // CSS animatsiyalarni qo'shish
   const style = document.createElement('style');
   style.textContent = `
     @keyframes pulse {
@@ -713,29 +664,24 @@ document.addEventListener("DOMContentLoaded", function() {
   `;
   document.head.appendChild(style);
   
-  // Firebase ni ishga tushirish
   initializeFirebase();
-  
-  // Event listenerlarni o'rnatish
   setupEventListeners();
   
   console.log("✅ Ilova muvaffaqiyatli ishga tushdi");
 });
 
-// Window error handlerini qo'shish
+// Global xato ishlov berish
 window.addEventListener('error', function(e) {
   console.error('❌ Global xato:', e.error);
   showError('Kutilmagan xato yuz berdi');
 });
 
-// Unhandled promise rejectionlarni tutish
 window.addEventListener('unhandledrejection', function(e) {
   console.error('❌ Unhandled promise rejection:', e.reason);
   showError('Ma\'lumotlarni yuklashda xato');
   e.preventDefault();
 });
 
-// Window unload eventida listenerlarni tozalash
 window.addEventListener('beforeunload', function() {
   clearAllListeners();
   console.log("🔇 Barcha listenerlar tozalandi");
