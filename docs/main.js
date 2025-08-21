@@ -3,6 +3,7 @@ import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase
 import { getDatabase, ref, set, get, push, update, remove, onValue } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
+// 🔧 Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDShZAo9lg-SxpQViCT27uXVni1UK7TGYU",
   authDomain: "dragon-92897.firebaseapp.com",
@@ -127,7 +128,7 @@ function handleReferral(myUid) {
   }
 }
 
-// ✅ Admin actions (o‘zgarishsiz qoldi)
+// ✅ Admin actions
 function adminAction(action) {
   const db = database;
   switch(action) {
@@ -203,20 +204,22 @@ function adminAction(action) {
   }
 }
 
-// 🔗 Event listenerlar
-document.getElementById("tab-tap").addEventListener("click", () => showSection("tap"));
-document.getElementById("tab-leaderboard").addEventListener("click", () => { 
-  showSection("leaderboard"); 
-  loadLeaderboard("coins"); 
-});
-document.getElementById("tab-admin").addEventListener("click", () => showSection("admin"));
+// 🔄 Event listenerlarni DOM yuklangandan keyin qo‘shish
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("tab-tap")?.addEventListener("click", () => showSection("tap"));
+  document.getElementById("tab-leaderboard")?.addEventListener("click", () => { 
+    showSection("leaderboard"); 
+    loadLeaderboard("coins"); 
+  });
+  document.getElementById("tab-admin")?.addEventListener("click", () => showSection("admin"));
 
-document.getElementById("tapButton").addEventListener("click", tapCoin);
-document.getElementById("btn-leaderboard-coins").addEventListener("click", () => loadLeaderboard("coins"));
-document.getElementById("btn-leaderboard-referrals").addEventListener("click", () => loadLeaderboard("referrals"));
+  document.getElementById("tapButton")?.addEventListener("click", tapCoin);
+  document.getElementById("btn-leaderboard-coins")?.addEventListener("click", () => loadLeaderboard("coins"));
+  document.getElementById("btn-leaderboard-referrals")?.addEventListener("click", () => loadLeaderboard("referrals"));
 
-document.querySelectorAll("#adminSection button").forEach(btn => {
-  btn.addEventListener("click", () => adminAction(btn.dataset.action));
+  document.querySelectorAll("#adminSection button").forEach(btn => {
+    btn.addEventListener("click", () => adminAction(btn.dataset.action));
+  });
 });
 
 // 🔄 Sektsiyalar
