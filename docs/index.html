@@ -4930,5 +4930,40 @@
         window.addEventListener('beforeunload', saveGameState);
     </script>
 <script type="module" src="/dragon-coin/main.js"></script>
+    <body>
+  <!-- 🔹 Navigatsiya tugmalari -->
+  <div class="tabs">
+    <button id="tab-tap">Tap</button>
+    <button id="tab-leaderboard">Leaderboard</button>
+    <button id="tab-admin">Admin</button>
+  </div>
+
+  <!-- 🔹 Tap bo‘limi -->
+  <div id="tapSection" class="section">
+    <button id="tapButton">🐉 Tap</button>
+  </div>
+
+  <!-- 🔹 Reyting bo‘limi -->
+  <div id="leaderboardSection" class="section" style="display:none;">
+    <button id="btn-leaderboard-coins">Coins Leaderboard</button>
+    <button id="btn-leaderboard-referrals">Referrals Leaderboard</button>
+    <div id="leaderboardList"></div>
+  </div>
+
+  <!-- 🔹 Admin bo‘limi -->
+  <div id="adminSection" class="section" style="display:none;">
+    <button data-action="addCoins">Add Coins</button>
+    <button data-action="resetPlayer">Reset Player</button>
+    <button data-action="addTask">Add Task</button>
+    <button data-action="removeTask">Remove Task</button>
+    <button data-action="editTask">Edit Task</button>
+    <button data-action="viewTasks">View Tasks</button>
+  </div>
+
+  <!-- 🔹 Custom vazifalar ro‘yxati -->
+  <div id="customTasksList"></div>
+
+  <!-- 🔹 JavaScript ulanish -->
+  <script type="module" src="/dragon-coin/main.js"></script>
 </body>
 </html>
