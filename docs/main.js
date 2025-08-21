@@ -20,6 +20,7 @@ let leaderboardListener = null;
 let tasksListener = null;
 let playerDataListener = null;
 let taskSettingsListener = null;
+let processedTaskUpdates = new Set();
 
 // Firebase initializatsiyasi
 function initializeFirebase() {
@@ -31,7 +32,6 @@ function initializeFirebase() {
     
     console.log("✅ Firebase muvaffaqiyatli ishga tushirildi");
     
-    // Anonymous login
     signInAnonymously(auth)
       .then(() => {
         console.log("✅ Anonymous login muvaffaqiyatli");
@@ -41,7 +41,6 @@ function initializeFirebase() {
         showError("Tizimga kirish xatosi: " + error.message);
       });
 
-    // Auth state o'zgarishlarini kuzatish
     onAuthStateChanged(auth, (user) => {
       if (user) {
         console.log("👤 Foydalanuvchi tizimga kirdi:", user.uid);
@@ -104,8 +103,6 @@ function setupPlayerDataListener(userId) {
     console.error("❌ Player data listener xatosi:", error);
     showError("Ma'lumotlar yangilanishida xato");
   });
-  
-  console.log("✅ Player data real-time listener o'rnatildi");
 }
 
 // UI ni yangilash
@@ -114,12 +111,14 @@ function updatePlayerDisplayUI(playerData) {
     const coinsElement = document.getElementById("playerCoins");
     const levelElement = document.getElementById("playerLevel");
     const referralsElement = document.getElementById("playerReferrals");
+    const rankElement = document.getElementById("playerRank");
     
     if (coinsElement) coinsElement.textContent = playerData.coins || 0;
     if (levelElement) levelElement.textContent = playerData.level || 1;
     if (referralsElement) referralsElement.textContent = playerData.referrals || 0;
+    if (rankElement) rankElement.textContent = playerData.rank || "-";
     
-    console.log("🔄 Player UI yangilandi:", playerData.coins);
+    console.log("🔄 Player UI yangilandi");
   } catch (error) {
     console.error("❌ Player UI yangilashda xato:", error);
   }
@@ -130,28 +129,23 @@ function clearAllListeners() {
   if (leaderboardListener) {
     off(leaderboardListener);
     leaderboardListener = null;
-    console.log("🔇 Leaderboard listener o'chirildi");
   }
-  
   if (tasksListener) {
     off(tasksListener);
     tasksListener = null;
-    console.log("🔇 Tasks listener o'chirildi");
   }
-  
   if (playerDataListener) {
     off(playerDataListener);
     playerDataListener = null;
-    console.log("🔇 Player data listener o'chirildi");
   }
-  
   if (taskSettingsListener) {
     off(taskSettingsListener);
     taskSettingsListener = null;
-    console.log("🔇 Task settings listener o'chirildi");
   }
+  processedTaskUpdates.clear();
 }
 
+// Xato xabarini ko'rsatish
 function showError(message) {
   let errorDiv = document.getElementById("errorMessage");
   if (!errorDiv) {
@@ -173,7 +167,7 @@ function showError(message) {
   }, 5000);
 }
 
-// Section ko'rsatish funksiyasi
+// Section ko'rsatish
 function showSection(id) {
   try {
     document.querySelectorAll(".section").forEach(sec => {
@@ -184,8 +178,6 @@ function showSection(id) {
     if (targetSection) {
       targetSection.style.display = "block";
       console.log("✅ Section ko'rsatildi:", id);
-    } else {
-      console.error("❌ Section topilmadi:", id + "Section");
     }
   } catch (error) {
     console.error("❌ Section ko'rsatishda xato:", error);
@@ -209,7 +201,6 @@ async function tapCoin() {
       
       await update(playerRef, { coins: newCoins });
       
-      // Animatsiya
       const tapButton = document.getElementById("tapButton");
       if (tapButton) {
         tapButton.style.transform = "scale(0.95)";
@@ -217,8 +208,6 @@ async function tapCoin() {
           tapButton.style.transform = "scale(1)";
         }, 100);
       }
-      
-      console.log("🐉 Coin tapped! Yangi coins:", newCoins);
     }
   } catch (error) {
     console.error("❌ Coin tap xatosi:", error);
@@ -226,11 +215,9 @@ async function tapCoin() {
   }
 }
 
-// Real-time Leaderboard (tuzatilgan)
+// Leaderboard yuklash
 function loadLeaderboard(type = "coins") {
   try {
-    console.log("🔄 Real-time leaderboard o'rnatilmoqda:", type);
-    
     if (leaderboardListener) {
       off(leaderboardListener);
     }
@@ -255,12 +242,10 @@ function loadLeaderboard(type = "coins") {
       }
     }
     
-    if (!list) return;
-    
-    list.innerHTML = "<div style='text-align:center; color:#666; padding:20px;'>🔄 Real-time ma'lumotlar yuklanmoqda...</div>";
+    list.innerHTML = "<div style='text-align:center; color:#666; padding:20px;'>🔄 Yuklanmoqda...</div>";
     
     const playersRef = ref(database, "players");
-    leaderboardListener = onValue(playersRef, (snapshot) => {
+    leaderboardListener = onValue(playersRef, async (snapshot) => {
       try {
         if (snapshot.exists()) {
           const data = snapshot.val();
@@ -276,6 +261,23 @@ function loadLeaderboard(type = "coins") {
             players.sort((a, b) => (b.referrals || 0) - (a.referrals || 0));
           }
           
+          // Rank qo'shish
+          players = players.map((player, index) => ({
+            ...player,
+            rank: index + 1
+          }));
+          
+          // Foydalanuvchi rankini yangilash
+          if (currentUser) {
+            const currentPlayer = players.find(p => p.id === currentUser.uid);
+            if (currentPlayer) {
+              await update(ref(database, `players/${currentUser.uid}`), {
+                rank: currentPlayer.rank
+              });
+            }
+          }
+          
+          // Top 50 ni olish
           players = players.slice(0, 50);
           
           list.innerHTML = `
@@ -284,19 +286,16 @@ function loadLeaderboard(type = "coins") {
             </div>
             ${players.map((p, i) => {
               const isCurrentUser = currentUser && p.id === currentUser.uid;
-              const backgroundColor = isCurrentUser ? "#2a2a2a" : "transparent";
-              
               return `
                 <div style='
                   padding: 12px; 
                   border-bottom: 1px solid #333; 
                   color: #fff;
-                  background: ${backgroundColor};
+                  background: ${isCurrentUser ? '#2a2a2a' : 'transparent'};
                   border-radius: 4px;
                   margin-bottom: 2px;
-                  transition: background-color 0.3s ease;
                 '>
-                  <span style='color: #ffd700; font-weight: bold;'>#${i+1}</span> - 
+                  <span style='color: #ffd700; font-weight: bold;'>#${p.rank}</span> - 
                   <span style='color: #00ff00;'>${p.name || 'Dragon Miner'}</span> 
                   <span style='color: #00bfff; float: right;'>
                     ${type === "coins" ? (p.coins || 0) + " 🪙" : (p.referrals || 0) + " 👥"}
@@ -306,29 +305,20 @@ function loadLeaderboard(type = "coins") {
               `;
             }).join("")}
           `;
-          
-          console.log("✅ Real-time leaderboard yangilandi, players:", players.length);
         } else {
           list.innerHTML = "<div style='padding:20px; text-align:center; color:#666;'>Hozircha ma'lumot yo'q</div>";
         }
       } catch (error) {
-        console.error("❌ Leaderboard listener ichida xato:", error);
+        console.error("❌ Leaderboard listener xatosi:", error);
         list.innerHTML = "<div style='padding:20px; text-align:center; color:red;'>Xato yuz berdi</div>";
       }
-    }, (error) => {
-      console.error("❌ Leaderboard listener xatosi:", error);
-      const list = document.getElementById("leaderboardList");
-      if (list) {
-        list.innerHTML = "<div style='padding:20px; text-align:center; color:red;'>Ma'lumotlarni yuklashda xato</div>";
-      }
     });
-    
   } catch (error) {
     console.error("❌ Leaderboard o'rnatishda xato:", error);
   }
 }
 
-// Real-time Tasks Display (tuzatilgan)
+// Vazifalarni ko'rsatish
 function displayTasks() {
   try {
     if (tasksListener) {
@@ -336,10 +326,13 @@ function displayTasks() {
     }
     
     let tasksList = document.getElementById("tasksList");
-    
     if (!tasksList) {
-      const adminSection = document.getElementById("adminSection");
-      if (adminSection) {
+      const sections = [
+        document.getElementById("adminSection"),
+        document.getElementById("tasksSection")
+      ].filter(Boolean);
+      
+      for (const section of sections) {
         const tasksDiv = document.createElement("div");
         tasksDiv.innerHTML = `
           <h3 style="margin-top:20px; color: #fff;">📋 Mavjud Vazifalar:</h3>
@@ -353,23 +346,21 @@ function displayTasks() {
             border-radius:8px;
           "></div>
         `;
-        adminSection.appendChild(tasksDiv);
-        tasksList = document.getElementById("tasksList");
+        section.appendChild(tasksDiv);
       }
+      tasksList = document.getElementById("tasksList");
     }
     
     if (!tasksList) return;
     
-    tasksList.innerHTML = "<div style='text-align:center; color:#666; padding:10px;'>🔄 Real-time vazifalar yuklanmoqda...</div>";
+    tasksList.innerHTML = "<div style='text-align:center; color:#666; padding:10px;'>🔄 Yuklanmoqda...</div>";
     
     const tasksRef = ref(database, "globalCustomTasks");
-    
     tasksListener = onValue(tasksRef, (snapshot) => {
       try {
         if (snapshot.exists()) {
           const tasks = snapshot.val();
           const taskCount = Object.keys(tasks).length;
-          const currentTime = Date.now();
           
           tasksList.innerHTML = `
             <div style='text-align:center; color:#0f0; font-size:12px; margin-bottom:10px;'>
@@ -378,7 +369,7 @@ function displayTasks() {
             ${Object.keys(tasks).map(key => {
               const task = tasks[key];
               const createdTime = task.createdAt || 0;
-              const isNew = (currentTime - createdTime) < 10000;
+              const isNew = (Date.now() - createdTime) < 10000;
               
               return `
                 <div style='
@@ -391,8 +382,6 @@ function displayTasks() {
                   background: ${isNew ? '#1e4d2b' : 'transparent'};
                   border-radius: 4px;
                   margin-bottom: 4px;
-                  transition: all 0.3s ease;
-                  ${isNew ? 'border-left: 3px solid #00ff00; animation: taskGlow 2s ease-in-out;' : ''}
                 '>
                   <div>
                     <div style="display:flex; align-items:center;">
@@ -417,8 +406,19 @@ function displayTasks() {
             }).join("")}
           `;
           
-          console.log("✅ Vazifalar DARHOL yangilandi:", taskCount);
+          // Yangi vazifalar xabari
+          if (taskCount > (tasksList.dataset.taskCount || 0)) {
+            showSuccess(`Yangi vazifa qo'shildi! Jami: ${taskCount}`);
+            tasksList.dataset.taskCount = taskCount;
+          }
           
+          setTimeout(() => {
+            const newItems = tasksList.querySelectorAll('[style*="1e4d2b"]');
+            newItems.forEach(item => {
+              item.style.background = 'transparent';
+              item.style.borderLeft = 'none';
+            });
+          }, 10000);
         } else {
           tasksList.innerHTML = `
             <div style='text-align:center; color:#0f0; font-size:12px; margin-bottom:10px;'>
@@ -428,23 +428,31 @@ function displayTasks() {
           `;
         }
       } catch (error) {
-        console.error("❌ Tasks listener ichida xato:", error);
+        console.error("❌ Tasks listener xatosi:", error);
         tasksList.innerHTML = "<div style='text-align:center; color:red; padding:10px;'>Xato yuz berdi</div>";
       }
-    }, (error) => {
-      console.error("❌ Tasks listener xatosi:", error);
-      const tasksList = document.getElementById("tasksList");
-      if (tasksList) {
-        tasksList.innerHTML = "<div style='text-align:center; color:red; padding:10px;'>Ma'lumotlarni yuklashda xato</div>";
-      }
     });
-    
   } catch (error) {
     console.error("❌ Vazifalar listenerini o'rnatishda xato:", error);
   }
 }
 
-// Admin actions (tuzatilgan)
+// Muvaffaqiyat xabarini ko'rsatish
+function showSuccess(message) {
+  const successMsg = document.createElement('div');
+  successMsg.style.cssText = `
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: linear-gradient(45deg, #00ff00, #00aa00); 
+    color: white; padding: 15px 25px; border-radius: 10px; 
+    z-index: 10000; font-size: 16px; font-weight: bold;
+    box-shadow: 0 4px 20px rgba(0,255,0,0.4);
+  `;
+  successMsg.textContent = message;
+  document.body.appendChild(successMsg);
+  setTimeout(() => successMsg.remove(), 3000);
+}
+
+// Admin actions
 async function adminAction(action) {
   if (!currentUser) {
     showError("Admin funksiyalari uchun tizimga kirish kerak");
@@ -465,12 +473,12 @@ async function adminAction(action) {
             const data = snap.val();
             const newCoins = (data.coins || 0) + amount;
             await update(playerRef, { coins: newCoins });
-            alert("💰 " + amount + " coin qo'shildi!");
+            showSuccess(`${amount} coin qo'shildi!`);
           } else {
-            alert("❌ O'yinchi topilmadi!");
+            showError("O'yinchi topilmadi!");
           }
         } else {
-          alert("❌ Noto'g'ri ma'lumot kiritildi");
+          showError("Noto'g'ri ma'lumot kiritildi");
         }
         break;
 
@@ -485,7 +493,7 @@ async function adminAction(action) {
             referrals: 0,
             resetAt: Date.now()
           });
-          alert("🔄 O'yinchi qayta tiklandi!");
+          showSuccess("O'yinchi qayta tiklandi!");
         }
         break;
 
@@ -495,38 +503,16 @@ async function adminAction(action) {
         
         if (taskName && !isNaN(taskReward) && taskReward > 0) {
           const tasksRef = ref(database, "globalCustomTasks");
-          const newTaskRef = await push(tasksRef, { 
+          await push(tasksRef, { 
             name: taskName, 
             reward: taskReward,
             createdAt: Date.now(),
-            createdBy: currentUser.uid
+            createdBy: currentUser.uid,
+            status: "active"
           });
-          
-          // Success feedback with better animation
-          const successMsg = document.createElement('div');
-          successMsg.style.cssText = `
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: linear-gradient(45deg, #00ff00, #00aa00); 
-            color: white; padding: 20px 30px; border-radius: 15px; 
-            z-index: 10000; font-size: 18px; font-weight: bold;
-            box-shadow: 0 8px 32px rgba(0,255,0,0.3);
-            animation: successBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-          `;
-          successMsg.innerHTML = `
-            ✅ Vazifa qo'shildi!<br>
-            <div style="font-size:14px; margin-top:5px;">📋 "${taskName}" - 💰${taskReward} coin</div>
-            <div style="font-size:12px; color:#ccc; margin-top:5px;">🔄 DARHOL ko'rsatiladi</div>
-          `;
-          
-          document.body.appendChild(successMsg);
-          setTimeout(() => {
-            successMsg.remove();
-          }, 4000);
-          
-          console.log("➕ Yangi vazifa qo'shildi:", taskName, "ID:", newTaskRef.key);
-          
+          showSuccess("Vazifa qo'shildi!");
         } else {
-          alert("❌ Noto'g'ri ma'lumot kiritildi");
+          showError("Noto'g'ri ma'lumot kiritildi");
         }
         break;
 
@@ -535,41 +521,43 @@ async function adminAction(action) {
         if (removeId && confirm("Rostdan ham bu vazifani o'chirasizmi?")) {
           const taskRef = ref(database, "globalCustomTasks/" + removeId);
           await remove(taskRef);
+          showSuccess("Vazifa o'chirildi!");
+        }
+        break;
+
+      case "editTask":
+        const editId = prompt("Tahrirlanadigan vazifa ID (to'liq):");
+        if (editId) {
+          const taskRef = ref(database, "globalCustomTasks/" + editId);
+          const snap = await get(taskRef);
           
-          // Success feedback
-          const removeMsg = document.createElement('div');
-          removeMsg.style.cssText = `
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: linear-gradient(45deg, #ff4444, #aa0000); 
-            color: white; padding: 20px 30px; border-radius: 15px; 
-            z-index: 10000; font-size: 18px; font-weight: bold;
-            box-shadow: 0 8px 32px rgba(255,68,68,0.3);
-            animation: removeBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-          `;
-          removeMsg.innerHTML = `
-            🗑️ Vazifa o'chirildi!<br>
-            <div style="font-size:12px; color:#ffccc; margin-top:5px;">🔄 DARHOL yangilanadi</div>
-          `;
-          
-          document.body.appendChild(removeMsg);
-          setTimeout(() => {
-            removeMsg.remove();
-          }, 3000);
-          
-          console.log("➖ Vazifa o'chirildi:", removeId);
+          if (snap.exists()) {
+            const newName = prompt("Yangi vazifa nomi:", snap.val().name);
+            const newReward = parseInt(prompt("Yangi mukofot (coin):", snap.val().reward));
+            
+            if (newName && !isNaN(newReward) && newReward > 0) {
+              await update(taskRef, {
+                name: newName,
+                reward: newReward,
+                updatedAt: Date.now()
+              });
+              showSuccess("Vazifa tahrirlandi!");
+            } else {
+              showError("Noto'g'ri ma'lumot kiritildi");
+            }
+          } else {
+            showError("Vazifa topilmadi!");
+          }
         }
         break;
 
       case "viewTasks":
         displayTasks();
         break;
-
-      default:
-        console.warn("⚠️ Noma'lum action:", action);
     }
   } catch (error) {
     console.error("❌ Admin action xatosi:", error);
-    alert("❌ Xato yuz berdi: " + error.message);
+    showError("Xato yuz berdi: " + error.message);
   }
 }
 
@@ -577,75 +565,59 @@ async function adminAction(action) {
 function setupEventListeners() {
   console.log("🔗 Event listenerlar o'rnatilmoqda...");
 
-  // Navigation tabs
   const tabTap = document.getElementById("tab-tap");
   const tabLeaderboard = document.getElementById("tab-leaderboard");
   const tabAdmin = document.getElementById("tab-admin");
+  const tabTasks = document.getElementById("tab-tasks");
 
   if (tabTap) {
     tabTap.addEventListener("click", () => showSection("tap"));
-    console.log("✅ Tab Tap listener qo'shildi");
   }
-
   if (tabLeaderboard) {
-    tabLeaderboard.addEventListener("click", async () => { 
+    tabLeaderboard.addEventListener("click", () => {
       showSection("leaderboard");
-      setTimeout(() => {
-        loadLeaderboard("coins");
-      }, 100); // Kichikroq delay
+      setTimeout(() => loadLeaderboard("coins"), 200);
     });
-    console.log("✅ Tab Leaderboard listener qo'shildi");
   }
-
   if (tabAdmin) {
-    tabAdmin.addEventListener("click", async () => { 
+    tabAdmin.addEventListener("click", () => {
       showSection("admin");
-      setTimeout(() => {
-        displayTasks(); // Darhol tasks ko'rsatish
-      }, 50);
+      displayTasks();
     });
-    console.log("✅ Tab Admin listener qo'shildi");
+  }
+  if (tabTasks) {
+    tabTasks.addEventListener("click", () => {
+      showSection("tasks");
+      displayTasks();
+    });
   }
 
-  // Tap button
   const tapButton = document.getElementById("tapButton");
   if (tapButton) {
     tapButton.addEventListener("click", tapCoin);
-    console.log("✅ Tap button listener qo'shildi");
   }
 
-  // Leaderboard buttons
   const btnCoins = document.getElementById("btn-leaderboard-coins");
   const btnReferrals = document.getElementById("btn-leaderboard-referrals");
 
   if (btnCoins) {
     btnCoins.addEventListener("click", () => loadLeaderboard("coins"));
-    console.log("✅ Coins button listener qo'shildi");
   }
-
   if (btnReferrals) {
     btnReferrals.addEventListener("click", () => loadLeaderboard("referrals"));
-    console.log("✅ Referrals button listener qo'shildi");
   }
 
-  // Admin buttons
   const adminButtons = document.querySelectorAll("#adminSection button[data-action]");
-  console.log("🔧 Admin buttons topildi:", adminButtons.length);
-
   adminButtons.forEach(btn => {
     const action = btn.dataset.action;
     if (action) {
       btn.addEventListener("click", () => adminAction(action));
-      console.log("✅ Admin button listener qo'shildi:", action);
     }
   });
 }
 
-// DOM yuklangandan keyin ishga tushirish
+// DOM yuklanganda
 document.addEventListener("DOMContentLoaded", function() {
-  console.log("🚀 DOM yuklandi, ilovani ishga tushiryapman...");
-  
-  // CSS animatsiyalarni qo'shish
   const style = document.createElement('style');
   style.textContent = `
     @keyframes pulse {
@@ -653,36 +625,14 @@ document.addEventListener("DOMContentLoaded", function() {
       50% { opacity: 0.5; }
       100% { opacity: 1; }
     }
-    @keyframes successBounce {
-      0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
-      50% { transform: translate(-50%, -50%) scale(1.05); }
-      70% { transform: translate(-50%, -50%) scale(0.9); }
-      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-    }
-    @keyframes removeBounce {
-      0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
-      50% { transform: translate(-50%, -50%) scale(1.05); }
-      70% { transform: translate(-50%, -50%) scale(0.9); }
-      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-    }
-    @keyframes taskGlow {
-      0% { box-shadow: 0 0 5px rgba(0,255,0,0.3); }
-      50% { box-shadow: 0 0 20px rgba(0,255,0,0.6); }
-      100% { box-shadow: 0 0 5px rgba(0,255,0,0.3); }
-    }
   `;
   document.head.appendChild(style);
   
-  // Firebase ni ishga tushirish
   initializeFirebase();
-  
-  // Event listenerlarni o'rnatish
   setupEventListeners();
-  
-  console.log("✅ Ilova muvaffaqiyatli ishga tushdi");
 });
 
-// Window error handlers
+// Error handlers
 window.addEventListener('error', function(e) {
   console.error('❌ Global xato:', e.error);
   showError('Kutilmagan xato yuz berdi');
@@ -691,10 +641,8 @@ window.addEventListener('error', function(e) {
 window.addEventListener('unhandledrejection', function(e) {
   console.error('❌ Unhandled promise rejection:', e.reason);
   showError('Ma\'lumotlarni yuklashda xato');
-  e.preventDefault();
 });
 
 window.addEventListener('beforeunload', function() {
   clearAllListeners();
-  console.log("🔇 Barcha listenerlar tozalandi");
 });
