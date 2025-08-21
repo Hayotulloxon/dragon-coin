@@ -224,53 +224,73 @@ function adminAction(action) {
 // 🔗 Event listenerlar
 // Event listenerlarni DOM yuklangandan keyin qo'shish
 document.addEventListener("DOMContentLoaded", function() {
-  // Tab event listenerlar
-  const tabTap = document.getElementById("tab-tap");
-  const tabLeaderboard = document.getElementById("tab-leaderboard");
-  const tabAdmin = document.getElementById("tab-admin");
+  console.log("🔄 DOM yuklandi, elementlarni qidiryapman...");
   
-  if (tabTap) tabTap.addEventListener("click", () => showSection("tap"));
-  if (tabLeaderboard) {
-    tabLeaderboard.addEventListener("click", () => { 
-      showSection("leaderboard"); 
-      setTimeout(() => loadLeaderboard("coins"), 100); // Kichik kechikish
-    });
-  }
-  if (tabAdmin) {
-    tabAdmin.addEventListener("click", () => { 
-      showSection("admin"); 
-      setTimeout(() => displayTasks(), 100); // Kichik kechikish
-    });
-  }
-
-  // Tap button
-  const tapButton = document.getElementById("tapButton");
-  if (tapButton) tapButton.addEventListener("click", tapCoin);
-  
-  // Leaderboard buttons
-  const btnCoins = document.getElementById("btn-leaderboard-coins");
-  const btnReferrals = document.getElementById("btn-leaderboard-referrals");
-  if (btnCoins) btnCoins.addEventListener("click", () => loadLeaderboard("coins"));
-  if (btnReferrals) btnReferrals.addEventListener("click", () => loadLeaderboard("referrals"));
-
-  // Admin buttons
-  document.querySelectorAll("#adminSection button").forEach(btn => {
-    btn.addEventListener("click", () => adminAction(btn.dataset.action));
-  });
-});
-
-// Agar DOM allaqachon yuklangan bo'lsa
-if (document.readyState === "loading") {
-  // DOM hali yuklanmagan
-} else {
-  // DOM allaqachon yuklangan
+  // Elementlarni topish va event listener qo'shish
   setTimeout(() => {
+    const tabTap = document.getElementById("tab-tap");
     const tabLeaderboard = document.getElementById("tab-leaderboard");
+    const tabAdmin = document.getElementById("tab-admin");
+    
+    console.log("📋 Topilgan elementlar:", { tabTap, tabLeaderboard, tabAdmin });
+    
+    if (tabTap) {
+      tabTap.addEventListener("click", () => showSection("tap"));
+      console.log("✅ Tab Tap event listener qo'shildi");
+    }
+    
     if (tabLeaderboard) {
       tabLeaderboard.addEventListener("click", () => { 
         showSection("leaderboard"); 
         setTimeout(() => loadLeaderboard("coins"), 100);
       });
+      console.log("✅ Tab Leaderboard event listener qo'shildi");
     }
-  }, 500);
-}
+    
+    if (tabAdmin) {
+      tabAdmin.addEventListener("click", () => { 
+        showSection("admin"); 
+        setTimeout(() => displayTasks(), 100);
+      });
+      console.log("✅ Tab Admin event listener qo'shildi");
+    }
+
+    // Tap button
+    const tapButton = document.getElementById("tapButton");
+    if (tapButton) {
+      tapButton.addEventListener("click", tapCoin);
+      console.log("✅ Tap button event listener qo'shildi");
+    }
+    
+    // Leaderboard buttons
+    const btnCoins = document.getElementById("btn-leaderboard-coins");
+    const btnReferrals = document.getElementById("btn-leaderboard-referrals");
+    
+    if (btnCoins) {
+      btnCoins.addEventListener("click", () => loadLeaderboard("coins"));
+      console.log("✅ Coins button event listener qo'shildi");
+    }
+    
+    if (btnReferrals) {
+      btnReferrals.addEventListener("click", () => loadLeaderboard("referrals"));
+      console.log("✅ Referrals button event listener qo'shildi");
+    }
+
+    // Admin buttons
+    const adminButtons = document.querySelectorAll("#adminSection button");
+    console.log("🔧 Admin buttons topildi:", adminButtons.length);
+    
+    adminButtons.forEach(btn => {
+      if (btn.dataset.action) {
+        btn.addEventListener("click", () => adminAction(btn.dataset.action));
+        console.log("✅ Admin button event listener qo'shildi:", btn.dataset.action);
+      }
+    });
+  }, 1000); // 1 soniya kutish
+});
+
+// Global funksiyalar (HTML dan chaqirish uchun)
+window.showSection = showSection;
+window.tapCoin = tapCoin;
+window.loadLeaderboard = loadLeaderboard;
+window.adminAction = adminAction;
