@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
-import { getDatabase, ref, set, get, push, update, remove } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+import { getDatabase, ref, set, get, push, update, remove, onValue } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -19,41 +19,73 @@ getAnalytics(app);
 const database = getDatabase(app);
 const auth = getAuth(app);
 
+// 🔐 Anonim login
 signInAnonymously(auth)
   .then(() => console.log("✅ Anonymous login yuborildi"))
   .catch((error) => console.error("❌ Login xatosi:", error));
 
+// 🔐 Foydalanuvchi autentifikatsiya qilinganda
 onAuthStateChanged(auth, (user) => {
   if (user) {
     console.log("👤 Auth UID:", user.uid);
     const playerRef = ref(database, "players/" + user.uid);
-    set(playerRef, { name: "Dragon Miner", coins: 0, level: 1, referrals: 0 })
-      .then(() => console.log("✅ Player ma'lumotlari yozildi"))
-      .catch((err) => console.error("❌ Player yozishda xato:", err));
+
+    // ❌ avval har safar set() qilib yozib yuborayotgan edik
+    // ✅ endi mavjudligini tekshiramiz
+    get(playerRef).then(snap => {
+      if (snap.exists()) {
+        console.log("🔄 O'yinchi mavjud:", snap.val());
+      } else {
+        set(playerRef, { name: "Dragon Miner", coins: 0, level: 1, referrals: 0 })
+          .then(() => console.log("✅ Yangi o'yinchi yozildi"))
+          .catch((err) => console.error("❌ O'yinchi yozishda xato:", err));
+      }
+    });
+
+    // ✅ Vazifalarni real-time kuzatish
+    const tasksRef = ref(database, "globalCustomTasks");
+    onValue(tasksRef, (snapshot) => {
+      if (snapshot.exists()) {
+        renderTasks(snapshot.val());
+      } else {
+        renderTasks({});
+      }
+    });
   }
 });
 
-function showSection(id) {
-  document.querySelectorAll(".section").forEach(sec => sec.style.display = "none");
-  if (id === "tap") document.getElementById("tapSection").style.display = "block";
-  if (id === "leaderboard") document.getElementById("leaderboardSection").style.display = "block";
-  if (id === "admin") document.getElementById("adminSection").style.display = "block";
+// 📋 Vazifalarni UI’da ko‘rsatish
+function renderTasks(tasks) {
+  const list = document.getElementById("customTasksList");
+  if (!list) return;
+  list.innerHTML = ""; // eski vazifalarni tozalash
+  for (let id in tasks) {
+    const task = tasks[id];
+    const item = document.createElement("div");
+    item.className = "condition-item";
+    item.innerHTML = `
+      <div class="condition-text">${task.name}</div>
+      <div class="condition-reward">+${task.reward || 0} DRC</div>
+    `;
+    list.appendChild(item);
+  }
 }
 
-function tapCoin() {
-  alert("🐉 Coin tapped!");
-}
-
-// ✅ Reyting yuklash funksiyasi
+// 📊 Reyting yuklash funksiyasi
 function loadLeaderboard(type) {
   const playersRef = ref(database, "players");
-  get(playersRef).then(snapshot => {
+  onValue(playersRef, (snapshot) => {
     if (snapshot.exists()) {
       const data = snapshot.val();
       let players = Object.values(data);
+
+      // Saralash
       if (type === "coins") players.sort((a, b) => (b.coins || 0) - (a.coins || 0));
       if (type === "referrals") players.sort((a, b) => (b.referrals || 0) - (a.referrals || 0));
+
+      // UI yangilash
       const list = document.getElementById("leaderboardList");
+      if (!list) return;
       list.innerHTML = players.map((p, i) => 
         `<div style='padding:6px; border-bottom:1px solid #333;'>#${i+1} - ${p.name} (${type === "coins" ? (p.coins||0) : (p.referrals||0)})</div>`
       ).join("");
@@ -149,3 +181,16 @@ document.getElementById("btn-leaderboard-referrals").addEventListener("click", (
 document.querySelectorAll("#adminSection button").forEach(btn => {
   btn.addEventListener("click", () => adminAction(btn.dataset.action));
 });
+
+// 🔄 Sektsiya ko‘rsatish
+function showSection(id) {
+  document.querySelectorAll(".section").forEach(sec => sec.style.display = "none");
+  if (id === "tap") document.getElementById("tapSection").style.display = "block";
+  if (id === "leaderboard") document.getElementById("leaderboardSection").style.display = "block";
+  if (id === "admin") document.getElementById("adminSection").style.display = "block";
+}
+
+// 🐉 Tap
+function tapCoin() {
+  alert("🐉 Coin tapped!");
+}
