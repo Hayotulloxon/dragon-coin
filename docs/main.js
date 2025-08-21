@@ -1,17 +1,4 @@
-case "removeTask":
-        const removeId = prompt("O'chiriladigan vazifa ID (to'liq):");
-        if (removeId && confirm("Rostdan ham bu vazifani o'chirasizmi?")) {
-          const taskRef = ref(database, "globalCustomTasks/" + removeId);
-          await remove(taskRef);
-          
-          // Success feedback
-          const removeMsg = document.createElement('div');
-          removeMsg.style.cssText = `
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: linear-gradient(45deg, #ff4444, #aa0000); 
-            color: white; padding: 15px 25px; border-radius: 10px; 
-            z-index: 10000; font-size: 16px; font-weight: bold;
-            box-shadowimport { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
 import { getDatabase, ref, set, get, push, update, remove, onValue, off } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
@@ -33,7 +20,6 @@ let leaderboardListener = null;
 let tasksListener = null;
 let playerDataListener = null;
 let taskSettingsListener = null;
-let processedTaskUpdates = new Set(); // Takrorlanishni oldini olish uchun
 
 // Firebase initializatsiyasi
 function initializeFirebase() {
@@ -64,7 +50,6 @@ function initializeFirebase() {
       } else {
         console.log("👤 Foydalanuvchi tizimdan chiqdi");
         currentUser = null;
-        // Barcha listenerlarni o'chirish
         clearAllListeners();
       }
     });
@@ -82,7 +67,6 @@ async function initializePlayer(user) {
     const snapshot = await get(playerRef);
     
     if (!snapshot.exists()) {
-      // Yangi foydalanuvchi yaratish
       await set(playerRef, { 
         name: "Dragon Miner", 
         coins: 0, 
@@ -95,7 +79,6 @@ async function initializePlayer(user) {
       console.log("✅ Mavjud player topildi");
     }
     
-    // Real-time player data listener o'rnatish
     setupPlayerDataListener(user.uid);
     
   } catch (error) {
@@ -106,7 +89,6 @@ async function initializePlayer(user) {
 
 // Real-time player data listener
 function setupPlayerDataListener(userId) {
-  // Eski listenerni o'chirish
   if (playerDataListener) {
     off(playerDataListener);
   }
@@ -126,7 +108,7 @@ function setupPlayerDataListener(userId) {
   console.log("✅ Player data real-time listener o'rnatildi");
 }
 
-// UI ni yangilash (ma'lumotlarni olmasdan)
+// UI ni yangilash
 function updatePlayerDisplayUI(playerData) {
   try {
     const coinsElement = document.getElementById("playerCoins");
@@ -168,12 +150,9 @@ function clearAllListeners() {
     taskSettingsListener = null;
     console.log("🔇 Task settings listener o'chirildi");
   }
-  
-  // Cache ni tozalash
-  processedTaskUpdates.clear();
 }
+
 function showError(message) {
-  // Xato xabarini ko'rsatish uchun element yaratish
   let errorDiv = document.getElementById("errorMessage");
   if (!errorDiv) {
     errorDiv = document.createElement("div");
@@ -230,7 +209,7 @@ async function tapCoin() {
       
       await update(playerRef, { coins: newCoins });
       
-      // Animatsiya yoki feedback
+      // Animatsiya
       const tapButton = document.getElementById("tapButton");
       if (tapButton) {
         tapButton.style.transform = "scale(0.95)";
@@ -240,8 +219,6 @@ async function tapCoin() {
       }
       
       console.log("🐉 Coin tapped! Yangi coins:", newCoins);
-      
-      // UI real-time listener orqali avtomatik yangilanadi
     }
   } catch (error) {
     console.error("❌ Coin tap xatosi:", error);
@@ -249,17 +226,15 @@ async function tapCoin() {
   }
 }
 
-// Leaderboard yuklash funksiyasi (real-time)
+// Real-time Leaderboard (tuzatilgan)
 function loadLeaderboard(type = "coins") {
   try {
     console.log("🔄 Real-time leaderboard o'rnatilmoqda:", type);
     
-    // Eski listenerni o'chirish
     if (leaderboardListener) {
       off(leaderboardListener);
     }
     
-    // Leaderboard list elementini topish yoki yaratish
     let list = document.getElementById("leaderboardList");
     if (!list) {
       const leaderboardSection = document.getElementById("leaderboardSection");
@@ -280,15 +255,10 @@ function loadLeaderboard(type = "coins") {
       }
     }
     
-    if (!list) {
-      console.error("❌ Leaderboard list elementi yaratilmadi");
-      return;
-    }
+    if (!list) return;
     
-    // Loading ko'rsatish
     list.innerHTML = "<div style='text-align:center; color:#666; padding:20px;'>🔄 Real-time ma'lumotlar yuklanmoqda...</div>";
     
-    // Real-time listener o'rnatish
     const playersRef = ref(database, "players");
     leaderboardListener = onValue(playersRef, (snapshot) => {
       try {
@@ -306,10 +276,8 @@ function loadLeaderboard(type = "coins") {
             players.sort((a, b) => (b.referrals || 0) - (a.referrals || 0));
           }
           
-          // Top 50 ni olish
           players = players.slice(0, 50);
           
-          // HTML yaratish
           list.innerHTML = `
             <div style='text-align:center; color:#0f0; font-size:12px; margin-bottom:10px;'>
               🟢 Real-time yangilanmoqda
@@ -360,10 +328,9 @@ function loadLeaderboard(type = "coins") {
   }
 }
 
-// Vazifalarni ko'rsatish funksiyasi (real-time, optimized)
+// Real-time Tasks Display (tuzatilgan)
 function displayTasks() {
   try {
-    // Eski listenerni o'chirish
     if (tasksListener) {
       off(tasksListener);
     }
@@ -395,30 +362,13 @@ function displayTasks() {
     
     tasksList.innerHTML = "<div style='text-align:center; color:#666; padding:10px;'>🔄 Real-time vazifalar yuklanmoqda...</div>";
     
-    // Real-time listener o'rnatish (throttled)
     const tasksRef = ref(database, "globalCustomTasks");
-    let lastUpdate = 0;
     
     tasksListener = onValue(tasksRef, (snapshot) => {
       try {
-        const now = Date.now();
-        // 500ms throttling - juda tez yangilanishlarni oldini olish
-        if (now - lastUpdate < 500) {
-          return;
-        }
-        lastUpdate = now;
-        
         if (snapshot.exists()) {
           const tasks = snapshot.val();
           const taskCount = Object.keys(tasks).length;
-          
-          // Faqat o'zgarish bo'lsa yangilash
-          const currentTasksHash = JSON.stringify(tasks);
-          if (tasksList.dataset.lastHash === currentTasksHash) {
-            return;
-          }
-          tasksList.dataset.lastHash = currentTasksHash;
-          
           const currentTime = Date.now();
           
           tasksList.innerHTML = `
@@ -428,7 +378,7 @@ function displayTasks() {
             ${Object.keys(tasks).map(key => {
               const task = tasks[key];
               const createdTime = task.createdAt || 0;
-              const isNew = (currentTime - createdTime) < 10000; // 10 soniya ichida yaratilgan
+              const isNew = (currentTime - createdTime) < 10000;
               
               return `
                 <div style='
@@ -441,8 +391,8 @@ function displayTasks() {
                   background: ${isNew ? '#1e4d2b' : 'transparent'};
                   border-radius: 4px;
                   margin-bottom: 4px;
-                  transition: background-color 1s ease;
-                  ${isNew ? 'border-left: 3px solid #00ff00;' : ''}
+                  transition: all 0.3s ease;
+                  ${isNew ? 'border-left: 3px solid #00ff00; animation: taskGlow 2s ease-in-out;' : ''}
                 '>
                   <div>
                     <div style="display:flex; align-items:center;">
@@ -467,16 +417,7 @@ function displayTasks() {
             }).join("")}
           `;
           
-          console.log("✅ Vazifalar yangilandi:", taskCount);
-          
-          // Yangi vazifalar uchun animatsiyani o'chirish
-          setTimeout(() => {
-            const newItems = tasksList.querySelectorAll('[style*="1e4d2b"]');
-            newItems.forEach(item => {
-              item.style.background = 'transparent';
-              item.style.borderLeft = 'none';
-            });
-          }, 10000);
+          console.log("✅ Vazifalar DARHOL yangilandi:", taskCount);
           
         } else {
           tasksList.innerHTML = `
@@ -503,7 +444,7 @@ function displayTasks() {
   }
 }
 
-// Admin actions
+// Admin actions (tuzatilgan)
 async function adminAction(action) {
   if (!currentUser) {
     showError("Admin funksiyalari uchun tizimga kirish kerak");
@@ -554,33 +495,36 @@ async function adminAction(action) {
         
         if (taskName && !isNaN(taskReward) && taskReward > 0) {
           const tasksRef = ref(database, "globalCustomTasks");
-          await push(tasksRef, { 
+          const newTaskRef = await push(tasksRef, { 
             name: taskName, 
             reward: taskReward,
             createdAt: Date.now(),
             createdBy: currentUser.uid
           });
           
-          // Success feedback with animation
+          // Success feedback with better animation
           const successMsg = document.createElement('div');
           successMsg.style.cssText = `
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: linear-gradient(45deg, #00ff00, #00aa00); 
-            color: white; padding: 15px 25px; border-radius: 10px; 
-            z-index: 10000; font-size: 16px; font-weight: bold;
-            box-shadow: 0 4px 20px rgba(0,255,0,0.4);
-            animation: successPulse 0.6s ease-in-out;
+            color: white; padding: 20px 30px; border-radius: 15px; 
+            z-index: 10000; font-size: 18px; font-weight: bold;
+            box-shadow: 0 8px 32px rgba(0,255,0,0.3);
+            animation: successBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
           `;
-          successMsg.innerHTML = "✅ Vazifa muvaffaqiyatli qo'shildi!<br>🔄 Real-time yangilanmoqda...";
+          successMsg.innerHTML = `
+            ✅ Vazifa qo'shildi!<br>
+            <div style="font-size:14px; margin-top:5px;">📋 "${taskName}" - 💰${taskReward} coin</div>
+            <div style="font-size:12px; color:#ccc; margin-top:5px;">🔄 DARHOL ko'rsatiladi</div>
+          `;
           
-          // CSS animation qo'shish (endi kerak emas, yuqorida qo'shilgan)
           document.body.appendChild(successMsg);
           setTimeout(() => {
             successMsg.remove();
-          }, 3000);
+          }, 4000);
           
-          console.log("➕ Yangi vazifa qo'shildi:", taskName);
-          // Real-time listener avtomatik yangilaydi
+          console.log("➕ Yangi vazifa qo'shildi:", taskName, "ID:", newTaskRef.key);
+          
         } else {
           alert("❌ Noto'g'ri ma'lumot kiritildi");
         }
@@ -597,11 +541,15 @@ async function adminAction(action) {
           removeMsg.style.cssText = `
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: linear-gradient(45deg, #ff4444, #aa0000); 
-            color: white; padding: 15px 25px; border-radius: 10px; 
-            z-index: 10000; font-size: 16px; font-weight: bold;
-            box-shadow: 0 4px 20px rgba(255,68,68,0.4);
+            color: white; padding: 20px 30px; border-radius: 15px; 
+            z-index: 10000; font-size: 18px; font-weight: bold;
+            box-shadow: 0 8px 32px rgba(255,68,68,0.3);
+            animation: removeBounce 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
           `;
-          removeMsg.innerHTML = "🗑️ Vazifa o'chirildi!<br>🔄 Real-time yangilanmoqda...";
+          removeMsg.innerHTML = `
+            🗑️ Vazifa o'chirildi!<br>
+            <div style="font-size:12px; color:#ffccc; margin-top:5px;">🔄 DARHOL yangilanadi</div>
+          `;
           
           document.body.appendChild(removeMsg);
           setTimeout(() => {
@@ -609,7 +557,6 @@ async function adminAction(action) {
           }, 3000);
           
           console.log("➖ Vazifa o'chirildi:", removeId);
-          // Real-time listener avtomatik yangilaydi
         }
         break;
 
@@ -643,10 +590,9 @@ function setupEventListeners() {
   if (tabLeaderboard) {
     tabLeaderboard.addEventListener("click", async () => { 
       showSection("leaderboard");
-      // Kichik kechikish qo'shib, DOM element yaratilishini kutamiz
       setTimeout(() => {
         loadLeaderboard("coins");
-      }, 200);
+      }, 100); // Kichikroq delay
     });
     console.log("✅ Tab Leaderboard listener qo'shildi");
   }
@@ -654,7 +600,9 @@ function setupEventListeners() {
   if (tabAdmin) {
     tabAdmin.addEventListener("click", async () => { 
       showSection("admin");
-      await displayTasks();
+      setTimeout(() => {
+        displayTasks(); // Darhol tasks ko'rsatish
+      }, 50);
     });
     console.log("✅ Tab Admin listener qo'shildi");
   }
@@ -705,10 +653,22 @@ document.addEventListener("DOMContentLoaded", function() {
       50% { opacity: 0.5; }
       100% { opacity: 1; }
     }
-    @keyframes successPulse {
-      0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
-      50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+    @keyframes successBounce {
+      0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+      50% { transform: translate(-50%, -50%) scale(1.05); }
+      70% { transform: translate(-50%, -50%) scale(0.9); }
       100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+    @keyframes removeBounce {
+      0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+      50% { transform: translate(-50%, -50%) scale(1.05); }
+      70% { transform: translate(-50%, -50%) scale(0.9); }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+    @keyframes taskGlow {
+      0% { box-shadow: 0 0 5px rgba(0,255,0,0.3); }
+      50% { box-shadow: 0 0 20px rgba(0,255,0,0.6); }
+      100% { box-shadow: 0 0 5px rgba(0,255,0,0.3); }
     }
   `;
   document.head.appendChild(style);
@@ -722,20 +682,18 @@ document.addEventListener("DOMContentLoaded", function() {
   console.log("✅ Ilova muvaffaqiyatli ishga tushdi");
 });
 
-// Window error handlerini qo'shish
+// Window error handlers
 window.addEventListener('error', function(e) {
   console.error('❌ Global xato:', e.error);
   showError('Kutilmagan xato yuz berdi');
 });
 
-// Unhandled promise rejectionlarni tutish
 window.addEventListener('unhandledrejection', function(e) {
   console.error('❌ Unhandled promise rejection:', e.reason);
   showError('Ma\'lumotlarni yuklashda xato');
   e.preventDefault();
 });
 
-// Window unload eventida listenerlarni tozalash
 window.addEventListener('beforeunload', function() {
   clearAllListeners();
   console.log("🔇 Barcha listenerlar tozalandi");
