@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self' https: data: blob:;
+    base-uri 'self';
+    object-src 'none';
+    frame-ancestors 'self';
+    script-src 'self' 'unsafe-eval'
+               https://www.gstatic.com
+               https://*.gstatic.com
+               https://*.googleapis.com
+               https://telegram.org
+               https://www.googletagmanager.com;
+    script-src-elem 'self'
+               https://www.googletagmanager.com
+               https://*.googleapis.com
+               https://*.gstatic.com
+               https://www.gstatic.com
+               https://telegram.org;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    connect-src 'self'
+               https://dragon-92897-default-rtdb.asia-southeast1.firebasedatabase.app
+               wss://dragon-92897-default-rtdb.asia-southeast1.firebasedatabase.app
+               https://*.googleapis.com https://*.gstatic.com https://telegram.org wss:;
+    img-src 'self' data: https:;
+    font-src 'self' https://fonts.gstatic.com;
+    block-all-mixed-content;
+  ">
+  <title>Dragon Coin - Tap to Earn</title>
+  <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script type="module" src="main.js"></script>
+</head>
+<body>
+  <div class="navigation-tabs">
+    <button id="tab-tap" class="nav-tab active">🐉 Tapping</button>
+    <button id="tab-leaderboard" class="nav-tab">🏆 Reyting</button>
+    <button id="tab-admin" class="nav-tab">⚙️ Admin</button>
+  </div>
+
+  <div id="tapSection" class="section">
+    <div id="tapButton" style="padding:20px; background:#eee; margin:10px; cursor:pointer;">🐉 Tap</div>
+  </div>
+
+  <div id="leaderboardSection" class="section" style="display:none;">
+    <h3>🏆 Reyting Jadvali</h3>
+    <button id="btn-leaderboard-coins">Coinlar bo'yicha</button>
+    <button id="btn-leaderboard-referrals">Referrallar bo'yicha</button>
+    <div id="leaderboardList"></div>
+  </div>
+
+  <div id="adminSection" class="section" style="display:none;">
+    <h3>⚙️ Admin Panel</h3>
+    <button data-action="addCoins">💰 Coin qo'shish</button>
+    <button data-action="resetPlayer">🔄 O'yinchi Reset</button>
+    <button data-action="broadcastMessage">📢 Umumiy Xabar</button>
+    <button data-action="systemMaintenance">🔧 Texnik xizmat</button>
+    <button data-action="addTask">➕ Vazifa qo'shish</button>
+    <button data-action="removeTask">➖ Vazifa o'chirish</button>
+    <button data-action="editTask">✏️ Vazifa tahrirlash</button>
+    <button data-action="viewTasks">👁️ Vazifalarni ko'rish</button>
+  </div>
+</body>
+</html>
