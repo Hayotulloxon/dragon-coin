@@ -19,46 +19,47 @@ getAnalytics(app);
 const database = getDatabase(app);
 const auth = getAuth(app);
 
-// 🔐 Anonim login
+// 🔐 Anonymous login
 signInAnonymously(auth)
   .then(() => console.log("✅ Anonymous login yuborildi"))
   .catch((error) => console.error("❌ Login xatosi:", error));
 
-// 🔐 Foydalanuvchi autentifikatsiya qilinganda
+// 🔐 User login bo‘lganda
 onAuthStateChanged(auth, (user) => {
   if (user) {
     console.log("👤 Auth UID:", user.uid);
     const playerRef = ref(database, "players/" + user.uid);
 
-    // ❌ avval har safar set() qilib yozib yuborayotgan edik
-    // ✅ endi mavjudligini tekshiramiz
+    // Faqat birinchi marta yozish
     get(playerRef).then(snap => {
       if (snap.exists()) {
         console.log("🔄 O'yinchi mavjud:", snap.val());
       } else {
-        set(playerRef, { name: "Dragon Miner", coins: 0, level: 1, referrals: 0 })
-          .then(() => console.log("✅ Yangi o'yinchi yozildi"))
-          .catch((err) => console.error("❌ O'yinchi yozishda xato:", err));
+        set(playerRef, { 
+          name: "Dragon Miner", 
+          coins: 0, 
+          level: 1, 
+          referrals: 0 
+        }).then(() => console.log("✅ Yangi o'yinchi yozildi"));
       }
     });
 
-    // ✅ Vazifalarni real-time kuzatish
+    // Referalni tekshirish
+    handleReferral(user.uid);
+
+    // Vazifalar real-time
     const tasksRef = ref(database, "globalCustomTasks");
     onValue(tasksRef, (snapshot) => {
-      if (snapshot.exists()) {
-        renderTasks(snapshot.val());
-      } else {
-        renderTasks({});
-      }
+      renderTasks(snapshot.exists() ? snapshot.val() : {});
     });
   }
 });
 
-// 📋 Vazifalarni UI’da ko‘rsatish
+// 📋 Vazifalarni ko‘rsatish
 function renderTasks(tasks) {
   const list = document.getElementById("customTasksList");
   if (!list) return;
-  list.innerHTML = ""; // eski vazifalarni tozalash
+  list.innerHTML = "";
   for (let id in tasks) {
     const task = tasks[id];
     const item = document.createElement("div");
@@ -71,29 +72,62 @@ function renderTasks(tasks) {
   }
 }
 
-// 📊 Reyting yuklash funksiyasi
+// 📊 Reyting yuklash
 function loadLeaderboard(type) {
   const playersRef = ref(database, "players");
   onValue(playersRef, (snapshot) => {
     if (snapshot.exists()) {
       const data = snapshot.val();
-      let players = Object.values(data);
+      let players = Object.entries(data).map(([uid, player]) => ({
+        uid,
+        ...player
+      }));
 
       // Saralash
       if (type === "coins") players.sort((a, b) => (b.coins || 0) - (a.coins || 0));
       if (type === "referrals") players.sort((a, b) => (b.referrals || 0) - (a.referrals || 0));
 
-      // UI yangilash
+      // UI
       const list = document.getElementById("leaderboardList");
       if (!list) return;
-      list.innerHTML = players.map((p, i) => 
-        `<div style='padding:6px; border-bottom:1px solid #333;'>#${i+1} - ${p.name} (${type === "coins" ? (p.coins||0) : (p.referrals||0)})</div>`
-      ).join("");
+      list.innerHTML = players.map((p, i) => `
+        <div class="leaderboard-item">
+          <span class="rank">#${i+1}</span>
+          <span class="name">${p.name || "Unknown"}</span>
+          <span class="score">${type === "coins" ? (p.coins || 0) : (p.referrals || 0)}</span>
+        </div>
+      `).join("");
     }
   });
 }
 
-// ✅ Admin actions
+// 🔗 Referal tizimi
+function handleReferral(myUid) {
+  const urlParams = new URLSearchParams(window.location.search);
+  const refId = urlParams.get("ref"); // ?ref=UID
+
+  if (refId && refId !== myUid) {
+    console.log("👥 Referal orqali kirilgan:", refId);
+    const refPlayerRef = ref(database, "players/" + refId);
+
+    get(refPlayerRef).then(snap => {
+      if (snap.exists()) {
+        const data = snap.val();
+        const newReferrals = (data.referrals || 0) + 1;
+        const newCoins = (data.coins || 0) + 100; // referer uchun bonus
+
+        update(refPlayerRef, { referrals: newReferrals, coins: newCoins });
+        console.log(`✅ ${refId} ga +1 referral va +100 coin berildi`);
+      }
+    });
+
+    // Yangi foydalanuvchi uchun refererId yozib qo‘yish
+    const myRef = ref(database, "players/" + myUid);
+    update(myRef, { refererId: refId });
+  }
+}
+
+// ✅ Admin actions (o‘zgarishsiz qoldi)
 function adminAction(action) {
   const db = database;
   switch(action) {
@@ -171,7 +205,10 @@ function adminAction(action) {
 
 // 🔗 Event listenerlar
 document.getElementById("tab-tap").addEventListener("click", () => showSection("tap"));
-document.getElementById("tab-leaderboard").addEventListener("click", () => { showSection("leaderboard"); loadLeaderboard("coins"); });
+document.getElementById("tab-leaderboard").addEventListener("click", () => { 
+  showSection("leaderboard"); 
+  loadLeaderboard("coins"); 
+});
 document.getElementById("tab-admin").addEventListener("click", () => showSection("admin"));
 
 document.getElementById("tapButton").addEventListener("click", tapCoin);
@@ -182,7 +219,7 @@ document.querySelectorAll("#adminSection button").forEach(btn => {
   btn.addEventListener("click", () => adminAction(btn.dataset.action));
 });
 
-// 🔄 Sektsiya ko‘rsatish
+// 🔄 Sektsiyalar
 function showSection(id) {
   document.querySelectorAll(".section").forEach(sec => sec.style.display = "none");
   if (id === "tap") document.getElementById("tapSection").style.display = "block";
@@ -190,7 +227,7 @@ function showSection(id) {
   if (id === "admin") document.getElementById("adminSection").style.display = "block";
 }
 
-// 🐉 Tap
+// 🐉 Tap tugmasi
 function tapCoin() {
   alert("🐉 Coin tapped!");
 }
