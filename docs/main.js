@@ -289,8 +289,3 @@ document.addEventListener("DOMContentLoaded", function() {
   }, 1000); // 1 soniya kutish
 });
 
-// Global funksiyalar (HTML dan chaqirish uchun)
-window.showSection = showSection;
-window.tapCoin = tapCoin;
-window.loadLeaderboard = loadLeaderboard;
-window.adminAction = adminAction;
