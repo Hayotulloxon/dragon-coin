@@ -48,8 +48,8 @@ onAuthStateChanged(auth, (user) => {
     // Referalni tekshirish
     handleReferral(user.uid);
 
-    // Vazifalar real-time
-    const tasksRef = ref(database, "globalCustomTasks");
+    // Vazifalar real-time (faqat global)
+    const tasksRef = ref(database, "globalTasks");
     onValue(tasksRef, (snapshot) => {
       renderTasks(snapshot.exists() ? snapshot.val() : {});
     });
@@ -167,7 +167,7 @@ function adminAction(action) {
     case "addTask":
       const taskName = prompt("Yangi vazifa nomi:");
       if (taskName) {
-        const tasksRef = ref(db, "globalCustomTasks");
+        const tasksRef = ref(db, "globalTasks");
         push(tasksRef, { name: taskName, reward: 100 });
         alert("➕ Vazifa qo'shildi!");
       }
@@ -175,7 +175,7 @@ function adminAction(action) {
     case "removeTask":
       const removeId = prompt("O'chiriladigan vazifa ID:");
       if (removeId) {
-        const taskRef = ref(db, "globalCustomTasks/" + removeId);
+        const taskRef = ref(db, "globalTasks/" + removeId);
         remove(taskRef).then(() => alert("➖ Vazifa o'chirildi!"));
       }
       break;
@@ -183,13 +183,13 @@ function adminAction(action) {
       const editId = prompt("Tahrir qilinadigan vazifa ID:");
       const newName = prompt("Yangi nom:");
       if (editId && newName) {
-        const editRef = ref(db, "globalCustomTasks/" + editId);
+        const editRef = ref(db, "globalTasks/" + editId);
         update(editRef, { name: newName });
         alert("✏️ Vazifa yangilandi!");
       }
       break;
     case "viewTasks":
-      const tasksRef = ref(db, "globalCustomTasks");
+      const tasksRef = ref(db, "globalTasks");
       get(tasksRef).then(snap => {
         if (snap.exists()) {
           console.log("📋 Vazifalar:", snap.val());
