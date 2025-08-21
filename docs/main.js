@@ -32,6 +32,8 @@ let app, database, auth, currentUser = null;
 let leaderboardListener = null;
 let tasksListener = null;
 let playerDataListener = null;
+let taskSettingsListener = null;
+let processedTaskUpdates = new Set(); // Takrorlanishni oldini olish uchun
 
 // Firebase initializatsiyasi
 function initializeFirebase() {
@@ -160,6 +162,15 @@ function clearAllListeners() {
     playerDataListener = null;
     console.log("🔇 Player data listener o'chirildi");
   }
+  
+  if (taskSettingsListener) {
+    off(taskSettingsListener);
+    taskSettingsListener = null;
+    console.log("🔇 Task settings listener o'chirildi");
+  }
+  
+  // Cache ni tozalash
+  processedTaskUpdates.clear();
 }
 function showError(message) {
   // Xato xabarini ko'rsatish uchun element yaratish
@@ -349,7 +360,7 @@ function loadLeaderboard(type = "coins") {
   }
 }
 
-// Vazifalarni ko'rsatish funksiyasi (real-time)
+// Vazifalarni ko'rsatish funksiyasi (real-time, optimized)
 function displayTasks() {
   try {
     // Eski listenerni o'chirish
@@ -384,22 +395,40 @@ function displayTasks() {
     
     tasksList.innerHTML = "<div style='text-align:center; color:#666; padding:10px;'>🔄 Real-time vazifalar yuklanmoqda...</div>";
     
-    // Real-time listener o'rnatish
+    // Real-time listener o'rnatish (throttled)
     const tasksRef = ref(database, "globalCustomTasks");
+    let lastUpdate = 0;
+    
     tasksListener = onValue(tasksRef, (snapshot) => {
       try {
+        const now = Date.now();
+        // 500ms throttling - juda tez yangilanishlarni oldini olish
+        if (now - lastUpdate < 500) {
+          return;
+        }
+        lastUpdate = now;
+        
         if (snapshot.exists()) {
           const tasks = snapshot.val();
+          const taskCount = Object.keys(tasks).length;
+          
+          // Faqat o'zgarish bo'lsa yangilash
+          const currentTasksHash = JSON.stringify(tasks);
+          if (tasksList.dataset.lastHash === currentTasksHash) {
+            return;
+          }
+          tasksList.dataset.lastHash = currentTasksHash;
+          
           const currentTime = Date.now();
           
           tasksList.innerHTML = `
             <div style='text-align:center; color:#0f0; font-size:12px; margin-bottom:10px;'>
-              🟢 Real-time yangilanmoqda
+              🟢 ${taskCount} ta vazifa (Real-time)
             </div>
             ${Object.keys(tasks).map(key => {
               const task = tasks[key];
               const createdTime = task.createdAt || 0;
-              const isNew = (currentTime - createdTime) < 5000; // 5 soniya ichida yaratilgan
+              const isNew = (currentTime - createdTime) < 10000; // 10 soniya ichida yaratilgan
               
               return `
                 <div style='
@@ -412,12 +441,13 @@ function displayTasks() {
                   background: ${isNew ? '#1e4d2b' : 'transparent'};
                   border-radius: 4px;
                   margin-bottom: 4px;
-                  transition: background-color 0.5s ease;
+                  transition: background-color 1s ease;
+                  ${isNew ? 'border-left: 3px solid #00ff00;' : ''}
                 '>
                   <div>
                     <div style="display:flex; align-items:center;">
                       <span>🎯 ${task.name}</span>
-                      ${isNew ? '<span style="color:#0f0; font-size:10px; margin-left:8px;">YANGI!</span>' : ''}
+                      ${isNew ? '<span style="color:#0f0; font-size:10px; margin-left:8px; animation: pulse 1s infinite;">YANGI!</span>' : ''}
                     </div>
                     <div style="font-size:12px; color:#00bfff; margin-top:4px;">
                       💰 ${task.reward || 100} coin mukofot
@@ -437,11 +467,21 @@ function displayTasks() {
             }).join("")}
           `;
           
-          console.log("✅ Real-time vazifalar yangilandi:", Object.keys(tasks).length);
+          console.log("✅ Vazifalar yangilandi:", taskCount);
+          
+          // Yangi vazifalar uchun animatsiyani o'chirish
+          setTimeout(() => {
+            const newItems = tasksList.querySelectorAll('[style*="1e4d2b"]');
+            newItems.forEach(item => {
+              item.style.background = 'transparent';
+              item.style.borderLeft = 'none';
+            });
+          }, 10000);
+          
         } else {
           tasksList.innerHTML = `
             <div style='text-align:center; color:#0f0; font-size:12px; margin-bottom:10px;'>
-              🟢 Real-time yangilanmoqda
+              🟢 Real-time aktiv
             </div>
             <div style='text-align:center; color:#666; padding:20px;'>Hozircha vazifalar yo'q</div>
           `;
@@ -533,21 +573,10 @@ async function adminAction(action) {
           `;
           successMsg.innerHTML = "✅ Vazifa muvaffaqiyatli qo'shildi!<br>🔄 Real-time yangilanmoqda...";
           
-          // CSS animation qo'shish
-          const style = document.createElement('style');
-          style.textContent = `
-            @keyframes successPulse {
-              0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
-              50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
-              100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-            }
-          `;
-          document.head.appendChild(style);
-          
+          // CSS animation qo'shish (endi kerak emas, yuqorida qo'shilgan)
           document.body.appendChild(successMsg);
           setTimeout(() => {
             successMsg.remove();
-            style.remove();
           }, 3000);
           
           console.log("➕ Yangi vazifa qo'shildi:", taskName);
@@ -667,6 +696,22 @@ function setupEventListeners() {
 // DOM yuklangandan keyin ishga tushirish
 document.addEventListener("DOMContentLoaded", function() {
   console.log("🚀 DOM yuklandi, ilovani ishga tushiryapman...");
+  
+  // CSS animatsiyalarni qo'shish
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    @keyframes successPulse {
+      0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+      50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+  `;
+  document.head.appendChild(style);
   
   // Firebase ni ishga tushirish
   initializeFirebase();
