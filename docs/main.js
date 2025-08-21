@@ -20,7 +20,7 @@ let leaderboardListener = null;
 let tasksListener = null;
 let playerDataListener = null;
 let taskSettingsListener = null;
-let processedTaskUpdates = new Set(); // Takrorlanishni oldini olish uchun
+let processedTaskUpdates = new Set();
 
 // Firebase initializatsiyasi
 function initializeFirebase() {
@@ -32,7 +32,6 @@ function initializeFirebase() {
     
     console.log("✅ Firebase muvaffaqiyatli ishga tushirildi");
     
-    // Anonymous login
     signInAnonymously(auth)
       .then(() => {
         console.log("✅ Anonymous login muvaffaqiyatli");
@@ -42,7 +41,6 @@ function initializeFirebase() {
         showError("Tizimga kirish xatosi: " + error.message);
       });
 
-    // Auth state o'zgarishlarini kuzatish
     onAuthStateChanged(auth, (user) => {
       if (user) {
         console.log("👤 Foydalanuvchi tizimga kirdi:", user.uid);
@@ -229,8 +227,8 @@ async function tapCoin() {
   }
 }
 
-// Leaderboard yuklash funksiyasi
-function loadLeaderboard(type = "coins") {
+// Leaderboard yuklash funksiyasi (showLeaderboard sifatida ishlatiladi)
+function showLeaderboard(type = "coins") {
   try {
     console.log("🔄 Real-time leaderboard o'rnatilmoqda:", type);
     
@@ -281,7 +279,6 @@ function loadLeaderboard(type = "coins") {
             players.sort((a, b) => (b.referrals || 0) - (a.referrals || 0));
           }
           
-          // Foydalanuvchi o'rnini hisoblash
           let userRank = "-";
           if (currentUser) {
             const userIndex = players.findIndex(p => p.id === currentUser.uid);
@@ -590,7 +587,7 @@ function setupEventListeners() {
     tabLeaderboard.addEventListener("click", async () => { 
       showSection("leaderboard");
       setTimeout(() => {
-        loadLeaderboard("coins");
+        showLeaderboard("coins");
       }, 200);
     });
     console.log("✅ Tab Leaderboard listener qo'shildi");
@@ -616,21 +613,21 @@ function setupEventListeners() {
     console.error("❌ tapButton elementi topilmadi");
   }
 
-  const btnCoins = document.getElementById("btn-leaderboard-coins");
-  const btnReferrals = document.getElementById("btn-leaderboard-referrals");
+  const btnCoins = document.getElementById("coinsLeaderboard");
+  const btnReferrals = document.getElementById("referralsLeaderboard");
 
   if (btnCoins) {
-    btnCoins.addEventListener("click", () => loadLeaderboard("coins"));
+    btnCoins.addEventListener("click", () => showLeaderboard("coins"));
     console.log("✅ Coins button listener qo'shildi");
   } else {
-    console.error("❌ btn-leaderboard-coins elementi topilmadi");
+    console.error("❌ coinsLeaderboard elementi topilmadi");
   }
 
   if (btnReferrals) {
-    btnReferrals.addEventListener("click", () => loadLeaderboard("referrals"));
+    btnReferrals.addEventListener("click", () => showLeaderboard("referrals"));
     console.log("✅ Referrals button listener qo'shildi");
   } else {
-    console.error("❌ btn-leaderboard-referrals elementi topilmadi");
+    console.error("❌ referralsLeaderboard elementi topilmadi");
   }
 
   const adminButtons = document.querySelectorAll("#adminSection button[data-action]");
