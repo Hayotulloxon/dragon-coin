@@ -46,28 +46,53 @@ function tapCoin() {
 
 // ✅ Reyting yuklash funksiyasi
 function loadLeaderboard(type) {
+  console.log("🔄 Leaderboard yuklanmoqda:", type);
   const playersRef = ref(database, "players");
   get(playersRef).then(snapshot => {
     if (snapshot.exists()) {
       const data = snapshot.val();
+      console.log("📊 Players data:", data);
       let players = Object.keys(data).map(key => ({
         id: key,
         ...data[key]
       }));
       if (type === "coins") players.sort((a, b) => (b.coins || 0) - (a.coins || 0));
       if (type === "referrals") players.sort((a, b) => (b.referrals || 0) - (a.referrals || 0));
-      const list = document.getElementById("leaderboardList");
+      
+      let list = document.getElementById("leaderboardList");
+      if (!list) {
+        // Agar leaderboardList yo'q bo'lsa, yaratamiz
+        const leaderboardSection = document.getElementById("leaderboardSection");
+        if (leaderboardSection) {
+          const listDiv = document.createElement("div");
+          listDiv.id = "leaderboardList";
+          listDiv.style.cssText = "max-height:300px; overflow-y:auto; border:1px solid #333; padding:10px; margin:10px 0; background:#1a1a1a;";
+          leaderboardSection.appendChild(listDiv);
+          list = listDiv;
+        }
+      }
+      
+      if (list) {
       list.innerHTML = players.map((p, i) => 
-        `<div style='padding:6px; border-bottom:1px solid #333;'>#${i+1} - ${p.name || 'Dragon Miner'} (${type === "coins" ? (p.coins||0) : (p.referrals||0)})</div>`
+          `<div style='padding:8px; border-bottom:1px solid #333; color:#fff;'>
+            <span style='color:#ffd700;'>#${i+1}</span> - 
+            <span style='color:#00ff00;'>${p.name || 'Dragon Miner'}</span> 
+            <span style='color:#00bfff;'>(${type === "coins" ? (p.coins||0) + " coin" : (p.referrals||0) + " referral"})</span>
+          </div>`
       ).join("");
+      }
     } else {
-      const list = document.getElementById("leaderboardList");
-      list.innerHTML = "<div style='padding:10px; text-align:center;'>Ma'lumot topilmadi</div>";
+      let list = document.getElementById("leaderboardList");
+      if (list) {
+        list.innerHTML = "<div style='padding:10px; text-align:center; color:#666;'>Ma'lumot topilmadi</div>";
+      }
     }
   }).catch(error => {
     console.error("❌ Leaderboard yuklashda xato:", error);
-    const list = document.getElementById("leaderboardList");
-    list.innerHTML = "<div style='padding:10px; text-align:center; color:red;'>Xato yuz berdi</div>";
+    let list = document.getElementById("leaderboardList");
+    if (list) {
+      list.innerHTML = "<div style='padding:10px; text-align:center; color:red;'>Xato yuz berdi</div>";
+    }
   });
 }
 
@@ -197,20 +222,55 @@ function adminAction(action) {
 }
 
 // 🔗 Event listenerlar
-document.getElementById("tab-tap").addEventListener("click", () => showSection("tap"));
-document.getElementById("tab-leaderboard").addEventListener("click", () => { 
-  showSection("leaderboard"); 
-  loadLeaderboard("coins"); 
-});
-document.getElementById("tab-admin").addEventListener("click", () => { 
-  showSection("admin"); 
-  displayTasks(); // Admin bo'limiga kirganda vazifalarni ko'rsatish
+// Event listenerlarni DOM yuklangandan keyin qo'shish
+document.addEventListener("DOMContentLoaded", function() {
+  // Tab event listenerlar
+  const tabTap = document.getElementById("tab-tap");
+  const tabLeaderboard = document.getElementById("tab-leaderboard");
+  const tabAdmin = document.getElementById("tab-admin");
+  
+  if (tabTap) tabTap.addEventListener("click", () => showSection("tap"));
+  if (tabLeaderboard) {
+    tabLeaderboard.addEventListener("click", () => { 
+      showSection("leaderboard"); 
+      setTimeout(() => loadLeaderboard("coins"), 100); // Kichik kechikish
+    });
+  }
+  if (tabAdmin) {
+    tabAdmin.addEventListener("click", () => { 
+      showSection("admin"); 
+      setTimeout(() => displayTasks(), 100); // Kichik kechikish
+    });
+  }
+
+  // Tap button
+  const tapButton = document.getElementById("tapButton");
+  if (tapButton) tapButton.addEventListener("click", tapCoin);
+  
+  // Leaderboard buttons
+  const btnCoins = document.getElementById("btn-leaderboard-coins");
+  const btnReferrals = document.getElementById("btn-leaderboard-referrals");
+  if (btnCoins) btnCoins.addEventListener("click", () => loadLeaderboard("coins"));
+  if (btnReferrals) btnReferrals.addEventListener("click", () => loadLeaderboard("referrals"));
+
+  // Admin buttons
+  document.querySelectorAll("#adminSection button").forEach(btn => {
+    btn.addEventListener("click", () => adminAction(btn.dataset.action));
+  });
 });
 
-document.getElementById("tapButton").addEventListener("click", tapCoin);
-document.getElementById("btn-leaderboard-coins").addEventListener("click", () => loadLeaderboard("coins"));
-document.getElementById("btn-leaderboard-referrals").addEventListener("click", () => loadLeaderboard("referrals"));
-
-document.querySelectorAll("#adminSection button").forEach(btn => {
-  btn.addEventListener("click", () => adminAction(btn.dataset.action));
-});
+// Agar DOM allaqachon yuklangan bo'lsa
+if (document.readyState === "loading") {
+  // DOM hali yuklanmagan
+} else {
+  // DOM allaqachon yuklangan
+  setTimeout(() => {
+    const tabLeaderboard = document.getElementById("tab-leaderboard");
+    if (tabLeaderboard) {
+      tabLeaderboard.addEventListener("click", () => { 
+        showSection("leaderboard"); 
+        setTimeout(() => loadLeaderboard("coins"), 100);
+      });
+    }
+  }, 500);
+}
