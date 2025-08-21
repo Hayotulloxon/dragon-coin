@@ -1,9 +1,13 @@
+// ===== Firebase SDK =====
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
-import { getDatabase, ref, set, get, push, update, remove, onValue } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+import {
+  getDatabase, ref, set, get, push, update, remove, onValue,
+  onChildAdded, onChildRemoved, onChildChanged
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
-// 🔧 Firebase config
+// ===== Config =====
 const firebaseConfig = {
   apiKey: "AIzaSyDShZAo9lg-SxpQViCT27uXVni1UK7TGYU",
   authDomain: "dragon-92897.firebaseapp.com",
@@ -15,222 +19,321 @@ const firebaseConfig = {
   measurementId: "G-FXT1F3NPCD"
 };
 
+// ===== Init =====
 const app = initializeApp(firebaseConfig);
-getAnalytics(app);
-const database = getDatabase(app);
+try { getAnalytics(app); } catch {}
+const db = getDatabase(app);
 const auth = getAuth(app);
 
-// 🔐 Anonymous login
+// ===== Auth (anonymous) =====
 signInAnonymously(auth)
   .then(() => console.log("✅ Anonymous login yuborildi"))
-  .catch((error) => console.error("❌ Login xatosi:", error));
+  .catch(err => console.error("❌ Login xatosi:", err));
 
-// 🔐 User login bo‘lganda
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    console.log("👤 Auth UID:", user.uid);
-    const playerRef = ref(database, "players/" + user.uid);
+// ===== Global state =====
+let CURRENT_UID = null;
 
-    // Faqat birinchi marta yozish
-    get(playerRef).then(snap => {
-      if (snap.exists()) {
-        console.log("🔄 O'yinchi mavjud:", snap.val());
-      } else {
-        set(playerRef, { 
-          name: "Dragon Miner", 
-          coins: 0, 
-          level: 1, 
-          referrals: 0 
-        }).then(() => console.log("✅ Yangi o'yinchi yozildi"));
-      }
-    });
+// ===== DOM READY: event listenerlarni shu yerda ulang =====
+document.addEventListener("DOMContentLoaded", () => {
+  // Tabs
+  document.getElementById("tab-tap")?.addEventListener("click", () => showSection("tap"));
+  document.getElementById("tab-leaderboard")?.addEventListener("click", () => {
+    showSection("leaderboard");
+    startLeaderboard("coins");
+  });
+  document.getElementById("tab-admin")?.addEventListener("click", () => showSection("admin"));
 
-    // Referalni tekshirish
-    handleReferral(user.uid);
-
-    // Vazifalar real-time (faqat global)
-    const tasksRef = ref(database, "globalTasks");
-    onValue(tasksRef, (snapshot) => {
-      renderTasks(snapshot.exists() ? snapshot.val() : {});
-    });
-  }
+  // Buttons
+  document.getElementById("tapButton")?.addEventListener("click", tapCoin);
+  document.getElementById("btn-leaderboard-coins")?.addEventListener("click", () => startLeaderboard("coins"));
+  document.getElementById("btn-leaderboard-referrals")?.addEventListener("click", () => startLeaderboard("referrals"));
 });
 
-// 📋 Vazifalarni ko‘rsatish
-function renderTasks(tasks) {
+// ===== Auth state =====
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;
+  CURRENT_UID = user.uid;
+  console.log("👤 Auth UID:", CURRENT_UID);
+
+  // O'yinchi profilini yaratish (agar bo'lmasa)
+  const meRef = ref(db, `players/${CURRENT_UID}`);
+  const meSnap = await get(meRef);
+  if (!meSnap.exists()) {
+    await set(meRef, {
+      name: "Dragon Miner",
+      coins: 0,
+      level: 1,
+      referrals: 0,
+      createdAt: Date.now()
+    });
+    console.log("✅ Yangi o'yinchi yozildi");
+  } else {
+    console.log("🔄 O'yinchi mavjud:", meSnap.val());
+  }
+
+  // Referalni 1 marta ishlatish
+  await handleReferralOnce(CURRENT_UID);
+
+  // GLOBAL TASKS — real-time child listenerlar
+  listenGlobalTasks();
+
+  // Reytingni start qilib qo'yamiz (coins bo'yicha default)
+  startLeaderboard("coins");
+});
+
+// =====================
+//   GLOBAL TASKS (RTDB)
+// =====================
+/**
+ * Admin vazifani qo'shganda hamma ko'rishi, o'chirganda hamma joydan ketishi uchun
+ * faqat bitta joydan ishlaymiz: /globalTasks
+ * UI real-time uchun child listenerlar ishlatiladi (kechikish muammolari yo'q).
+ */
+const taskDomCache = new Set(); // DOMga qo'yilgan item id'lar
+
+function listenGlobalTasks() {
   const list = document.getElementById("customTasksList");
   if (!list) return;
+
   list.innerHTML = "";
-  for (let id in tasks) {
-    const task = tasks[id];
-    const item = document.createElement("div");
-    item.className = "condition-item";
-    item.innerHTML = `
-      <div class="condition-text">${task.name}</div>
-      <div class="condition-reward">+${task.reward || 0} DRC</div>
+  taskDomCache.clear();
+
+  const tasksRef = ref(db, "globalTasks");
+
+  // Qo'shilganda:
+  onChildAdded(tasksRef, (snap) => {
+    const id = snap.key;
+    const task = snap.val() || {};
+    if (taskDomCache.has(id)) return;
+
+    const el = document.createElement("div");
+    el.className = "condition-item";
+    el.id = `task-${id}`;
+    el.innerHTML = `
+      <div class="condition-text">${escapeHtml(task.name || "No name")}</div>
+      <div class="condition-reward">+${Number(task.reward || 0)} DRC</div>
     `;
-    list.appendChild(item);
-  }
-}
+    list.appendChild(el);
+    taskDomCache.add(id);
+  });
 
-// 📊 Reyting yuklash
-function loadLeaderboard(type) {
-  const playersRef = ref(database, "players");
-  onValue(playersRef, (snapshot) => {
-    if (snapshot.exists()) {
-      const data = snapshot.val();
-      let players = Object.entries(data).map(([uid, player]) => ({
-        uid,
-        ...player
-      }));
+  // O'chirilganda:
+  onChildRemoved(tasksRef, (snap) => {
+    const id = snap.key;
+    const el = document.getElementById(`task-${id}`);
+    if (el) el.remove();
+    taskDomCache.delete(id);
+  });
 
-      // Saralash
-      if (type === "coins") players.sort((a, b) => (b.coins || 0) - (a.coins || 0));
-      if (type === "referrals") players.sort((a, b) => (b.referrals || 0) - (a.referrals || 0));
-
-      // UI
-      const list = document.getElementById("leaderboardList");
-      if (!list) return;
-      list.innerHTML = players.map((p, i) => `
-        <div class="leaderboard-item">
-          <span class="rank">#${i+1}</span>
-          <span class="name">${p.name || "Unknown"}</span>
-          <span class="score">${type === "coins" ? (p.coins || 0) : (p.referrals || 0)}</span>
-        </div>
-      `).join("");
+  // Yangilanganda:
+  onChildChanged(tasksRef, (snap) => {
+    const id = snap.key;
+    const task = snap.val() || {};
+    const el = document.getElementById(`task-${id}`);
+    if (el) {
+      el.querySelector(".condition-text").textContent = task.name || "No name";
+      el.querySelector(".condition-reward").textContent = `+${Number(task.reward || 0)} DRC`;
     }
   });
 }
 
-// 🔗 Referal tizimi
-function handleReferral(myUid) {
+// =====================
+//   LEADERBOARD (RTDB)
+// =====================
+/**
+ * Hamma foydalanuvchilar ko'rinsin: /players ni tinglaymiz,
+ * har o'zgarishda qayta sort + render.
+ */
+let leaderboardUnsub = null; // onValue ni bitta marta ulash uchun
+
+function startLeaderboard(type = "coins") {
+  const list = document.getElementById("leaderboardList");
+  if (!list) return;
+
+  // Eski listener bo'lsa, UI tomonda qayta ishlov beramiz; onValue qayta ulanishi xavfsiz.
+  const playersRef = ref(db, "players");
+  onValue(playersRef, (snap) => {
+    if (!snap.exists()) {
+      list.innerHTML = `<div class="leaderboard-item">Hozircha o'yinchilar yo'q</div>`;
+      return;
+    }
+    const data = snap.val() || {};
+    const players = Object.entries(data).map(([uid, p]) => ({
+      uid,
+      name: p?.name || "Unknown",
+      coins: Number(p?.coins || 0),
+      referrals: Number(p?.referrals || 0)
+    }));
+
+    // Sort
+    if (type === "referrals") {
+      players.sort((a, b) => b.referrals - a.referrals || b.coins - a.coins);
+    } else {
+      players.sort((a, b) => b.coins - a.coins || b.referrals - a.referrals);
+    }
+
+    // Render
+    list.innerHTML = players.map((p, i) => `
+      <div class="leaderboard-item" data-uid="${p.uid}">
+        <span class="rank">#${i + 1}</span>
+        <span class="name">${escapeHtml(p.name)}</span>
+        <span class="score">${type === "referrals" ? p.referrals : p.coins}</span>
+      </div>
+    `).join("");
+  });
+}
+
+// =====================
+//   REFERRAL (once)
+// =====================
+/**
+ * ?ref=UID kelsa:
+ * - referer (ref=UID egasi) ga +1 referral va +100 coin
+ * - hozirgi foydalanuvchiga refererId yoziladi
+ * - BUNI FAQAT BIR MARTA qilamiz: players/{myUid}/refClaimed = true bo'lsa, qayta yozmaydi
+ */
+async function handleReferralOnce(myUid) {
+  const meRef = ref(db, `players/${myUid}`);
+  const meSnap = await get(meRef);
+  const me = meSnap.val() || {};
+
+  if (me.refClaimed) {
+    // allaqachon ishlatilgan
+    return;
+  }
+
   const urlParams = new URLSearchParams(window.location.search);
-  const refId = urlParams.get("ref"); // ?ref=UID
+  const refId = urlParams.get("ref");
 
-  if (refId && refId !== myUid) {
-    console.log("👥 Referal orqali kirilgan:", refId);
-    const refPlayerRef = ref(database, "players/" + refId);
+  if (!refId || refId === myUid) {
+    // referal yo'q yoki o'zini refer qildi
+    await update(meRef, { refClaimed: true }); // keyingi safar tekshirmasin
+    return;
+  }
 
-    get(refPlayerRef).then(snap => {
-      if (snap.exists()) {
-        const data = snap.val();
-        const newReferrals = (data.referrals || 0) + 1;
-        const newCoins = (data.coins || 0) + 100; // referer uchun bonus
+  console.log("👥 Referal orqali kirilgan:", refId);
 
-        update(refPlayerRef, { referrals: newReferrals, coins: newCoins });
-        console.log(`✅ ${refId} ga +1 referral va +100 coin berildi`);
-      }
-    });
+  const refPlayerRef = ref(db, `players/${refId}`);
+  const refSnap = await get(refPlayerRef);
 
-    // Yangi foydalanuvchi uchun refererId yozib qo‘yish
-    const myRef = ref(database, "players/" + myUid);
-    update(myRef, { refererId: refId });
+  if (refSnap.exists()) {
+    const r = refSnap.val();
+    const newReferrals = Number(r.referrals || 0) + 1;
+    const newCoins = Number(r.coins || 0) + 100;
+
+    await update(refPlayerRef, { referrals: newReferrals, coins: newCoins });
+    await update(meRef, { refererId: refId, refClaimed: true });
+    console.log(`✅ ${refId} ga +1 referral va +100 coin berildi`);
+  } else {
+    // referer topilmadi — baribir flag qo'yamiz, loop bo'lmasin
+    await update(meRef, { refClaimed: true });
   }
 }
 
-// ✅ Admin actions
+// =====================
+//   ADMIN ACTIONS
+// =====================
+/**
+ * Eslatma: tasklar faqat /globalTasks da saqlanadi.
+ * Shuning uchun qo'shish/o'chirish ham shu yo'lda.
+ */
 function adminAction(action) {
-  const db = database;
-  switch(action) {
-    case "addCoins":
+  switch (action) {
+    case "addCoins": {
       const targetId = prompt("O'yinchi UID kiriting:");
-      const amount = parseInt(prompt("Nechta coin qo'shilsin?"));
-      if (targetId && amount) {
-        const playerRef = ref(db, "players/" + targetId);
-        get(playerRef).then(snap => {
-          if (snap.exists()) {
-            let data = snap.val();
-            let newCoins = (data.coins || 0) + amount;
-            update(playerRef, { coins: newCoins });
-            alert("💰 " + amount + " coin qo'shildi!");
-          } else {
-            alert("❌ O'yinchi topilmadi!");
-          }
-        });
-      }
+      const amount = parseInt(prompt("Nechta coin qo'shilsin?"), 10);
+      if (!targetId || !amount) return;
+      const pRef = ref(db, `players/${targetId}`);
+      get(pRef).then(s => {
+        if (!s.exists()) return alert("❌ O'yinchi topilmadi!");
+        const d = s.val() || {};
+        update(pRef, { coins: Number(d.coins || 0) + amount });
+        alert(`💰 ${amount} coin qo'shildi!`);
+      });
       break;
-    case "resetPlayer":
+    }
+    case "resetPlayer": {
       const resetId = prompt("O'yinchi UID kiriting:");
-      if (resetId) {
-        const resetRef = ref(db, "players/" + resetId);
-        set(resetRef, { name: "Dragon Miner", coins: 0, level: 1, referrals: 0 });
-        alert("🔄 O'yinchi qayta tiklandi!");
-      }
+      if (!resetId) return;
+      const resetRef = ref(db, `players/${resetId}`);
+      set(resetRef, { name: "Dragon Miner", coins: 0, level: 1, referrals: 0, refClaimed: true });
+      alert("🔄 O'yinchi qayta tiklandi!");
       break;
-    case "broadcastMessage":
-      const msg = prompt("Xabar matnini kiriting:");
-      if (msg) alert("📢 Barcha foydalanuvchilarga yuboriladi: " + msg);
+    }
+    case "addTask": {
+      const name = prompt("Yangi vazifa nomi:");
+      const reward = parseInt(prompt("Mukofot (DRC):"), 10) || 100;
+      if (!name) return;
+      const tRef = ref(db, "globalTasks");
+      push(tRef, { name, reward, createdAt: Date.now() }).then(() => {
+        alert("➕ Vazifa qo'shildi (global)!");
+      });
       break;
+    }
+    case "removeTask": {
+      const id = prompt("O'chiriladigan vazifa ID:");
+      if (!id) return;
+      const tRef = ref(db, `globalTasks/${id}`);
+      remove(tRef).then(() => alert("➖ Vazifa o'chirildi (global)!"));
+      break;
+    }
+    case "editTask": {
+      const id = prompt("Tahrir qilinadigan vazifa ID:");
+      if (!id) return;
+      const newName = prompt("Yangi nom:");
+      const newReward = parseInt(prompt("Yangi mukofot (DRC):"), 10);
+      const payload = {};
+      if (newName) payload.name = newName;
+      if (!Number.isNaN(newReward)) payload.reward = newReward;
+      if (Object.keys(payload).length === 0) return;
+      const eRef = ref(db, `globalTasks/${id}`);
+      update(eRef, payload).then(() => alert("✏️ Vazifa yangilandi!"));
+      break;
+    }
+    case "viewTasks": {
+      get(ref(db, "globalTasks")).then(s => {
+        if (!s.exists()) return alert("❌ Vazifalar topilmadi");
+        console.log("📋 Vazifalar:", s.val());
+        alert("👁️ Vazifalar konsolda ko'rsatildi");
+      });
+      break;
+    }
     case "systemMaintenance":
       alert("🔧 Tizim texnik xizmat rejimida!");
       break;
-    case "addTask":
-      const taskName = prompt("Yangi vazifa nomi:");
-      if (taskName) {
-        const tasksRef = ref(db, "globalTasks");
-        push(tasksRef, { name: taskName, reward: 100 });
-        alert("➕ Vazifa qo'shildi!");
-      }
+    case "broadcastMessage": {
+      const msg = prompt("Xabar matnini kiriting:");
+      if (msg) alert("📢 Barcha foydalanuvchilarga yuboriladi: " + msg);
       break;
-    case "removeTask":
-      const removeId = prompt("O'chiriladigan vazifa ID:");
-      if (removeId) {
-        const taskRef = ref(db, "globalTasks/" + removeId);
-        remove(taskRef).then(() => alert("➖ Vazifa o'chirildi!"));
-      }
-      break;
-    case "editTask":
-      const editId = prompt("Tahrir qilinadigan vazifa ID:");
-      const newName = prompt("Yangi nom:");
-      if (editId && newName) {
-        const editRef = ref(db, "globalTasks/" + editId);
-        update(editRef, { name: newName });
-        alert("✏️ Vazifa yangilandi!");
-      }
-      break;
-    case "viewTasks":
-      const tasksRef = ref(db, "globalTasks");
-      get(tasksRef).then(snap => {
-        if (snap.exists()) {
-          console.log("📋 Vazifalar:", snap.val());
-          alert("👁️ Vazifalar konsolda ko'rsatildi");
-        } else {
-          alert("❌ Vazifalar topilmadi");
-        }
-      });
-      break;
+    }
     default:
       alert("⚠️ Noma'lum action: " + action);
   }
 }
 
-// 🔄 Event listenerlarni DOM yuklangandan keyin qo‘shish
+// Admin tugmalari (DOM yuklangach)
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("tab-tap")?.addEventListener("click", () => showSection("tap"));
-  document.getElementById("tab-leaderboard")?.addEventListener("click", () => { 
-    showSection("leaderboard"); 
-    loadLeaderboard("coins"); 
-  });
-  document.getElementById("tab-admin")?.addEventListener("click", () => showSection("admin"));
-
-  document.getElementById("tapButton")?.addEventListener("click", tapCoin);
-  document.getElementById("btn-leaderboard-coins")?.addEventListener("click", () => loadLeaderboard("coins"));
-  document.getElementById("btn-leaderboard-referrals")?.addEventListener("click", () => loadLeaderboard("referrals"));
-
-  document.querySelectorAll("#adminSection button").forEach(btn => {
+  document.querySelectorAll("#adminSection button")?.forEach(btn => {
     btn.addEventListener("click", () => adminAction(btn.dataset.action));
   });
 });
 
-// 🔄 Sektsiyalar
+// =====================
+//   UI helpers
+// =====================
 function showSection(id) {
   document.querySelectorAll(".section").forEach(sec => sec.style.display = "none");
-  if (id === "tap") document.getElementById("tapSection").style.display = "block";
-  if (id === "leaderboard") document.getElementById("leaderboardSection").style.display = "block";
-  if (id === "admin") document.getElementById("adminSection").style.display = "block";
+  if (id === "tap") document.getElementById("tapSection")?.style.setProperty("display", "block");
+  if (id === "leaderboard") document.getElementById("leaderboardSection")?.style.setProperty("display", "block");
+  if (id === "admin") document.getElementById("adminSection")?.style.setProperty("display", "block");
 }
 
-// 🐉 Tap tugmasi
 function tapCoin() {
   alert("🐉 Coin tapped!");
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, m => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[m]));
 }
