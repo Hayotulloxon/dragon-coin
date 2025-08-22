@@ -17,20 +17,18 @@ const firebaseConfig = {
 // Global variables
 let app, database, auth, currentUser = null;
 let leaderboardListener = null;
-let tasksListener = null;
 let playerDataListener = null;
-let taskSettingsListener = null;
 
-// Firebase initialization
+// Initialize Firebase
 function initializeFirebase() {
   try {
     app = initializeApp(firebaseConfig);
     getAnalytics(app);
     database = getDatabase(app);
     auth = getAuth(app);
-    
+
     console.log("✅ Firebase initialized");
-    
+
     signInAnonymously(auth)
       .then(() => console.log("✅ Anonymous login successful"))
       .catch((error) => {
@@ -43,13 +41,11 @@ function initializeFirebase() {
         console.log("👤 User logged in:", user.uid);
         currentUser = user;
         await initializePlayer(user);
-        
+
         const isAdmin = await checkAdminStatus(user.uid);
         if (isAdmin) {
           const adminTab = document.getElementById("adminTab");
-          if (adminTab) {
-            adminTab.style.display = "inline-block";
-          }
+          if (adminTab) adminTab.style.display = "inline-block";
         }
       } else {
         console.log("👤 User logged out");
@@ -57,7 +53,6 @@ function initializeFirebase() {
         clearAllListeners();
       }
     });
-    
   } catch (error) {
     console.error("❌ Firebase initialization error:", error);
     showError("Firebase connection error: " + error.message);
@@ -81,12 +76,13 @@ async function initializePlayer(user) {
   try {
     const playerRef = ref(database, "players/" + user.uid);
     const snapshot = await get(playerRef);
-    
+
     if (!snapshot.exists()) {
-      await set(playerRef, { 
-        name: "Dragon Miner", 
-        coins: 0, 
-        level: 1, 
+      await set(playerRef, {
+        name: "Dragon Miner",
+        coins: 0,
+        taps: 0,
+        level: 1,
         referrals: 0,
         createdAt: Date.now()
       });
@@ -94,9 +90,8 @@ async function initializePlayer(user) {
     } else {
       console.log("✅ Existing player found");
     }
-    
+
     setupPlayerDataListener(user.uid);
-    
   } catch (error) {
     console.error("❌ Player initialization error:", error);
     showError("Error loading player data");
@@ -105,10 +100,8 @@ async function initializePlayer(user) {
 
 // Real-time player data listener
 function setupPlayerDataListener(userId) {
-  if (playerDataListener) {
-    off(playerDataListener);
-  }
-  
+  if (playerDataListener) off(playerDataListener);
+
   const playerRef = ref(database, "players/" + userId);
   playerDataListener = onValue(playerRef, (snapshot) => {
     if (snapshot.exists()) {
@@ -123,14 +116,10 @@ function setupPlayerDataListener(userId) {
 // Update UI with player data
 function updatePlayerDisplayUI(playerData) {
   try {
-    const coinsElement = document.getElementById("balance");
-    const levelElement = document.getElementById("level");
-    const referralsElement = document.getElementById("referralCount");
-    
-    if (coinsElement) coinsElement.textContent = playerData.coins || 0;
-    if (levelElement) levelElement.textContent = playerData.level || 1;
-    if (referralsElement) referralsElement.textContent = playerData.referrals || 0;
-    
+    document.getElementById("balance").textContent = playerData.coins || 0;
+    document.getElementById("level").textContent = playerData.level || 1;
+    document.getElementById("referralCount").textContent = playerData.referrals || 0;
+    document.getElementById("totalTaps").textContent = playerData.taps || 0;
   } catch (error) {
     console.error("❌ UI update error:", error);
   }
@@ -139,9 +128,7 @@ function updatePlayerDisplayUI(playerData) {
 // Clear all listeners
 function clearAllListeners() {
   if (leaderboardListener) { off(leaderboardListener); leaderboardListener = null; }
-  if (tasksListener) { off(tasksListener); tasksListener = null; }
   if (playerDataListener) { off(playerDataListener); playerDataListener = null; }
-  if (taskSettingsListener) { off(taskSettingsListener); taskSettingsListener = null; }
 }
 
 // Show error message
@@ -172,15 +159,17 @@ function showSection(id) {
 // Tap coin
 async function tapCoin() {
   if (!currentUser) return showError("Please wait for login");
-  
+
   try {
     const playerRef = ref(database, "players/" + currentUser.uid);
     const snapshot = await get(playerRef);
-    
+
     if (snapshot.exists()) {
       const playerData = snapshot.val();
       const newCoins = (playerData.coins || 0) + 1;
-      await update(playerRef, { coins: newCoins });
+      const newTaps = (playerData.taps || 0) + 1;
+
+      await update(playerRef, { coins: newCoins, taps: newTaps });
     }
   } catch (error) {
     console.error("❌ Tap error:", error);
@@ -190,16 +179,16 @@ async function tapCoin() {
 // Show leaderboard with unique players
 function showLeaderboard(type = "coins") {
   if (leaderboardListener) off(leaderboardListener);
-  
+
   const list = document.getElementById("leaderboardList");
   list.innerHTML = "<div style='text-align:center; color:#666; padding:20px;'>Loading...</div>";
-  
+
   const playersRef = ref(database, "players");
   leaderboardListener = onValue(playersRef, (snapshot) => {
     if (snapshot.exists()) {
       const data = snapshot.val();
       let players = Object.keys(data).map(id => ({ id, ...data[id] }));
-      
+
       // ✅ Remove duplicates
       const seen = new Set();
       players = players.filter(p => {
@@ -207,18 +196,18 @@ function showLeaderboard(type = "coins") {
         seen.add(p.id);
         return true;
       });
-      
+
       // Sort by type
       if (type === "coins") players.sort((a, b) => (b.coins || 0) - (a.coins || 0));
       if (type === "referrals") players.sort((a, b) => (b.referrals || 0) - (a.referrals || 0));
-      
+
       const topPlayers = players.slice(0, 50);
       let userRank = "-";
       if (currentUser) {
         const idx = players.findIndex(p => p.id === currentUser.uid);
         if (idx !== -1) userRank = idx + 1;
       }
-      
+
       list.innerHTML = topPlayers.map((p, i) => `
         <div style='padding:12px; border-bottom:1px solid #333; color:#fff; ${p.id === currentUser?.uid ? "background:#2a2a2a;" : ""}'>
           <span style='color:#ffd700;'>#${i + 1}</span> - ${p.name || "Dragon Miner"}
@@ -226,7 +215,7 @@ function showLeaderboard(type = "coins") {
           ${p.id === currentUser?.uid ? "<span style='color:#ff6b6b;'> (You)</span>" : ""}
         </div>
       `).join("");
-      
+
       const rankElement = document.getElementById("playerRank");
       if (rankElement) rankElement.textContent = `#${userRank}`;
     } else {
