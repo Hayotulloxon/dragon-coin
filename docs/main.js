@@ -1,8 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
 import { getDatabase, ref, set, get, push, update, remove, onValue, off } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDShZAo9lg-SxpQViCT27uXVni1UK7TGYU",
   authDomain: "dragon-92897.firebaseapp.com",
@@ -10,8 +10,7 @@ const firebaseConfig = {
   projectId: "dragon-92897",
   storageBucket: "dragon-92897.firebasestorage.app",
   messagingSenderId: "40351345340",
-  appId: "1:40351345340:web:632388a9b45d3c7905feb9",
-  measurementId: "G-FXT1F3NPCD"
+  appId: "1:40351345340:web:632388a9b45d3c7905feb9"
 };
 
 let app, database, auth, currentUser = null;
@@ -19,50 +18,43 @@ let leaderboardListener = null;
 let playerDataListener = null;
 let tasksListener = null;
 
+// ✅ Initialize Firebase
 function initializeFirebase() {
-  try {
-    app = initializeApp(firebaseConfig);
-    getAnalytics(app);
-    database = getDatabase(app);
-    auth = getAuth(app);
+  app = initializeApp(firebaseConfig);
+  database = getDatabase(app);
+  auth = getAuth(app);
 
-    signInAnonymously(auth)
-      .then(() => console.log("✅ Logged in"))
-      .catch(e => showError("Login error: " + e.message));
+  signInAnonymously(auth)
+    .then(() => console.log("✅ Anonymous login successful"))
+    .catch((e) => showError("Login error: " + e.message));
 
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        currentUser = user;
-        await initializePlayer(user);
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      currentUser = user;
+      await initializePlayer(user);
 
-        const isAdmin = await checkAdminStatus(user.uid);
-        if (isAdmin) {
-          document.getElementById("adminTab").style.display = "inline-block";
-          loadAdminTasks(); // Admin uchun vazifalarni yuklash
-        }
-        loadTasks(); // Har bir user uchun tasklar
-      } else {
-        currentUser = null;
-        clearAllListeners();
+      const isAdmin = await checkAdminStatus(user.uid);
+      if (isAdmin) {
+        const adminTab = document.getElementById("adminTab");
+        if (adminTab) adminTab.style.display = "inline-block";
+        loadAdminTasks();
       }
-    });
-  } catch (error) {
-    showError("Firebase error: " + error.message);
-  }
+      loadTasks();
+    } else {
+      currentUser = null;
+      clearAllListeners();
+    }
+  });
 }
 
-// ✅ Admin tekshiruvi
+// ✅ Check if admin
 async function checkAdminStatus(uid) {
-  try {
-    const adminRef = ref(database, `admins/${uid}`);
-    const snapshot = await get(adminRef);
-    return snapshot.exists() && snapshot.val() === true;
-  } catch (error) {
-    return false;
-  }
+  const adminRef = ref(database, `admins/${uid}`);
+  const snapshot = await get(adminRef);
+  return snapshot.exists() && snapshot.val() === true;
 }
 
-// ✅ Yangi foydalanuvchi yaratish
+// ✅ Initialize player data
 async function initializePlayer(user) {
   const playerRef = ref(database, "players/" + user.uid);
   const snapshot = await get(playerRef);
@@ -80,26 +72,29 @@ async function initializePlayer(user) {
   setupPlayerDataListener(user.uid);
 }
 
-// ✅ Foydalanuvchi ma'lumotlarini real-time kuzatish
+// ✅ Real-time player data listener
 function setupPlayerDataListener(userId) {
   if (playerDataListener) off(playerDataListener);
 
   const playerRef = ref(database, "players/" + userId);
   playerDataListener = onValue(playerRef, (snap) => {
-    if (snap.exists()) updatePlayerDisplayUI(snap.val());
+    if (snap.exists()) {
+      updatePlayerDisplayUI(snap.val());
+    }
   });
 }
 
-function updatePlayerDisplayUI(playerData) {
-  document.getElementById("balance").textContent = playerData.coins || 0;
-  document.getElementById("level").textContent = playerData.level || 1;
-  document.getElementById("referralCount").textContent = playerData.referrals || 0;
-  document.getElementById("totalTaps").textContent = playerData.taps || 0;
+// ✅ Update UI
+function updatePlayerDisplayUI(data) {
+  const balanceEl = document.getElementById("balance");
+  const tapsEl = document.getElementById("totalTaps");
+  if (balanceEl) balanceEl.textContent = data.coins || 0;
+  if (tapsEl) tapsEl.textContent = data.taps || 0;
 }
 
-// ✅ Coin bosish
+// ✅ Tap button action
 async function tapCoin() {
-  if (!currentUser) return showError("Wait for login");
+  if (!currentUser) return showError("Please wait for login");
 
   const playerRef = ref(database, "players/" + currentUser.uid);
   const snap = await get(playerRef);
@@ -113,12 +108,14 @@ async function tapCoin() {
   }
 }
 
-// ✅ Vazifalarni yuklash (user ko‘radi)
+// ✅ Load tasks for user
 function loadTasks() {
   const taskList = document.getElementById("taskList");
-  const taskRef = ref(database, "globalCustomTasks");
+  if (!taskList) return;
 
+  const taskRef = ref(database, "globalCustomTasks");
   if (tasksListener) off(tasksListener);
+
   tasksListener = onValue(taskRef, (snap) => {
     if (snap.exists()) {
       const tasks = snap.val();
@@ -140,7 +137,7 @@ function loadTasks() {
   });
 }
 
-// ✅ Vazifa bajarish
+// ✅ Complete a task
 async function completeTask(taskId, reward) {
   if (!currentUser) return;
 
@@ -154,11 +151,12 @@ async function completeTask(taskId, reward) {
   }
 }
 
-// ✅ Admin uchun vazifalarni ko‘rish va boshqarish
+// ✅ Admin panel: Load tasks
 function loadAdminTasks() {
   const adminTaskList = document.getElementById("adminTaskList");
-  const taskRef = ref(database, "globalCustomTasks");
+  if (!adminTaskList) return;
 
+  const taskRef = ref(database, "globalCustomTasks");
   onValue(taskRef, (snap) => {
     if (snap.exists()) {
       const tasks = snap.val();
@@ -177,10 +175,15 @@ function loadAdminTasks() {
   });
 }
 
-// ✅ Admin yangi vazifa qo‘shishi
+// ✅ Admin: Add task
 async function addTask() {
-  const name = document.getElementById("taskName").value;
-  const reward = parseInt(document.getElementById("taskReward").value);
+  const nameInput = document.getElementById("taskName");
+  const rewardInput = document.getElementById("taskReward");
+
+  if (!nameInput || !rewardInput) return;
+  const name = nameInput.value.trim();
+  const reward = parseInt(rewardInput.value);
+
   if (!name || !reward) return alert("Fill all fields");
 
   const taskRef = ref(database, "globalCustomTasks");
@@ -194,30 +197,30 @@ async function addTask() {
     createdBy: currentUser.uid
   });
 
-  document.getElementById("taskName").value = "";
-  document.getElementById("taskReward").value = "";
+  nameInput.value = "";
+  rewardInput.value = "";
   alert("Task added!");
 }
 
-// ✅ Vazifani o‘chirish
+// ✅ Admin: Delete task
 async function deleteTask(taskId) {
   await remove(ref(database, "globalCustomTasks/" + taskId));
   alert("Task deleted");
 }
 
-// ✅ Reyting
+// ✅ Leaderboard
 function showLeaderboard(type = "coins") {
+  const list = document.getElementById("leaderboardList");
+  if (!list) return;
+
   if (leaderboardListener) off(leaderboardListener);
 
-  const list = document.getElementById("leaderboardList");
   const playersRef = ref(database, "players");
-
   leaderboardListener = onValue(playersRef, (snap) => {
     if (snap.exists()) {
       const data = snap.val();
       let players = Object.keys(data).map(id => ({ id, ...data[id] }));
 
-      // Duplicate oldini olish
       const seen = new Set();
       players = players.filter(p => {
         if (seen.has(p.id)) return false;
@@ -230,7 +233,7 @@ function showLeaderboard(type = "coins") {
 
       list.innerHTML = top.map((p, i) => `
         <div class="leaderboard-item ${p.id === currentUser?.uid ? 'me' : ''}">
-          #${i + 1} ${p.name} - ${type === "coins" ? p.coins : p.referrals}
+          #${i + 1} ${p.name} - ${type === "coins" ? (p.coins || 0) : (p.referrals || 0)}
         </div>
       `).join("");
     } else {
@@ -239,16 +242,24 @@ function showLeaderboard(type = "coins") {
   });
 }
 
+// ✅ Clear all listeners
 function clearAllListeners() {
   if (leaderboardListener) off(leaderboardListener);
   if (playerDataListener) off(playerDataListener);
   if (tasksListener) off(tasksListener);
 }
 
+// ✅ Show error
+function showError(msg) {
+  alert(msg);
+}
+
+// ✅ Expose functions globally
 window.tapCoin = tapCoin;
 window.showLeaderboard = showLeaderboard;
 window.addTask = addTask;
 window.deleteTask = deleteTask;
 window.completeTask = completeTask;
 
-initializeFirebase();
+// ✅ Start app after DOM load
+document.addEventListener("DOMContentLoaded", initializeFirebase);
