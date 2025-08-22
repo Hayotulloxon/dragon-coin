@@ -69,12 +69,14 @@ function initializeFirebase() {
 
     // Admin check
     isAdminUser = await checkAdminStatus(user.uid);
-    const adminTabBtn = document.querySelector("#adminTab");
-    if (adminTabBtn && isAdminUser) adminTabBtn.style.display = "inline-block";
+    const adminSection = document.querySelector("#adminSection");
+    if (adminSection) adminSection.style.display = isAdminUser ? "block" : "none";
 
     listenPlayer(user.uid);
     renderTasks("user");
     showLeaderboard("coins");
+
+    if (isAdminUser) checkForGlobalTaskUpdates();
   });
 }
 
@@ -114,9 +116,13 @@ async function ensurePlayerDoc(uid) {
 }
 
 async function checkAdminStatus(uid) {
-  const adminRef = ref(database, `admins/${uid}`);
-  const snap = await get(adminRef);
-  return snap.exists() && snap.val() === true;
+  try {
+    const adminRef = ref(database, `admins/${uid}`);
+    const snap = await get(adminRef);
+    return snap.exists() && snap.val() === true;
+  } catch {
+    return false;
+  }
 }
 
 /* =========================
@@ -221,6 +227,18 @@ async function deleteTask(taskId) {
   if (!isAdminUser) return toast("Admin only");
   await remove(ref(database, "globalCustomTasks/" + taskId));
   toast("Task deleted");
+}
+
+async function checkForGlobalTaskUpdates() {
+  const refGlobalSettings = ref(database, "globalTaskSettings");
+  try {
+    const snapshot = await get(refGlobalSettings);
+    if (snapshot.exists()) {
+      console.log("✅ Global vazifa sozlamalari:", snapshot.val());
+    }
+  } catch (err) {
+    console.error("❌ Global vazifa sozlamalarini yuklashda xatolik:", err);
+  }
 }
 
 /* =========================
