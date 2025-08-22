@@ -3,7 +3,7 @@ import {
   getDatabase, ref, set, get, push, update, remove, onValue, off
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 import {
-  getAuth, signInAnonymously, onAuthStateChanged
+  getAuth, signInAnonymously, onAuthStateChanged, setPersistence, browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 /* =========================
@@ -19,18 +19,12 @@ const firebaseConfig = {
   appId: "1:40351345340:web:632388a9b45d3c7905feb9"
 };
 
-/* =========================
-   Global variables
-   ========================= */
 let app, database, auth, currentUser = null;
 let leaderboardListener = null;
 let playerDataListener = null;
 let tasksListener = null;
 let isAdminUser = false;
 
-/* =========================
-   Helpers
-   ========================= */
 const $ = (id) => document.getElementById(id);
 function safeHTML(id, html) { const el = $(id); if (el) el.innerHTML = html; }
 function safeText(id, text) { const el = $(id); if (el) el.textContent = text; }
@@ -45,7 +39,7 @@ function escapeHTML(s) {
 function toast(msg) { alert(msg); }
 
 /* =========================
-   Initialize Firebase
+   Firebase Init with Persistence
    ========================= */
 function initializeFirebase() {
   if (getApps().length === 0) {
@@ -53,14 +47,14 @@ function initializeFirebase() {
     console.log("✅ Firebase initialized");
   } else {
     app = getApps()[0];
-    console.log("ℹ️ Firebase already initialized");
   }
 
   database = getDatabase(app);
   auth = getAuth(app);
 
-  signInAnonymously(auth)
-    .then(() => console.log("✅ Anonymous login successful"))
+  setPersistence(auth, browserLocalPersistence)
+    .then(() => signInAnonymously(auth))
+    .then(() => console.log("✅ Anonymous login with persistence"))
     .catch((e) => console.error("Login error:", e));
 
   onAuthStateChanged(auth, async (user) => {
@@ -73,7 +67,7 @@ function initializeFirebase() {
     currentUser = user;
     await ensurePlayerDoc(user.uid);
 
-    // Admin tekshiruv
+    // Admin check
     isAdminUser = await checkAdminStatus(user.uid);
     const adminTabBtn = document.querySelector("#adminTab");
     if (adminTabBtn && isAdminUser) adminTabBtn.style.display = "inline-block";
@@ -85,7 +79,7 @@ function initializeFirebase() {
 }
 
 /* =========================
-   Local Storage UX
+   Local Storage for Fast UI
    ========================= */
 function loadCachedData() {
   const cachedCoins = localStorage.getItem("coins");
@@ -120,17 +114,13 @@ async function ensurePlayerDoc(uid) {
 }
 
 async function checkAdminStatus(uid) {
-  try {
-    const adminRef = ref(database, `admins/${uid}`);
-    const snap = await get(adminRef);
-    return snap.exists() && snap.val() === true;
-  } catch {
-    return false;
-  }
+  const adminRef = ref(database, `admins/${uid}`);
+  const snap = await get(adminRef);
+  return snap.exists() && snap.val() === true;
 }
 
 /* =========================
-   Player live listener
+   Player listener
    ========================= */
 function listenPlayer(uid) {
   if (playerDataListener) off(playerDataListener);
@@ -147,23 +137,18 @@ function listenPlayer(uid) {
    ========================= */
 async function tapCoin() {
   if (!currentUser) return toast("Please wait...");
-  try {
-    const pRef = ref(database, "players/" + currentUser.uid);
-    const snap = await get(pRef);
-    if (!snap.exists()) return;
-    const p = snap.val();
-    await update(pRef, {
-      coins: (p.coins || 0) + 1,
-      taps: (p.taps || 0) + 1
-    });
-  } catch (e) {
-    console.error(e);
-    toast("Tap error: " + (e?.message || e));
-  }
+  const pRef = ref(database, "players/" + currentUser.uid);
+  const snap = await get(pRef);
+  if (!snap.exists()) return;
+  const p = snap.val();
+  await update(pRef, {
+    coins: (p.coins || 0) + 1,
+    taps: (p.taps || 0) + 1
+  });
 }
 
 /* =========================
-   Render tasks (User)
+   Tasks for User
    ========================= */
 async function renderTasks(mode = "user") {
   const containerId = "customTasksList";
@@ -183,8 +168,7 @@ async function renderTasks(mode = "user") {
     let html = "";
     Object.keys(tasks).forEach((id) => {
       const t = tasks[id];
-      if (mode === "user") {
-        if (t.status !== "active") return;
+      if (mode === "user" && t.status === "active") {
         html += `
           <div style="background:#222;margin:10px;padding:10px;border-radius:8px;">
             <p><strong>${escapeHTML(t.name)}</strong> – Reward: ${t.reward} 🪙</p>
@@ -193,8 +177,7 @@ async function renderTasks(mode = "user") {
         `;
       }
     });
-    if (!html) html = "<p>No tasks available</p>";
-    safeHTML(containerId, html);
+    safeHTML(containerId, html || "<p>No tasks available</p>");
   };
 
   if (mode === "user") {
@@ -216,7 +199,7 @@ async function completeTask(taskId, reward) {
 }
 
 /* =========================
-   Admin functions
+   Admin
    ========================= */
 async function addTask() {
   if (!isAdminUser) return toast("Admin only");
@@ -257,19 +240,12 @@ function showLeaderboard(type = "coins") {
     const data = snap.val();
     let players = Object.keys(data).map(id => ({ id, ...data[id] }));
 
-    const seen = new Set();
-    players = players.filter(p => {
-      if (seen.has(p.id)) return false;
-      seen.add(p.id);
-      return true;
-    });
-
     players.sort((a, b) => (b[type] || 0) - (a[type] || 0));
     const top = players.slice(0, 50);
 
     const html = top.map((p, i) => `
       <div style="padding:10px;border-bottom:1px solid #333;${p.id === currentUser?.uid ? 'background:#1f1f1f;color:#ffd700;' : ''}">
-        #${i + 1} — ${escapeHTML(p.name || "Player")} — ${type === "coins" ? (p.coins || 0) + " 🪙" : (p.referrals || 0) + " 👥"}
+        #${i + 1} — ${escapeHTML(p.name || "Player")} — ${(type === "coins" ? (p.coins || 0) + " 🪙" : (p.referrals || 0) + " 👥")}
       </div>
     `).join("");
 
@@ -278,19 +254,16 @@ function showLeaderboard(type = "coins") {
 }
 
 /* =========================
-   Cleanup
+   Clear Listeners
    ========================= */
 function clearAllListeners() {
   if (leaderboardListener) off(leaderboardListener);
   if (playerDataListener) off(playerDataListener);
   if (tasksListener) off(tasksListener);
-  leaderboardListener = null;
-  playerDataListener = null;
-  tasksListener = null;
 }
 
 /* =========================
-   Expose globally
+   Expose
    ========================= */
 window.tapCoin = tapCoin;
 window.showLeaderboard = showLeaderboard;
@@ -298,9 +271,6 @@ window.addTask = addTask;
 window.deleteTask = deleteTask;
 window.completeTask = completeTask;
 
-/* =========================
-   Start after DOM ready
-   ========================= */
 document.addEventListener("DOMContentLoaded", () => {
   loadCachedData();
   initializeFirebase();
