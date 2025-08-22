@@ -14,12 +14,11 @@ const firebaseConfig = {
   measurementId: "G-FXT1F3NPCD"
 };
 
-// Global variables
 let app, database, auth, currentUser = null;
 let leaderboardListener = null;
 let playerDataListener = null;
+let tasksListener = null;
 
-// Initialize Firebase
 function initializeFirebase() {
   try {
     app = initializeApp(firebaseConfig);
@@ -27,169 +26,198 @@ function initializeFirebase() {
     database = getDatabase(app);
     auth = getAuth(app);
 
-    console.log("✅ Firebase initialized");
-
     signInAnonymously(auth)
-      .then(() => console.log("✅ Anonymous login successful"))
-      .catch((error) => {
-        console.error("❌ Login error:", error.message);
-        showError("Login error: " + error.message);
-      });
+      .then(() => console.log("✅ Logged in"))
+      .catch(e => showError("Login error: " + e.message));
 
     onAuthStateChanged(auth, async (user) => {
       if (user) {
-        console.log("👤 User logged in:", user.uid);
         currentUser = user;
         await initializePlayer(user);
 
         const isAdmin = await checkAdminStatus(user.uid);
         if (isAdmin) {
-          const adminTab = document.getElementById("adminTab");
-          if (adminTab) adminTab.style.display = "inline-block";
+          document.getElementById("adminTab").style.display = "inline-block";
+          loadAdminTasks(); // Admin uchun vazifalarni yuklash
         }
+        loadTasks(); // Har bir user uchun tasklar
       } else {
-        console.log("👤 User logged out");
         currentUser = null;
         clearAllListeners();
       }
     });
   } catch (error) {
-    console.error("❌ Firebase initialization error:", error);
-    showError("Firebase connection error: " + error.message);
+    showError("Firebase error: " + error.message);
   }
 }
 
-// Check admin status
+// ✅ Admin tekshiruvi
 async function checkAdminStatus(uid) {
   try {
     const adminRef = ref(database, `admins/${uid}`);
     const snapshot = await get(adminRef);
     return snapshot.exists() && snapshot.val() === true;
   } catch (error) {
-    console.error("❌ Admin status check error:", error);
     return false;
   }
 }
 
-// Initialize player data
+// ✅ Yangi foydalanuvchi yaratish
 async function initializePlayer(user) {
-  try {
-    const playerRef = ref(database, "players/" + user.uid);
-    const snapshot = await get(playerRef);
+  const playerRef = ref(database, "players/" + user.uid);
+  const snapshot = await get(playerRef);
 
-    if (!snapshot.exists()) {
-      await set(playerRef, {
-        name: "Dragon Miner",
-        coins: 0,
-        taps: 0,
-        level: 1,
-        referrals: 0,
-        createdAt: Date.now()
-      });
-      console.log("✅ New player created");
-    } else {
-      console.log("✅ Existing player found");
-    }
-
-    setupPlayerDataListener(user.uid);
-  } catch (error) {
-    console.error("❌ Player initialization error:", error);
-    showError("Error loading player data");
+  if (!snapshot.exists()) {
+    await set(playerRef, {
+      name: "Dragon Miner",
+      coins: 0,
+      taps: 0,
+      level: 1,
+      referrals: 0,
+      createdAt: Date.now()
+    });
   }
+  setupPlayerDataListener(user.uid);
 }
 
-// Real-time player data listener
+// ✅ Foydalanuvchi ma'lumotlarini real-time kuzatish
 function setupPlayerDataListener(userId) {
   if (playerDataListener) off(playerDataListener);
 
   const playerRef = ref(database, "players/" + userId);
-  playerDataListener = onValue(playerRef, (snapshot) => {
-    if (snapshot.exists()) {
-      const playerData = snapshot.val();
-      updatePlayerDisplayUI(playerData);
-    }
-  }, (error) => {
-    console.error("❌ Player data listener error:", error);
+  playerDataListener = onValue(playerRef, (snap) => {
+    if (snap.exists()) updatePlayerDisplayUI(snap.val());
   });
 }
 
-// Update UI with player data
 function updatePlayerDisplayUI(playerData) {
-  try {
-    document.getElementById("balance").textContent = playerData.coins || 0;
-    document.getElementById("level").textContent = playerData.level || 1;
-    document.getElementById("referralCount").textContent = playerData.referrals || 0;
-    document.getElementById("totalTaps").textContent = playerData.taps || 0;
-  } catch (error) {
-    console.error("❌ UI update error:", error);
-  }
+  document.getElementById("balance").textContent = playerData.coins || 0;
+  document.getElementById("level").textContent = playerData.level || 1;
+  document.getElementById("referralCount").textContent = playerData.referrals || 0;
+  document.getElementById("totalTaps").textContent = playerData.taps || 0;
 }
 
-// Clear all listeners
-function clearAllListeners() {
-  if (leaderboardListener) { off(leaderboardListener); leaderboardListener = null; }
-  if (playerDataListener) { off(playerDataListener); playerDataListener = null; }
-}
-
-// Show error message
-function showError(message) {
-  let errorDiv = document.getElementById("errorMessage");
-  if (!errorDiv) {
-    errorDiv = document.createElement("div");
-    errorDiv.id = "errorMessage";
-    errorDiv.style.cssText = `
-      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-      background: #ff4444; color: white; padding: 10px 20px;
-      border-radius: 5px; z-index: 1000; display: none;
-    `;
-    document.body.appendChild(errorDiv);
-  }
-  errorDiv.textContent = message;
-  errorDiv.style.display = "block";
-  setTimeout(() => errorDiv.style.display = "none", 5000);
-}
-
-// Show section
-function showSection(id) {
-  document.querySelectorAll(".section").forEach(sec => sec.style.display = "none");
-  const targetSection = document.getElementById(id + "Section");
-  if (targetSection) targetSection.style.display = "block";
-}
-
-// Tap coin
+// ✅ Coin bosish
 async function tapCoin() {
-  if (!currentUser) return showError("Please wait for login");
+  if (!currentUser) return showError("Wait for login");
 
-  try {
-    const playerRef = ref(database, "players/" + currentUser.uid);
-    const snapshot = await get(playerRef);
+  const playerRef = ref(database, "players/" + currentUser.uid);
+  const snap = await get(playerRef);
 
-    if (snapshot.exists()) {
-      const playerData = snapshot.val();
-      const newCoins = (playerData.coins || 0) + 1;
-      const newTaps = (playerData.taps || 0) + 1;
-
-      await update(playerRef, { coins: newCoins, taps: newTaps });
-    }
-  } catch (error) {
-    console.error("❌ Tap error:", error);
+  if (snap.exists()) {
+    const data = snap.val();
+    await update(playerRef, {
+      coins: (data.coins || 0) + 1,
+      taps: (data.taps || 0) + 1
+    });
   }
 }
 
-// Show leaderboard with unique players
+// ✅ Vazifalarni yuklash (user ko‘radi)
+function loadTasks() {
+  const taskList = document.getElementById("taskList");
+  const taskRef = ref(database, "globalCustomTasks");
+
+  if (tasksListener) off(tasksListener);
+  tasksListener = onValue(taskRef, (snap) => {
+    if (snap.exists()) {
+      const tasks = snap.val();
+      taskList.innerHTML = Object.keys(tasks).map(id => {
+        const t = tasks[id];
+        if (t.status === "active") {
+          return `
+            <div class="task">
+              <p><strong>${t.name}</strong> - Reward: ${t.reward} 🪙</p>
+              <button onclick="completeTask('${id}', ${t.reward})">Complete</button>
+            </div>
+          `;
+        }
+        return "";
+      }).join("");
+    } else {
+      taskList.innerHTML = "<p>No active tasks</p>";
+    }
+  });
+}
+
+// ✅ Vazifa bajarish
+async function completeTask(taskId, reward) {
+  if (!currentUser) return;
+
+  const playerRef = ref(database, "players/" + currentUser.uid);
+  const snap = await get(playerRef);
+
+  if (snap.exists()) {
+    const data = snap.val();
+    await update(playerRef, { coins: (data.coins || 0) + reward });
+    alert("Task completed! +" + reward + " coins");
+  }
+}
+
+// ✅ Admin uchun vazifalarni ko‘rish va boshqarish
+function loadAdminTasks() {
+  const adminTaskList = document.getElementById("adminTaskList");
+  const taskRef = ref(database, "globalCustomTasks");
+
+  onValue(taskRef, (snap) => {
+    if (snap.exists()) {
+      const tasks = snap.val();
+      adminTaskList.innerHTML = Object.keys(tasks).map(id => {
+        const t = tasks[id];
+        return `
+          <div class="task-admin">
+            <p>${t.name} (${t.status}) - Reward: ${t.reward}</p>
+            <button onclick="deleteTask('${id}')">Delete</button>
+          </div>
+        `;
+      }).join("");
+    } else {
+      adminTaskList.innerHTML = "<p>No tasks yet</p>";
+    }
+  });
+}
+
+// ✅ Admin yangi vazifa qo‘shishi
+async function addTask() {
+  const name = document.getElementById("taskName").value;
+  const reward = parseInt(document.getElementById("taskReward").value);
+  if (!name || !reward) return alert("Fill all fields");
+
+  const taskRef = ref(database, "globalCustomTasks");
+  const newTaskRef = push(taskRef);
+
+  await set(newTaskRef, {
+    name: name,
+    reward: reward,
+    status: "active",
+    createdAt: Date.now(),
+    createdBy: currentUser.uid
+  });
+
+  document.getElementById("taskName").value = "";
+  document.getElementById("taskReward").value = "";
+  alert("Task added!");
+}
+
+// ✅ Vazifani o‘chirish
+async function deleteTask(taskId) {
+  await remove(ref(database, "globalCustomTasks/" + taskId));
+  alert("Task deleted");
+}
+
+// ✅ Reyting
 function showLeaderboard(type = "coins") {
   if (leaderboardListener) off(leaderboardListener);
 
   const list = document.getElementById("leaderboardList");
-  list.innerHTML = "<div style='text-align:center; color:#666; padding:20px;'>Loading...</div>";
-
   const playersRef = ref(database, "players");
-  leaderboardListener = onValue(playersRef, (snapshot) => {
-    if (snapshot.exists()) {
-      const data = snapshot.val();
+
+  leaderboardListener = onValue(playersRef, (snap) => {
+    if (snap.exists()) {
+      const data = snap.val();
       let players = Object.keys(data).map(id => ({ id, ...data[id] }));
 
-      // ✅ Remove duplicates
+      // Duplicate oldini olish
       const seen = new Set();
       players = players.filter(p => {
         if (seen.has(p.id)) return false;
@@ -197,31 +225,30 @@ function showLeaderboard(type = "coins") {
         return true;
       });
 
-      // Sort by type
-      if (type === "coins") players.sort((a, b) => (b.coins || 0) - (a.coins || 0));
-      if (type === "referrals") players.sort((a, b) => (b.referrals || 0) - (a.referrals || 0));
+      players.sort((a, b) => (b[type] || 0) - (a[type] || 0));
+      const top = players.slice(0, 50);
 
-      const topPlayers = players.slice(0, 50);
-      let userRank = "-";
-      if (currentUser) {
-        const idx = players.findIndex(p => p.id === currentUser.uid);
-        if (idx !== -1) userRank = idx + 1;
-      }
-
-      list.innerHTML = topPlayers.map((p, i) => `
-        <div style='padding:12px; border-bottom:1px solid #333; color:#fff; ${p.id === currentUser?.uid ? "background:#2a2a2a;" : ""}'>
-          <span style='color:#ffd700;'>#${i + 1}</span> - ${p.name || "Dragon Miner"}
-          <span style='float:right;'>${type === "coins" ? (p.coins || 0) + " 🪙" : (p.referrals || 0) + " 👥"}</span>
-          ${p.id === currentUser?.uid ? "<span style='color:#ff6b6b;'> (You)</span>" : ""}
+      list.innerHTML = top.map((p, i) => `
+        <div class="leaderboard-item ${p.id === currentUser?.uid ? 'me' : ''}">
+          #${i + 1} ${p.name} - ${type === "coins" ? p.coins : p.referrals}
         </div>
       `).join("");
-
-      const rankElement = document.getElementById("playerRank");
-      if (rankElement) rankElement.textContent = `#${userRank}`;
     } else {
-      list.innerHTML = "<div style='padding:20px; text-align:center; color:#666;'>No data yet</div>";
+      list.innerHTML = "<p>No data yet</p>";
     }
   });
 }
+
+function clearAllListeners() {
+  if (leaderboardListener) off(leaderboardListener);
+  if (playerDataListener) off(playerDataListener);
+  if (tasksListener) off(tasksListener);
+}
+
+window.tapCoin = tapCoin;
+window.showLeaderboard = showLeaderboard;
+window.addTask = addTask;
+window.deleteTask = deleteTask;
+window.completeTask = completeTask;
 
 initializeFirebase();
