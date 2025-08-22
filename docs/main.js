@@ -84,6 +84,26 @@ function initializeFirebase() {
   });
 }
 
+/* =========================
+   Local Storage UX
+   ========================= */
+function loadCachedData() {
+  const cachedCoins = localStorage.getItem("coins");
+  const cachedTaps = localStorage.getItem("taps");
+  if (cachedCoins) safeText("balance", cachedCoins);
+  if (cachedTaps) safeText("totalTaps", cachedTaps);
+}
+
+function updateBalanceUI(coins, taps) {
+  safeText("balance", coins);
+  safeText("totalTaps", taps);
+  localStorage.setItem("coins", coins);
+  localStorage.setItem("taps", taps);
+}
+
+/* =========================
+   Player functions
+   ========================= */
 async function ensurePlayerDoc(uid) {
   const r = ref(database, "players/" + uid);
   const snap = await get(r);
@@ -110,7 +130,7 @@ async function checkAdminStatus(uid) {
 }
 
 /* =========================
-   Player data listener
+   Player live listener
    ========================= */
 function listenPlayer(uid) {
   if (playerDataListener) off(playerDataListener);
@@ -118,8 +138,7 @@ function listenPlayer(uid) {
   playerDataListener = onValue(playerRef, (snap) => {
     if (!snap.exists()) return;
     const data = snap.val();
-    safeText("balance", (data.coins || 0).toString());
-    safeText("totalTaps", (data.taps || 0).toString());
+    updateBalanceUI(data.coins || 0, data.taps || 0);
   });
 }
 
@@ -144,7 +163,7 @@ async function tapCoin() {
 }
 
 /* =========================
-   Render tasks (User & Admin)
+   Render tasks (User)
    ========================= */
 async function renderTasks(mode = "user") {
   const containerId = "customTasksList";
@@ -167,19 +186,9 @@ async function renderTasks(mode = "user") {
       if (mode === "user") {
         if (t.status !== "active") return;
         html += `
-          <div class="task" style="background:#222;margin:10px;padding:10px;border-radius:8px;">
+          <div style="background:#222;margin:10px;padding:10px;border-radius:8px;">
             <p><strong>${escapeHTML(t.name)}</strong> – Reward: ${t.reward} 🪙</p>
             <button onclick="completeTask('${id}', ${t.reward})">Complete</button>
-          </div>
-        `;
-      } else {
-        html += `
-          <div class="task-admin" style="background:#1f1f1f;margin:10px;padding:10px;border-radius:8px;">
-            <p>
-              <strong>${escapeHTML(t.name)}</strong> – Reward: ${t.reward} 🪙
-              <br/>Status: ${t.status}
-            </p>
-            <button onclick="deleteTask('${id}')">Delete</button>
           </div>
         `;
       }
@@ -281,7 +290,7 @@ function clearAllListeners() {
 }
 
 /* =========================
-   Expose functions globally
+   Expose globally
    ========================= */
 window.tapCoin = tapCoin;
 window.showLeaderboard = showLeaderboard;
@@ -292,4 +301,7 @@ window.completeTask = completeTask;
 /* =========================
    Start after DOM ready
    ========================= */
-document.addEventListener("DOMContentLoaded", initializeFirebase);
+document.addEventListener("DOMContentLoaded", () => {
+  loadCachedData();
+  initializeFirebase();
+});
