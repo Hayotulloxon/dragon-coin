@@ -4959,59 +4959,5 @@
   <!-- 🔹 JavaScript ulanish -->
   <script type="module" src="/dragon-coin/main.js"></script>
 </body>
-    <body>
-
-<!-- Header: Balans va Taps -->
-<h2>Dragon Miner Game 🐉</h2>
-<div style="margin:10px 0;">
-  Balance: <span id="balance">0</span> 🪙 | Taps: <span id="totalTaps">0</span>
-</div>
-
-<!-- 🔹 Navigatsiya -->
-<div>
-  <button onclick="showSection('tap')">Tap</button>
-  <button onclick="showSection('leaderboard')">Leaderboard</button>
-  <button onclick="showSection('tasks')">Tasks</button>
-  <button id="adminTab" style="display:none;" onclick="showSection('admin')">Admin Panel</button>
-</div>
-
-<!-- 🔹 Tap bo‘limi -->
-<div id="tapSection" class="section">
-  <button id="tapButton" onclick="tapCoin()">🐉 Tap</button>
-</div>
-
-<!-- 🔹 Reyting bo‘limi -->
-<div id="leaderboardSection" class="section" style="display:none;">
-  <h3>Leaderboard</h3>
-  <button onclick="showLeaderboard('coins')">Coins</button>
-  <button onclick="showLeaderboard('referrals')">Referrals</button>
-  <div id="leaderboardList" style="margin-top:15px;"></div>
-</div>
-
-<!-- 🔹 Vazifalar bo‘limi -->
-<div id="tasksSection" class="section" style="display:none;">
-  <h3>Available Tasks</h3>
-  <div id="taskList"></div>
-</div>
-
-<!-- 🔹 Admin bo‘limi -->
-<div id="adminSection" class="section" style="display:none;">
-  <h3>Admin Panel</h3>
-  <input id="taskName" placeholder="Task name">
-  <input id="taskReward" placeholder="Reward" type="number">
-  <button onclick="addTask()">Add Task</button>
-  <div id="adminTaskList" style="margin-top:15px;"></div>
-</div>
-
-<!-- 🔹 JavaScript -->
-<script type="module" src="/dragon-coin/main.js"></script>
-<script>
-function showSection(section) {
-  document.querySelectorAll('.section').forEach(sec => sec.style.display = 'none');
-  document.getElementById(section + 'Section').style.display = 'block';
-}
-</script>
-
-</body>
 
 </html>
