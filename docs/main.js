@@ -1,4 +1,4 @@
-// main.js — final, Telegram-aware, Firebase-safe implementation
+// main.js — Optimized, Telegram-aware, Firebase-safe implementation
 
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import {
@@ -9,7 +9,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 /* ============
-   CONFIG — o'zingiznikiga almashtiring
+   CONFIG — Replace with your own
    ============ */
 const firebaseConfig = {
   apiKey: "AIzaSyDShZAo9lg-SxpQViCT27uXVni1UK7TGYU",
@@ -32,7 +32,7 @@ const $ = id => document.getElementById(id);
 const safeText = (id, v) => { const e = $(id); if (e) e.textContent = String(v); };
 const safeHTML = (id, h) => { const e = $(id); if (e) e.innerHTML = h; };
 const esc = s => String(s ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;");
-const toast = m => { try { alert(m); } catch(e){ console.log(m); } };
+const toast = m => { try { alert(m); } catch(e) { console.log(m); } };
 
 /* ============
    Init Firebase + auth persistence
@@ -48,7 +48,7 @@ function initializeFirebase() {
   db = getDatabase(app);
   auth = getAuth(app);
 
-  // keep auth persistent across reloads
+  // Keep auth persistent across reloads
   setPersistence(auth, browserLocalPersistence)
     .then(() => signInAnonymously(auth))
     .catch(err => console.error("Auth/persistence error:", err));
@@ -65,21 +65,21 @@ function initializeFirebase() {
     // Ensure player's DB node exists (only create if missing)
     await ensurePlayerDoc(user.uid);
 
-    // attempt to detect Telegram WebApp user (if present) and store/display it
-    attachTelegramInfoIfPresent(user.uid);
+    // Attempt to detect Telegram WebApp user (if present) and store/display it
+    await attachTelegramInfoIfPresent(user.uid);
 
-    // check admin status (reads admins/<uid> — rules allow user to read own admin flag)
+    // Check admin status
     isAdminUser = await safeCheckAdmin(user.uid);
     showAdmin(isAdminUser);
 
-    // start real-time listeners
+    // Start real-time listeners
     listenPlayer(user.uid);
     startLeaderboardListener("coins");
     startTasksListener();
 
-    // if admin, attempt to read globalTaskSettings (try/catch inside)
+    // If admin, attempt to read globalTaskSettings
     if (isAdminUser) {
-      try { await readGlobalTaskSettings(); } catch(e){ console.warn("Global settings read failed:", e); }
+      try { await readGlobalTaskSettings(); } catch(e) { console.warn("Global settings read failed:", e); }
     }
   });
 }
@@ -104,10 +104,8 @@ async function ensurePlayerDoc(uid) {
 
 /* ============
    Telegram integration (optional)
-   - if inside Telegram WebApp, grabs initDataUnsafe.user and stores a copy under players/<uid>/telegram
-   - safe fallback: does nothing in normal browser
    ============ */
-function attachTelegramInfoIfPresent(uid) {
+async function attachTelegramInfoIfPresent(uid) {
   try {
     const tg = window.Telegram?.WebApp;
     if (!tg) {
@@ -119,17 +117,13 @@ function attachTelegramInfoIfPresent(uid) {
       console.warn("⚠️ Telegram user info not provided inside WebApp.");
       return;
     }
-    // store some visible info in DB (non-sensitive)
     const telegramData = {
       id: u.id,
       first_name: u.first_name || null,
       last_name: u.last_name || null,
       username: u.username || null
     };
-    // write as update so we don't overwrite other fields
-    update(ref(db, `players/${uid}/telegram`), telegramData).catch(e => {
-      console.warn("Telegram data write failed:", e);
-    });
+    await update(ref(db, `players/${uid}/telegram`), telegramData);
     console.log("📱 Telegram user attached:", telegramData);
   } catch (e) {
     console.warn("Telegram attach error:", e);
@@ -137,8 +131,7 @@ function attachTelegramInfoIfPresent(uid) {
 }
 
 /* ============
-   Safe check admin (reads admins/<uid>)
-   rules must allow user to read own admins/$uid
+   Safe check admin
    ============ */
 async function safeCheckAdmin(uid) {
   try {
@@ -169,7 +162,6 @@ function listenPlayer(uid) {
     const data = snap.val() || {};
     safeText("balance", data.coins ?? 0);
     safeText("totalTaps", data.taps ?? 0);
-    // local cache for instant UX on reload
     localStorage.setItem("coins", String(data.coins ?? 0));
     localStorage.setItem("taps", String(data.taps ?? 0));
   }, err => {
@@ -184,7 +176,7 @@ async function handleTap() {
   if (!currentUser) return toast("Please wait until login completes");
   const basePath = `players/${currentUser.uid}`;
   const coinsRef = ref(db, `${basePath}/coins`);
-  const tapsRef  = ref(db, `${basePath}/taps`);
+  const tapsRef = ref(db, `${basePath}/taps`);
   try {
     await runTransaction(coinsRef, cur => (cur || 0) + 1);
     await runTransaction(tapsRef, cur => (cur || 0) + 1);
@@ -195,19 +187,22 @@ async function handleTap() {
 }
 
 /* ============
-   Tasks: real-time listen (users see active tasks)
+   Tasks: real-time listener
    ============ */
 function startTasksListener() {
   if (listeners.tasks) off(listeners.tasks);
   const r = ref(db, "globalCustomTasks");
   listeners.tasks = onValue(r, snap => {
     const target = "customTasksList";
-    if (!snap.exists()) return safeHTML(target, "<p style='color:#999'>No tasks</p>");
+    if (!snap.exists()) {
+      console.log("No tasks found in globalCustomTasks");
+      return safeHTML(target, "<p style='color:#999'>No tasks</p>");
+    }
     const tasks = snap.val() || {};
+    console.log("Tasks data:", tasks); // Debug
     let html = "";
     Object.entries(tasks).forEach(([id, t]) => {
-      if (!t) return;
-      if (t.status !== "active") return;
+      if (!t || t.status !== "active") return;
       html += `
         <div class="task" style="background:#222;padding:10px;border-radius:8px;margin:8px 0">
           <div style="font-weight:700">${esc(t.name)}</div>
@@ -218,7 +213,6 @@ function startTasksListener() {
     });
     safeHTML(target, html || "<p style='color:#999'>No tasks</p>");
 
-    // attach complete handlers
     const wrap = $(target);
     if (wrap) {
       wrap.querySelectorAll(".btn-complete").forEach(btn => {
@@ -231,20 +225,23 @@ function startTasksListener() {
     }
   }, err => {
     console.error("tasks listener error:", err);
+    toast("Failed to load tasks: " + (err.message || err));
   });
 }
 
 /* ============
-   Complete task (transaction add coins)
-   - Optional anti-cheat or one-time-per-user logic not included by default
+   Complete task (with one-time completion check)
    ============ */
 async function completeTask(taskId, reward) {
   if (!currentUser) return toast("Login first");
   try {
+    const completedRef = ref(db, `players/${currentUser.uid}/tasksCompleted/${taskId}`);
+    const snap = await get(completedRef);
+    if (snap.exists()) return toast("Task already completed");
+    
     const coinsRef = ref(db, `players/${currentUser.uid}/coins`);
     await runTransaction(coinsRef, cur => (cur || 0) + (Number(reward) || 0));
-    // Optionally record completion to prevent reuse (requires DB rules support)
-    // await set(ref(db, `players/${currentUser.uid}/tasksCompleted/${taskId}`), true);
+    await set(completedRef, true); // Mark task as completed
     toast(`Task completed: +${reward} 🪙`);
   } catch (e) {
     console.error("completeTask error:", e);
@@ -253,7 +250,7 @@ async function completeTask(taskId, reward) {
 }
 
 /* ============
-   Admin actions (all guarded by isAdminUser check)
+   Admin actions
    ============ */
 async function adminAddTask() {
   if (!isAdminUser) return toast("Admin only");
@@ -297,8 +294,8 @@ async function adminEditTask() {
     const s = await get(ref(db, `globalCustomTasks/${id}`));
     if (!s.exists()) return toast("Task not found");
     const cur = s.val();
-    const name = prompt("New name (leave blank keep)", cur.name || "");
-    const rewardStr = prompt("New reward (leave blank keep)", String(cur.reward || ""));
+    const name = prompt("New name (leave blank to keep)", cur.name || "");
+    const rewardStr = prompt("New reward (leave blank to keep)", String(cur.reward || ""));
     const status = prompt("New status (active/inactive/completed)", cur.status || "active");
     const upd = { updatedAt: Date.now() };
     if (name) upd.name = name;
@@ -313,7 +310,7 @@ async function adminEditTask() {
 }
 
 /* ============
-   Leaderboard (real-time, avoids duplicates)
+   Leaderboard (optimized to prevent duplicates)
    ============ */
 function startLeaderboardListener(type = "coins") {
   if (listeners.leaderboard) off(listeners.leaderboard);
@@ -322,23 +319,24 @@ function startLeaderboardListener(type = "coins") {
     const target = "leaderboardList";
     if (!snap.exists()) return safeHTML(target, "<p style='color:#999'>No players yet</p>");
     const data = snap.val() || {};
-    const arr = Object.entries(data).map(([id, p]) => ({ id, ...p }));
-    // filter duplicates by id (defensive)
+    console.log("Leaderboard data:", data); // Debug
     const seen = new Set();
-    const uniq = [];
-    for (const p of arr) {
-      if (seen.has(p.id)) continue;
-      seen.add(p.id);
-      uniq.push(p);
-    }
-    uniq.sort((a,b) => (b[type] || 0) - (a[type] || 0));
-    const top = uniq.slice(0, 50);
-    const html = top.map((p,i) => `
+    const players = Object.entries(data)
+      .map(([id, p]) => ({ id, ...p }))
+      .filter(p => {
+        if (seen.has(p.id)) return false;
+        seen.add(p.id);
+        return true;
+      })
+      .sort((a, b) => (b[type] || 0) - (a[type] || 0))
+      .slice(0, 50);
+
+    const html = players.map((p, i) => `
       <div style="padding:8px;border-bottom:1px solid #333;${p.id === currentUser?.uid ? 'background:#1f1f1f;color:#ffd700;' : ''}">
         #${i+1} — ${esc(p.name || "Player")} — ${type === "coins" ? (p.coins||0) + " 🪙" : (p.referrals||0) + " 👥"}
       </div>
     `).join("");
-    safeHTML(target, html);
+    safeHTML(target, html || "<p style='color:#999'>No players yet</p>");
   }, err => { console.error("leaderboard listen error:", err); });
 }
 
@@ -374,7 +372,7 @@ function bindUI() {
   if (coinsBtn) coinsBtn.addEventListener("click", () => startLeaderboardListener("coins"));
   if (refBtn) refBtn.addEventListener("click", () => startLeaderboardListener("referrals"));
 
-  // admin section delegation
+  // Admin section delegation
   const adminSec = $("adminSection");
   if (adminSec) {
     adminSec.addEventListener("click", async (e) => {
@@ -392,7 +390,7 @@ function bindUI() {
     });
   }
 
-  // restore cached UI quickly
+  // Restore cached UI quickly
   const cachedCoins = localStorage.getItem("coins");
   const cachedTaps = localStorage.getItem("taps");
   if (cachedCoins) safeText("balance", cachedCoins);
@@ -400,7 +398,7 @@ function bindUI() {
 }
 
 /* ============
-   Extra admin helpers (example)
+   Extra admin helpers
    ============ */
 async function adminAddCoins() {
   if (!isAdminUser) return toast("Admin only");
@@ -411,6 +409,7 @@ async function adminAddCoins() {
   await runTransaction(r, cur => (cur || 0) + amount);
   toast("Added");
 }
+
 async function adminResetPlayer() {
   if (!isAdminUser) return toast("Admin only");
   const uid = prompt("UID to reset:");
@@ -418,13 +417,14 @@ async function adminResetPlayer() {
   await update(ref(db, `players/${uid}`), { coins: 0, taps: 0 });
   toast("Reset done");
 }
+
 async function adminViewTasks() {
   if (!isAdminUser) return toast("Admin only");
   const s = await get(ref(db, "globalCustomTasks"));
   if (!s.exists()) return safeHTML("customTasksList", "<p>No tasks</p>");
   const tasks = s.val() || {};
   let html = "";
-  Object.entries(tasks).forEach(([id,t]) => {
+  Object.entries(tasks).forEach(([id, t]) => {
     html += `<div><b>${esc(t.name)}</b> — ${Number(t.reward)||0} 🪙 — <small>${esc(t.status)}</small><br/><code>${id}</code></div><hr/>`;
   });
   safeHTML("customTasksList", html);
@@ -437,8 +437,9 @@ document.addEventListener("DOMContentLoaded", () => {
   bindUI();
   initializeFirebase();
 });
+
 /* ============
-   Expose a few functions globally for HTML buttons if needed
+   Expose functions globally for HTML buttons
    ============ */
 window.completeTask = completeTask;
 window.adminAddTask = adminAddTask;
