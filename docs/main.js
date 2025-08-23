@@ -1,8 +1,8 @@
-// main.js — Optimized, Telegram-aware, Firebase-safe implementation
+// main.js — Optimized, Telegram-aware, Firebase-safe implementation with fixes for duplicates, persistence, and tap limits
 
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import {
-  getDatabase, ref, set, get, push, update, remove, onValue, off, runTransaction
+  getDatabase, ref, set, get, push, update, remove, onValue, off, runTransaction, query, orderByChild, equalTo
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 import {
   getAuth, signInAnonymously, onAuthStateChanged, setPersistence, browserLocalPersistence
@@ -27,12 +27,15 @@ const firebaseConfig = {
 let app, db, auth, currentUser = null;
 let isAdminUser = false;
 let listeners = { player: null, leaderboard: null, tasks: null };
+let tapLimit = 1000; // Daily tap limit (customize as needed)
+let currentTapsToday = 0;
 
 const $ = id => document.getElementById(id);
 const safeText = (id, v) => { const e = $(id); if (e) e.textContent = String(v); };
 const safeHTML = (id, h) => { const e = $(id); if (e) e.innerHTML = h; };
 const esc = s => String(s ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;");
 const toast = m => { try { alert(m); } catch(e) { console.log(m); } };
+const getTodayKey = () => new Date().toISOString().split('T')[0]; // YYYY-MM-DD for daily limits
 
 /* ============
    Init Firebase + auth persistence
@@ -62,26 +65,102 @@ function initializeFirebase() {
     }
     currentUser = user;
 
-    // Ensure player's DB node exists (only create if missing)
-    await ensurePlayerDoc(user.uid);
+    // Get Telegram user info if available
+    const tgUser = getTelegramUser();
 
-    // Attempt to detect Telegram WebApp user (if present) and store/display it
-    await attachTelegramInfoIfPresent(user.uid);
+    // Find or create player based on Telegram ID or Firebase UID
+    const playerUid = await findOrCreatePlayer(user.uid, tgUser);
+
+    // Update currentUser.uid to the merged/found UID
+    currentUser.uid = playerUid;
 
     // Check admin status
-    isAdminUser = await safeCheckAdmin(user.uid);
+    isAdminUser = await safeCheckAdmin(playerUid);
     showAdmin(isAdminUser);
 
     // Start real-time listeners
-    listenPlayer(user.uid);
+    listenPlayer(playerUid);
     startLeaderboardListener("coins");
     startTasksListener();
+
+    // Load daily tap count
+    await loadDailyTaps(playerUid);
 
     // If admin, attempt to read globalTaskSettings
     if (isAdminUser) {
       try { await readGlobalTaskSettings(); } catch(e) { console.warn("Global settings read failed:", e); }
     }
   });
+}
+
+/* ============
+   Get Telegram user info
+   ============ */
+function getTelegramUser() {
+  try {
+    const tg = window.Telegram?.WebApp;
+    if (!tg) return null;
+    const u = tg.initDataUnsafe?.user ?? null;
+    if (!u) return null;
+    return {
+      id: u.id,
+      first_name: u.first_name || null,
+      last_name: u.last_name || null,
+      username: u.username || null
+    };
+  } catch (e) {
+    console.warn("Telegram user fetch error:", e);
+    return null;
+  }
+}
+
+/* ============
+   Find or create player based on Telegram ID or Firebase UID (to prevent duplicates)
+   ============ */
+async function findOrCreatePlayer(firebaseUid, tgUser) {
+  let playerUid = firebaseUid;
+  if (tgUser && tgUser.id) {
+    // Search for existing player with this Telegram ID
+    const tgIdQuery = query(ref(db, 'players'), orderByChild('telegram/id'), equalTo(tgUser.id));
+    const snap = await get(tgIdQuery);
+    if (snap.exists()) {
+      const existingPlayers = snap.val();
+      const existingUid = Object.keys(existingPlayers)[0]; // Take the first match
+      playerUid = existingUid;
+      // Merge if different Firebase UID
+      if (existingUid !== firebaseUid) {
+        await mergePlayers(firebaseUid, existingUid);
+      }
+    } else {
+      // Attach Telegram info to current player
+      await update(ref(db, `players/${playerUid}/telegram`), tgUser);
+    }
+  }
+  // Ensure player doc exists
+  await ensurePlayerDoc(playerUid);
+  return playerUid;
+}
+
+/* ============
+   Merge two players (transfer data from old to new and remove old)
+   ============ */
+async function mergePlayers(oldUid, newUid) {
+  try {
+    const oldRef = ref(db, `players/${oldUid}`);
+    const oldSnap = await get(oldRef);
+    if (oldSnap.exists()) {
+      const oldData = oldSnap.val();
+      await update(ref(db, `players/${newUid}`), {
+        coins: (oldData.coins || 0) + (await get(ref(db, `players/${newUid}/coins`))).val() || 0,
+        taps: (oldData.taps || 0) + (await get(ref(db, `players/${newUid}/taps`))).val() || 0,
+        // Merge other fields as needed
+      });
+      await remove(oldRef);
+      console.log(`Merged player ${oldUid} into ${newUid}`);
+    }
+  } catch (e) {
+    console.error("Merge players error:", e);
+  }
 }
 
 /* ============
@@ -97,37 +176,20 @@ async function ensurePlayerDoc(uid) {
       taps: 0,
       level: 1,
       referrals: 0,
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      dailyTaps: {} // For daily limits
     });
   }
 }
 
 /* ============
-   Telegram integration (optional)
+   Load daily taps for limit
    ============ */
-async function attachTelegramInfoIfPresent(uid) {
-  try {
-    const tg = window.Telegram?.WebApp;
-    if (!tg) {
-      console.warn("⚠️ Telegram WebApp not available (running in browser).");
-      return;
-    }
-    const u = tg.initDataUnsafe?.user ?? null;
-    if (!u) {
-      console.warn("⚠️ Telegram user info not provided inside WebApp.");
-      return;
-    }
-    const telegramData = {
-      id: u.id,
-      first_name: u.first_name || null,
-      last_name: u.last_name || null,
-      username: u.username || null
-    };
-    await update(ref(db, `players/${uid}/telegram`), telegramData);
-    console.log("📱 Telegram user attached:", telegramData);
-  } catch (e) {
-    console.warn("Telegram attach error:", e);
-  }
+async function loadDailyTaps(uid) {
+  const today = getTodayKey();
+  const tapsRef = ref(db, `players/${uid}/dailyTaps/${today}`);
+  const snap = await get(tapsRef);
+  currentTapsToday = snap.val() || 0;
 }
 
 /* ============
@@ -164,22 +226,30 @@ function listenPlayer(uid) {
     safeText("totalTaps", data.taps ?? 0);
     localStorage.setItem("coins", String(data.coins ?? 0));
     localStorage.setItem("taps", String(data.taps ?? 0));
+    // Update daily taps
+    const today = getTodayKey();
+    currentTapsToday = data.dailyTaps?.[today] || 0;
   }, err => {
     console.error("player listener error:", err);
   });
 }
 
 /* ============
-   Tap (use transaction to avoid race)
+   Tap (with daily limit and transaction)
    ============ */
 async function handleTap() {
   if (!currentUser) return toast("Please wait until login completes");
+  if (currentTapsToday >= tapLimit) return toast("Daily tap limit reached!");
+
   const basePath = `players/${currentUser.uid}`;
   const coinsRef = ref(db, `${basePath}/coins`);
   const tapsRef = ref(db, `${basePath}/taps`);
+  const dailyTapsRef = ref(db, `${basePath}/dailyTaps/${getTodayKey()}`);
   try {
     await runTransaction(coinsRef, cur => (cur || 0) + 1);
     await runTransaction(tapsRef, cur => (cur || 0) + 1);
+    await runTransaction(dailyTapsRef, cur => (cur || 0) + 1);
+    currentTapsToday++;
   } catch (e) {
     console.error("tap transaction failed:", e);
     toast("Tap failed: " + (e.message || e));
@@ -256,7 +326,7 @@ async function adminAddTask() {
   if (!isAdminUser) return toast("Admin only");
   const name = prompt("Task name:");
   const reward = Number(prompt("Reward (coins):"));
-  if (!name || !Number.isFinite(reward) || reward <= 0) return toast("Invalid task");
+  if (!name || !Number.isFinite(reward) || reward <= 0 || reward > 50000) return toast("Invalid task or reward");
   try {
     const newRef = push(ref(db, "globalCustomTasks"));
     await set(newRef, {
@@ -299,8 +369,8 @@ async function adminEditTask() {
     const status = prompt("New status (active/inactive/completed)", cur.status || "active");
     const upd = { updatedAt: Date.now() };
     if (name) upd.name = name;
-    if (rewardStr && Number.isFinite(Number(rewardStr))) upd.reward = Number(rewardStr);
-    if (status) upd.status = status;
+    if (rewardStr && Number.isFinite(Number(rewardStr)) && Number(rewardStr) > 0 && Number(rewardStr) <= 50000) upd.reward = Number(rewardStr);
+    if (status && ["active", "inactive", "completed"].includes(status)) upd.status = status;
     await update(ref(db, `globalCustomTasks/${id}`), upd);
     toast("Task updated");
   } catch (e) {
@@ -324,7 +394,10 @@ function startLeaderboardListener(type = "coins") {
     const players = Object.entries(data)
       .map(([id, p]) => ({ id, ...p }))
       .filter(p => {
-        if (seen.has(p.id)) return false;
+        if (seen.has(p.id)) {
+          console.warn(`Duplicate player ID detected: ${p.id}`); // Debug
+          return false;
+        }
         seen.add(p.id);
         return true;
       })
@@ -414,7 +487,7 @@ async function adminResetPlayer() {
   if (!isAdminUser) return toast("Admin only");
   const uid = prompt("UID to reset:");
   if (!uid) return;
-  await update(ref(db, `players/${uid}`), { coins: 0, taps: 0 });
+  await update(ref(db, `players/${uid}`), { coins: 0, taps: 0, dailyTaps: null });
   toast("Reset done");
 }
 
