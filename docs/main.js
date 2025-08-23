@@ -1,16 +1,8 @@
-// main.js — Optimized, Telegram-aware, Firebase-safe implementation with fixes for duplicates, persistence, and tap limits
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
+import { getDatabase, ref, set, get, push, update, remove, onValue, off } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-import {
-  getDatabase, ref, set, get, push, update, remove, onValue, off, runTransaction, query, orderByChild, equalTo
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
-import {
-  getAuth, signInAnonymously, onAuthStateChanged, setPersistence, browserLocalPersistence
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-
-/* ============
-   CONFIG — Replace with your own
-   ============ */
 const firebaseConfig = {
   apiKey: "AIzaSyDShZAo9lg-SxpQViCT27uXVni1UK7TGYU",
   authDomain: "dragon-92897.firebaseapp.com",
@@ -18,612 +10,722 @@ const firebaseConfig = {
   projectId: "dragon-92897",
   storageBucket: "dragon-92897.firebasestorage.app",
   messagingSenderId: "40351345340",
-  appId: "1:40351345340:web:632388a9b45d3c7905feb9"
+  appId: "1:40351345340:web:632388a9b45d3c7905feb9",
+  measurementId: "G-FXT1F3NPCD"
 };
 
-/* ============
-   Globals & helpers
-   ============ */
-let app, db, auth, currentUser = null;
-let isAdminUser = false;
-let listeners = { player: null, leaderboard: null, tasks: null };
-let tapLimit = 1000; // Daily tap limit as per HTML
-let currentTapsToday = 0;
+// Global o'zgaruvchilar
+let app, database, auth, currentUser = null;
+let leaderboardListener = null;
+let tasksListener = null;
+let playerDataListener = null;
+let taskSettingsListener = null;
+let processedTaskUpdates = new Set();
 
-const $ = id => document.getElementById(id);
-const safeText = (id, v) => { const e = $(id); if (e) e.textContent = String(v); };
-const safeHTML = (id, h) => { const e = $(id); if (e) e.innerHTML = h; };
-const esc = s => String(s ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;");
-const toast = m => { try { alert(m); } catch(e) { console.log(m); } };
-const getTodayKey = () => new Date().toISOString().split('T')[0]; // YYYY-MM-DD for daily limits
-
-/* ============
-   Init Firebase + auth persistence
-   ============ */
+// Firebase initializatsiyasi
 function initializeFirebase() {
-  if (getApps().length === 0) {
+  try {
     app = initializeApp(firebaseConfig);
-    console.log("✅ Firebase initialized");
-  } else {
-    app = getApps()[0];
-    console.log("ℹ️ Firebase already initialized");
-  }
-  db = getDatabase(app);
-  auth = getAuth(app);
-
-  // Keep auth persistent across reloads
-  setPersistence(auth, browserLocalPersistence)
-    .then(() => signInAnonymously(auth))
-    .catch(err => console.error("Auth/persistence error:", err));
-
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      currentUser = null;
-      detachAllListeners();
-      showAdmin(false);
-      safeText("firebaseStatus", "🔴 Firebase ulandi, lekin foydalanuvchi yo'q");
-      return;
-    }
-    currentUser = user;
-    safeText("firebaseStatus", "🟢 Firebase ulandi");
-
-    // Get Telegram user info if available
-    const tgUser = getTelegramUser();
-
-    // Find or create player based on Telegram ID or Firebase UID
-    const playerUid = await findOrCreatePlayer(user.uid, tgUser);
-
-    // Update currentUser.uid to the merged/found UID
-    currentUser.uid = playerUid;
-
-    // Check admin status
-    isAdminUser = await safeCheckAdmin(playerUid);
-    showAdmin(isAdminUser);
-
-    // Start real-time listeners
-    listenPlayer(playerUid);
-    startLeaderboardListener("coins");
-    startTasksListener();
-
-    // Load daily tap count
-    await loadDailyTaps(playerUid);
-
-    // If admin, attempt to read globalTaskSettings
-    if (isAdminUser) {
-      try { await readGlobalTaskSettings(); } catch(e) { console.warn("Global settings read failed:", e); }
-    }
-
-    // Update profile UI
-    updateProfileUI(playerUid, tgUser);
-  });
-}
-
-/* ============
-   Get Telegram user info
-   ============ */
-function getTelegramUser() {
-  try {
-    const tg = window.Telegram?.WebApp;
-    if (!tg) {
-      console.warn("⚠️ Telegram WebApp not available (running in browser).");
-      return null;
-    }
-    const u = tg.initDataUnsafe?.user ?? null;
-    if (!u) {
-      console.warn("⚠️ Telegram user info not provided inside WebApp.");
-      return null;
-    }
-    return {
-      id: u.id,
-      first_name: u.first_name || null,
-      last_name: u.last_name || null,
-      username: u.username || null
-    };
-  } catch (e) {
-    console.warn("Telegram user fetch error:", e);
-    return null;
-  }
-}
-
-/* ============
-   Find or create player based on Telegram ID or Firebase UID (to prevent duplicates)
-   ============ */
-async function findOrCreatePlayer(firebaseUid, tgUser) {
-  let playerUid = firebaseUid;
-  if (tgUser && tgUser.id) {
-    // Search for existing player with this Telegram ID
-    const tgIdQuery = query(ref(db, 'players'), orderByChild('telegram/id'), equalTo(tgUser.id));
-    const snap = await get(tgIdQuery);
-    if (snap.exists()) {
-      const existingPlayers = snap.val();
-      const existingUid = Object.keys(existingPlayers)[0]; // Take the first match
-      playerUid = existingUid;
-      // Merge if different Firebase UID
-      if (existingUid !== firebaseUid) {
-        await mergePlayers(firebaseUid, existingUid);
-      }
-    } else {
-      // Attach Telegram info to current player
-      await update(ref(db, `players/${playerUid}/telegram`), tgUser);
-    }
-  }
-  // Ensure player doc exists
-  await ensurePlayerDoc(playerUid);
-  return playerUid;
-}
-
-/* ============
-   Merge two players (transfer data from old to new and remove old)
-   ============ */
-async function mergePlayers(oldUid, newUid) {
-  try {
-    const oldRef = ref(db, `players/${oldUid}`);
-    const oldSnap = await get(oldRef);
-    if (oldSnap.exists()) {
-      const oldData = oldSnap.val();
-      const newRef = ref(db, `players/${newUid}`);
-      const newSnap = await get(newRef);
-      const newData = newSnap.val() || {};
-      await update(newRef, {
-        coins: Math.max(oldData.coins || 0, newData.coins || 0),
-        taps: Math.max(oldData.taps || 0, newData.taps || 0),
-        level: Math.max(oldData.level || 1, newData.level || 1),
-        referrals: Math.max(oldData.referrals || 0, newData.referrals || 0),
-        tasksCompleted: { ...oldData.tasksCompleted, ...newData.tasksCompleted },
-        dailyTaps: { ...oldData.dailyTaps, ...newData.dailyTaps }
+    getAnalytics(app);
+    database = getDatabase(app);
+    auth = getAuth(app);
+    
+    console.log("✅ Firebase muvaffaqiyatli ishga tushirildi");
+    
+    signInAnonymously(auth)
+      .then(() => {
+        console.log("✅ Anonymous login muvaffaqiyatli");
+      })
+      .catch((error) => {
+        console.error("❌ Login xatosi:", error.message);
+        showError("Tizimga kirish xatosi: " + error.message);
       });
-      await remove(oldRef);
-      console.log(`Merged player ${oldUid} into ${newUid}`);
-    }
-  } catch (e) {
-    console.error("Merge players error:", e);
-    toast("Foydalanuvchilarni birlashtirishda xato: " + (e.message || e));
-  }
-}
 
-/* ============
-   Ensure player node exists (no overwrite)
-   ============ */
-async function ensurePlayerDoc(uid) {
-  const pRef = ref(db, `players/${uid}`);
-  const snap = await get(pRef);
-  if (!snap.exists()) {
-    await set(pRef, {
-      name: "Dragon Miner",
-      coins: 0,
-      taps: 0,
-      level: 1,
-      referrals: 0,
-      createdAt: Date.now(),
-      dailyTaps: {}
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        console.log("👤 Foydalanuvchi tizimga kirdi:", user.uid);
+        currentUser = user;
+        initializePlayer(user);
+        checkAdminStatus(user.uid); // Admin holatini tekshirish
+      } else {
+        console.log("👤 Foydalanuvchi tizimdan chiqdi");
+        currentUser = null;
+        clearAllListeners();
+      }
     });
+    
+  } catch (error) {
+    console.error("❌ Firebase initializatsiya xatosi:", error);
+    showError("Firebase ulanish xatosi: " + error.message);
   }
 }
 
-/* ============
-   Load daily taps for limit
-   ============ */
-async function loadDailyTaps(uid) {
-  const today = getTodayKey();
-  const tapsRef = ref(db, `players/${uid}/dailyTaps/${today}`);
-  const snap = await get(tapsRef);
-  currentTapsToday = snap.val() || 0;
-  safeText("energyStatus", `${tapLimit - currentTapsToday}/${tapLimit}`);
-}
-
-/* ============
-   Safe check admin
-   ============ */
-async function safeCheckAdmin(uid) {
+// Admin holatini tekshirish
+async function checkAdminStatus(uid) {
   try {
-    const snap = await get(ref(db, `admins/${uid}`));
-    return snap.exists() && snap.val() === true;
-  } catch (e) {
-    console.warn("safeCheckAdmin error:", e);
+    const adminRef = ref(database, `admins/${uid}`);
+    const snapshot = await get(adminRef);
+    if (snapshot.exists() && snapshot.val() === true) {
+      console.log("✅ Foydalanuvchi admin sifatida tasdiqlandi:", uid);
+      return true;
+    } else {
+      console.warn("⚠️ Foydalanuvchi admin emas:", uid);
+      return false;
+    }
+  } catch (error) {
+    console.error("❌ Admin holatini tekshirishda xato:", error);
+    showError("Admin huquqlarini tekshirishda xato");
     return false;
   }
 }
 
-/* ============
-   UI: show/hide admin section
-   ============ */
-function showAdmin(flag) {
-  const adminEl = $("adminSection");
-  if (adminEl) adminEl.style.display = flag ? "" : "none";
-}
-
-/* ============
-   Player real-time listener (balance + taps)
-   ============ */
-function listenPlayer(uid) {
-  if (listeners.player) off(listeners.player);
-  const r = ref(db, `players/${uid}`);
-  listeners.player = onValue(r, snap => {
-    if (!snap.exists()) return;
-    const data = snap.val() || {};
-    safeText("balance", data.coins ?? 0);
-    safeText("totalTaps", data.taps ?? 0);
-    safeText("level", data.level ?? 1);
-    safeText("referrals", data.referrals ?? 0);
-    localStorage.setItem("coins", String(data.coins ?? 0));
-    localStorage.setItem("taps", String(data.taps ?? 0));
-    localStorage.setItem("level", String(data.level ?? 1));
-    localStorage.setItem("referrals", String(data.referrals ?? 0));
-    // Update daily taps
-    const today = getTodayKey();
-    currentTapsToday = data.dailyTaps?.[today] || 0;
-    safeText("energyStatus", `${tapLimit - currentTapsToday}/${tapLimit}`);
-    // Update profile UI
-    safeText("playerName", data.name || "Dragon Miner");
-    safeText("playerId", uid);
-    safeText("joinDate", new Date(data.createdAt).toLocaleDateString());
-  }, err => {
-    console.error("player listener error:", err);
-    toast("Foydalanuvchi ma'lumotlarini yuklashda xato: " + (err.message || err));
-  });
-}
-
-/* ============
-   Tap (with daily limit and transaction)
-   ============ */
-async function handleTap() {
-  if (!currentUser) return toast("Iltimos, tizimga kirishni kuting");
-  if (currentTapsToday >= tapLimit) {
-    safeText("energyWarning", "⚠️ Energiya bo'sh! Energiya to'lishi uchun kutib turing.");
-    return toast("Kunlik bosish limiti tugadi!");
-  }
-
-  const basePath = `players/${currentUser.uid}`;
-  const coinsRef = ref(db, `${basePath}/coins`);
-  const tapsRef = ref(db, `${basePath}/taps`);
-  const dailyTapsRef = ref(db, `${basePath}/dailyTaps/${getTodayKey()}`);
+// Foydalanuvchi ma'lumotlarini yaratish/yangilash
+async function initializePlayer(user) {
   try {
-    await runTransaction(coinsRef, cur => (cur || 0) + 1);
-    await runTransaction(tapsRef, cur => (cur || 0) + 1);
-    await runTransaction(dailyTapsRef, cur => (cur || 0) + 1);
-    currentTapsToday++;
-    safeText("energyStatus", `${tapLimit - currentTapsToday}/${tapLimit}`);
-    safeText("energyWarning", "");
-  } catch (e) {
-    console.error("tap transaction failed:", e);
-    toast("Bosishda xato: " + (e.message || e));
-  }
-}
-
-/* ============
-   Tasks: real-time listener
-   ============ */
-function startTasksListener() {
-  if (listeners.tasks) off(listeners.tasks);
-  const r = ref(db, "globalCustomTasks");
-  listeners.tasks = onValue(r, snap => {
-    const target = "customTasksList";
-    if (!snap.exists()) {
-      console.log("No tasks found in globalCustomTasks");
-      return safeHTML(target, "<p style='color:#999'>Vazifalar yo'q</p>");
-    }
-    const tasks = snap.val() || {};
-    console.log("Tasks data:", tasks); // Debug
-    let html = "";
-    Object.entries(tasks).forEach(([id, t]) => {
-      if (!t || t.status !== "active") return;
-      html += `
-        <div class="task" style="background:#222;padding:10px;border-radius:8px;margin:8px 0">
-          <div style="font-weight:700">${esc(t.name)}</div>
-          <div style="opacity:.8">Mukofot: ${Number(t.reward)||0} 🪙</div>
-          <div style="margin-top:8px"><button data-task-id="${id}" data-reward="${Number(t.reward)||0}" class="btn-complete">Bajarish</button></div>
-        </div>
-      `;
-    });
-    safeHTML(target, html || "<p style='color:#999'>Vazifalar yo'q</p>");
-
-    const wrap = $(target);
-    if (wrap) {
-      wrap.querySelectorAll(".btn-complete").forEach(btn => {
-        btn.onclick = async () => {
-          const id = btn.getAttribute("data-task-id");
-          const reward = Number(btn.getAttribute("data-reward")) || 0;
-          await completeTask(id, reward);
-        };
-      });
-    }
-  }, err => {
-    console.error("tasks listener error:", err);
-    toast("Vazifalarni yuklashda xato: " + (err.message || err));
-  });
-}
-
-/* ============
-   Complete task (with one-time completion check)
-   ============ */
-async function completeTask(taskId, reward) {
-  if (!currentUser) return toast("Iltimos, tizimga kirishni kuting");
-  try {
-    const completedRef = ref(db, `players/${currentUser.uid}/tasksCompleted/${taskId}`);
-    const snap = await get(completedRef);
-    if (snap.exists()) return toast("Vazifa allaqachon bajarilgan");
+    const playerRef = ref(database, "players/" + user.uid);
+    const snapshot = await get(playerRef);
     
-    const coinsRef = ref(db, `players/${currentUser.uid}/coins`);
-    await runTransaction(coinsRef, cur => (cur || 0) + (Number(reward) || 0));
-    await set(completedRef, true); // Mark task as completed
-    toast(`Vazifa bajarildi: +${reward} 🪙`);
-    // Update completed tasks count
-    const tasksSnap = await get(ref(db, `players/${currentUser.uid}/tasksCompleted`));
-    safeText("completedTasks", Object.keys(tasksSnap.val() || {}).length);
-  } catch (e) {
-    console.error("completeTask error:", e);
-    toast("Vazifani bajarishda xato: " + (e.message || e));
-  }
-}
-
-/* ============
-   Admin actions
-   ============ */
-async function adminAddTask() {
-  if (!isAdminUser) return toast("Faqat adminlar uchun");
-  const name = prompt("Vazifa nomi:");
-  const reward = Number(prompt("Mukofot (tangalar):"));
-  if (!name || !Number.isFinite(reward) || reward <= 0 || reward > 50000) return toast("Noto'g'ri vazifa yoki mukofot");
-  try {
-    const newRef = push(ref(db, "globalCustomTasks"));
-    await set(newRef, {
-      name,
-      reward,
-      status: "active",
-      createdAt: Date.now(),
-      createdBy: currentUser.uid
-    });
-    toast("Vazifa qo'shildi");
-  } catch (e) {
-    console.error("adminAddTask error:", e);
-    toast("Vazifa qo'shishda xato: " + (e.message || e));
-  }
-}
-
-async function adminDeleteTask() {
-  if (!isAdminUser) return toast("Faqat adminlar uchun");
-  const id = prompt("O'chiriladigan vazifa ID si:");
-  if (!id) return;
-  try {
-    await remove(ref(db, `globalCustomTasks/${id}`));
-    toast("Vazifa o'chirildi");
-  } catch (e) {
-    console.error("adminDeleteTask error:", e);
-    toast("O'chirishda xato: " + (e.message || e));
-  }
-}
-
-async function adminEditTask() {
-  if (!isAdminUser) return toast("Faqat adminlar uchun");
-  const id = prompt("Tahrirlanadigan vazifa ID si:");
-  if (!id) return;
-  try {
-    const s = await get(ref(db, `globalCustomTasks/${id}`));
-    if (!s.exists()) return toast("Vazifa topilmadi");
-    const cur = s.val();
-    const name = prompt("Yangi nom (o'zgarmaslik uchun bo'sh qoldiring)", cur.name || "");
-    const rewardStr = prompt("Yangi mukofot (o'zgarmaslik uchun bo'sh qoldiring)", String(cur.reward || ""));
-    const status = prompt("Yangi holat (active/inactive/completed)", cur.status || "active");
-    const upd = { updatedAt: Date.now() };
-    if (name) upd.name = name;
-    if (rewardStr && Number.isFinite(Number(rewardStr)) && Number(rewardStr) > 0 && Number(rewardStr) <= 50000) upd.reward = Number(rewardStr);
-    if (status && ["active", "inactive", "completed"].includes(status)) upd.status = status;
-    await update(ref(db, `globalCustomTasks/${id}`), upd);
-    toast("Vazifa yangilandi");
-  } catch (e) {
-    console.error("adminEditTask error:", e);
-    toast("Tahrirlashda xato: " + (e.message || e));
-  }
-}
-
-/* ============
-   Leaderboard (optimized to prevent duplicates)
-   ============ */
-function startLeaderboardListener(type = "coins") {
-  if (listeners.leaderboard) off(listeners.leaderboard);
-  const r = ref(db, "players");
-  listeners.leaderboard = onValue(r, snap => {
-    const target = "leaderboardList";
-    if (!snap.exists()) return safeHTML(target, "<p style='color:#999'>O'yinchilar yo'q</p>");
-    const data = snap.val() || {};
-    console.log("Leaderboard data:", data); // Debug
-    const seen = new Set();
-    const players = Object.entries(data)
-      .map(([id, p]) => ({ id, ...p }))
-      .filter(p => {
-        const key = p.telegram?.id || p.id;
-        if (seen.has(key)) {
-          console.warn(`Duplicate player detected: ${key}`); // Debug
-          return false;
-        }
-        seen.add(key);
-        return true;
-      })
-      .sort((a, b) => (b[type] || 0) - (a[type] || 0))
-      .slice(0, 50);
-
-    const html = players.map((p, i) => `
-      <div style="padding:8px;border-bottom:1px solid #333;${p.id === currentUser?.uid ? 'background:#1f1f1f;color:#ffd700;' : ''}">
-        #${i+1} — ${esc(p.name || "O'yinchi")} — ${type === "coins" ? (p.coins||0) + " 🪙" : (p.referrals||0) + " 👥"}
-      </div>
-    `).join("");
-    safeHTML(target, html || "<p style='color:#999'>O'yinchilar yo'q</p>");
-
-    // Update player's rank
-    const rank = players.findIndex(p => p.id === currentUser?.uid) + 1;
-    safeText("playerRank", rank > 0 ? `#${rank}` : "#-");
-  }, err => {
-    console.error("leaderboard listen error:", err);
-    toast("Reyting jadvalini yuklashda xato: " + (err.message || err));
-  });
-}
-
-/* ============
-   Read globalTaskSettings (admin only)
-   ============ */
-async function readGlobalTaskSettings() {
-  if (!isAdminUser) return; // Skip if not admin to avoid permission denied
-  try {
-    const snap = await get(ref(db, "globalTaskSettings"));
-    if (snap.exists()) console.log("GlobalTaskSettings:", snap.val());
-  } catch (e) {
-    console.error("readGlobalTaskSettings error:", e);
-    if (e.code === "PERMISSION_DENIED") {
-      console.warn("Skipping globalTaskSettings read: Not an admin");
+    if (!snapshot.exists()) {
+      await set(playerRef, { 
+        name: "Dragon Miner", 
+        coins: 0, 
+        level: 1, 
+        referrals: 0,
+        createdAt: Date.now()
+      });
+      console.log("✅ Yangi player yaratildi");
     } else {
-      toast("Global vazifa sozlamalarini yuklashda xato: " + (e.message || e));
+      console.log("✅ Mavjud player topildi");
     }
+    
+    setupPlayerDataListener(user.uid);
+    
+  } catch (error) {
+    console.error("❌ Player initializatsiya xatosi:", error);
+    showError("Foydalanuvchi ma'lumotlarini yuklashda xato");
   }
 }
 
-/* ============
-   Update profile UI
-   ============ */
-async function updateProfileUI(uid, tgUser) {
-  try {
-    const snap = await get(ref(db, `players/${uid}`));
-    if (!snap.exists()) return;
-    const data = snap.val();
-    safeText("playerName", data.name || "Dragon Miner");
-    safeText("playerId", uid);
-    safeText("joinDate", new Date(data.createdAt).toLocaleDateString());
-    safeText("profileCoins", data.coins || 0);
-    safeText("profileLevel", data.level || 1);
-    safeText("profileTaps", data.taps || 0);
-    safeText("profileReferrals", data.referrals || 0);
-    safeText("tapPower", 1); // As per HTML
-    safeText("energyLimit", tapLimit);
-    safeText("completedTasks", Object.keys(data.tasksCompleted || {}).length);
-    safeText("referralIncome", data.referralIncome || 0);
-  } catch (e) {
-    console.error("updateProfileUI error:", e);
-    toast("Profilni yangilashda xato: " + (e.message || e));
+// Real-time player data listener
+function setupPlayerDataListener(userId) {
+  if (playerDataListener) {
+    off(playerDataListener);
   }
-}
-
-/* ============
-   Referral system
-   ============ */
-async function handleReferral(referralId) {
-  if (!currentUser) return;
-  if (referralId && referralId !== currentUser.uid) {
-    const referrerRef = ref(db, `players/${referralId}`);
-    const snap = await get(referrerRef);
-    if (snap.exists()) {
-      await runTransaction(ref(db, `players/${referralId}/referrals`), cur => (cur || 0) + 1);
-      await runTransaction(ref(db, `players/${referralId}/coins`), cur => (cur || 0) + 500);
-      await update(ref(db, `players/${currentUser.uid}`), { referredBy: referralId });
-      toast("Referral qo'shildi: +500 DRC refererga!");
+  
+  const playerRef = ref(database, "players/" + userId);
+  playerDataListener = onValue(playerRef, (snapshot) => {
+    if (snapshot.exists()) {
+      const playerData = snapshot.val();
+      updatePlayerDisplayUI(playerData);
+      console.log("🔄 Player data real-time yangilandi:", playerData.coins);
     }
-  }
-}
-
-/* ============
-   Detach listeners
-   ============ */
-function detachAllListeners() {
-  Object.values(listeners).forEach(l => { if (l) off(l); });
-  listeners = { player: null, leaderboard: null, tasks: null };
-}
-
-/* ============
-   UI binding + start
-   ============ */
-function bindUI() {
-  const tapBtn = $("tapButton");
-  if (tapBtn) tapBtn.addEventListener("click", handleTap);
-
-  const coinsBtn = $("btn-leaderboard-coins");
-  const refBtn = $("btn-leaderboard-referrals");
-  if (coinsBtn) coinsBtn.addEventListener("click", () => startLeaderboardListener("coins"));
-  if (refBtn) refBtn.addEventListener("click", () => startLeaderboardListener("referrals"));
-
-  // Admin section delegation
-  const adminSec = $("adminSection");
-  if (adminSec) {
-    adminSec.addEventListener("click", async (e) => {
-      const btn = e.target.closest("[data-action]");
-      if (!btn) return;
-      const action = btn.dataset.action;
-      switch(action) {
-        case "addTask": return adminAddTask();
-        case "delTask": return adminDeleteTask();
-        case "editTask": return adminEditTask();
-        case "addCoins": return adminAddCoins();
-        case "resetPlayer": return adminResetPlayer();
-        case "viewTasks": return adminViewTasks();
-      }
-    });
-  }
-
-  // Copy referral link
-  const copyLinkBtn = $("copyLink");
-  if (copyLinkBtn) {
-    copyLinkBtn.addEventListener("click", () => {
-      const link = `https://t.me/Dragon_coin_money_bot?start=ref_${currentUser?.uid || '123456'}`;
-      navigator.clipboard.writeText(link).then(() => toast("Link nusxalandi!"));
-    });
-  }
-
-  // Restore cached UI quickly
-  const cachedCoins = localStorage.getItem("coins");
-  const cachedTaps = localStorage.getItem("taps");
-  if (cachedCoins) safeText("balance", cachedCoins);
-  if (cachedTaps) safeText("totalTaps", cachedTaps);
-}
-
-/* ============
-   Extra admin helpers
-   ============ */
-async function adminAddCoins() {
-  if (!isAdminUser) return toast("Faqat adminlar uchun");
-  const uid = prompt("Foydalanuvchi UID si:");
-  const amount = Number(prompt("Miqdori:"));
-  if (!uid || !Number.isFinite(amount)) return toast("Noto'g'ri ma'lumot");
-  const r = ref(db, `players/${uid}/coins`);
-  await runTransaction(r, cur => (cur || 0) + amount);
-  toast("Tangalar qo'shildi");
-}
-
-async function adminResetPlayer() {
-  if (!isAdminUser) return toast("Faqat adminlar uchun");
-  const uid = prompt("Qayta boshlanadigan UID:");
-  if (!uid) return;
-  await update(ref(db, `players/${uid}`), { coins: 0, taps: 0, dailyTaps: null });
-  toast("Foydalanuvchi qayta boshlandi");
-}
-
-async function adminViewTasks() {
-  if (!isAdminUser) return toast("Faqat adminlar uchun");
-  const s = await get(ref(db, "globalCustomTasks"));
-  if (!s.exists()) return safeHTML("customTasksList", "<p>Vazifalar yo'q</p>");
-  const tasks = s.val() || {};
-  let html = "";
-  Object.entries(tasks).forEach(([id, t]) => {
-    html += `<div><b>${esc(t.name)}</b> — ${Number(t.reward)||0} 🪙 — <small>${esc(t.status)}</small><br/><code>${id}</code></div><hr/>`;
+  }, (error) => {
+    console.error("❌ Player data listener xatosi:", error);
+    showError("Ma'lumotlar yangilanishida xato");
   });
-  safeHTML("customTasksList", html);
+  
+  console.log("✅ Player data real-time listener o'rnatildi");
 }
 
-/* ============
-   Start on DOM ready
-   ============ */
-document.addEventListener("DOMContentLoaded", () => {
-  bindUI();
-  initializeFirebase();
+// UI ni yangilash
+function updatePlayerDisplayUI(playerData) {
+  try {
+    const coinsElement = document.getElementById("playerCoins");
+    const levelElement = document.getElementById("playerLevel");
+    const referralsElement = document.getElementById("playerReferrals");
+    
+    if (coinsElement) coinsElement.textContent = playerData.coins || 0;
+    if (levelElement) levelElement.textContent = playerData.level || 1;
+    if (referralsElement) referralsElement.textContent = playerData.referrals || 0;
+    
+    console.log("🔄 Player UI yangilandi:", playerData.coins);
+  } catch (error) {
+    console.error("❌ Player UI yangilashda xato:", error);
+  }
+}
 
-  // Check for referral in URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const refId = urlParams.get('start')?.replace('ref_', '');
-  if (refId) handleReferral(refId);
+// Barcha listenerlarni tozalash
+function clearAllListeners() {
+  if (leaderboardListener) {
+    off(leaderboardListener);
+    leaderboardListener = null;
+    console.log("🔇 Leaderboard listener o'chirildi");
+  }
+  
+  if (tasksListener) {
+    off(tasksListener);
+    tasksListener = null;
+    console.log("🔇 Tasks listener o'chirildi");
+  }
+  
+  if (playerDataListener) {
+    off(playerDataListener);
+    playerDataListener = null;
+    console.log("🔇 Player data listener o'chirildi");
+  }
+  
+  if (taskSettingsListener) {
+    off(taskSettingsListener);
+    taskSettingsListener = null;
+    console.log("🔇 Task settings listener o'chirildi");
+  }
+  
+  processedTaskUpdates.clear();
+}
+
+// Xato xabarini ko'rsatish
+function showError(message) {
+  let errorDiv = document.getElementById("errorMessage");
+  if (!errorDiv) {
+    errorDiv = document.createElement("div");
+    errorDiv.id = "errorMessage";
+    errorDiv.style.cssText = `
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+      background: #ff4444; color: white; padding: 10px 20px;
+      border-radius: 5px; z-index: 1000; display: none;
+    `;
+    document.body.appendChild(errorDiv);
+  }
+  
+  errorDiv.textContent = message;
+  errorDiv.style.display = "block";
+  
+  setTimeout(() => {
+    errorDiv.style.display = "none";
+  }, 5000);
+}
+
+// Section ko'rsatish
+function showSection(id) {
+  try {
+    document.querySelectorAll(".section").forEach(sec => {
+      sec.style.display = "none";
+    });
+    
+    const targetSection = document.getElementById(id + "Section");
+    if (targetSection) {
+      targetSection.style.display = "block";
+      console.log("✅ Section ko'rsatildi:", id);
+    } else {
+      console.error("❌ Section topilmadi:", id + "Section");
+    }
+  } catch (error) {
+    console.error("❌ Section ko'rsatishda xato:", error);
+  }
+}
+
+// Coin tap funksiyasi
+async function tapCoin() {
+  if (!currentUser) {
+    showError("Iltimos, tizimga kirish kutilsin");
+    return;
+  }
+  
+  try {
+    const playerRef = ref(database, "players/" + currentUser.uid);
+    const snapshot = await get(playerRef);
+    
+    if (snapshot.exists()) {
+      const playerData = snapshot.val();
+      const newCoins = (playerData.coins || 0) + 1;
+      
+      await update(playerRef, { coins: newCoins });
+      
+      const tapButton = document.getElementById("tapButton");
+      if (tapButton) {
+        tapButton.style.transform = "scale(0.95)";
+        setTimeout(() => {
+          tapButton.style.transform = "scale(1)";
+        }, 100);
+      }
+      
+      console.log("🐉 Coin tapped! Yangi coins:", newCoins);
+    }
+  } catch (error) {
+    console.error("❌ Coin tap xatosi:", error);
+    showError("Coin tap xatosi");
+  }
+}
+
+// Leaderboard yuklash funksiyasi
+function showLeaderboard(type = "coins") {
+  try {
+    console.log("🔄 Real-time leaderboard o'rnatilmoqda:", type);
+    
+    if (leaderboardListener) {
+      off(leaderboardListener);
+    }
+    
+    let list = document.getElementById("leaderboardList");
+    if (!list) {
+      const leaderboardSection = document.getElementById("leaderboardSection");
+      if (leaderboardSection) {
+        const listDiv = document.createElement("div");
+        listDiv.id = "leaderboardList";
+        listDiv.style.cssText = `
+          max-height: 400px; 
+          overflow-y: auto; 
+          border: 1px solid #333; 
+          padding: 10px; 
+          margin: 10px 0; 
+          background: #1a1a1a;
+          border-radius: 8px;
+        `;
+        leaderboardSection.appendChild(listDiv);
+        list = listDiv;
+      }
+    }
+    
+    if (!list) {
+      console.error("❌ Leaderboard list elementi yaratilmadi");
+      return;
+    }
+    
+    list.innerHTML = "<div style='text-align:center; color:#666; padding:20px;'>🔄 Real-time ma'lumotlar yuklanmoqda...</div>";
+    
+    const playersRef = ref(database, "players");
+    leaderboardListener = onValue(playersRef, (snapshot) => {
+      try {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          let players = Object.keys(data).map(key => ({
+            id: key,
+            ...data[key]
+          }));
+          
+          if (type === "coins") {
+            players.sort((a, b) => (b.coins || 0) - (a.coins || 0));
+          } else if (type === "referrals") {
+            players.sort((a, b) => (b.referrals || 0) - (a.referrals || 0));
+          }
+          
+          let userRank = "-";
+          if (currentUser) {
+            const userIndex = players.findIndex(p => p.id === currentUser.uid);
+            if (userIndex !== -1) {
+              userRank = userIndex + 1;
+            }
+          }
+          
+          players = players.slice(0, 50);
+          
+          list.innerHTML = `
+            <div style='text-align:center; color:#0f0; font-size:12px; margin-bottom:10px;'>
+              🟢 Real-time yangilanmoqda
+            </div>
+            ${players.map((p, i) => {
+              const isCurrentUser = currentUser && p.id === currentUser.uid;
+              const backgroundColor = isCurrentUser ? "#2a2a2a" : "transparent";
+              
+              return `
+                <div style='
+                  padding: 12px; 
+                  border-bottom: 1px solid #333; 
+                  color: #fff;
+                  background: ${backgroundColor};
+                  border-radius: 4px;
+                  margin-bottom: 2px;
+                  transition: background-color 0.3s ease;
+                '>
+                  <span style='color: #ffd700; font-weight: bold;'>#${i+1}</span> - 
+                  <span style='color: #00ff00;'>${p.name || 'Dragon Miner'}</span> 
+                  <span style='color: #00bfff; float: right;'>
+                    ${type === "coins" ? (p.coins || 0) + " 🪙" : (p.referrals || 0) + " 👥"}
+                  </span>
+                  ${isCurrentUser ? '<span style="color: #ff6b6b; font-size: 12px;"> (Siz)</span>' : ''}
+                </div>
+              `;
+            }).join("")}
+          `;
+          
+          const rankElement = document.getElementById("playerRank");
+          if (rankElement) {
+            rankElement.textContent = `#${userRank}`;
+          } else {
+            console.error("❌ playerRank elementi topilmadi");
+          }
+          
+          // Tugmalar sinfini yangilash
+          const btnCoins = document.getElementById("coinsLeaderboard");
+          const btnReferrals = document.getElementById("referralsLeaderboard");
+          if (btnCoins && btnReferrals) {
+            btnCoins.classList.toggle("active", type === "coins");
+            btnReferrals.classList.toggle("active", type === "referrals");
+          }
+          
+          console.log("✅ Real-time leaderboard yangilandi, players:", players.length, "Sizning o'rningiz:", userRank);
+        } else {
+          list.innerHTML = "<div style='padding:20px; text-align:center; color:#666;'>Hozircha ma'lumot yo'q</div>";
+          const rankElement = document.getElementById("playerRank");
+          if (rankElement) {
+            rankElement.textContent = "#-";
+          }
+        }
+      } catch (error) {
+        console.error("❌ Leaderboard listener ichida xato:", error);
+        list.innerHTML = "<div style='padding:20px; text-align:center; color:red;'>Ma'lumotlarni yuklashda xato</div>";
+        showError("Reyting jadvalini yuklashda xato");
+      }
+    }, (error) => {
+      console.error("❌ Leaderboard listener xatosi:", error);
+      list.innerHTML = "<div style='padding:20px; text-align:center; color:red;'>Ma'lumotlarni yuklashda xato</div>";
+      showError("Reyting jadvalini yuklashda xato");
+    });
+  } catch (error) {
+    console.error("❌ Leaderboard o'rnatishda xato:", error);
+    showError("Reyting jadvalini yuklashda xato");
+  }
+}
+
+// Vazifalarni ko'rsatish
+async function displayTasks() {
+  try {
+    const tasksList = document.getElementById("tasksList");
+    if (!tasksList) {
+      console.error("❌ tasksList elementi topilmadi");
+      showError("Vazifalar ro'yxati elementi topilmadi");
+      return;
+    }
+    
+    if (tasksListener) {
+      off(tasksListener);
+    }
+    
+    tasksList.innerHTML = "<div style='text-align:center; color:#666; padding:20px;'>🔄 Vazifalar yuklanmoqda...</div>";
+    
+    const tasksRef = ref(database, "globalCustomTasks");
+    tasksListener = onValue(tasksRef, (snapshot) => {
+      try {
+        if (snapshot.exists()) {
+          const tasks = snapshot.val();
+          const taskCount = Object.keys(tasks).length;
+          const currentTime = Date.now();
+          
+          tasksList.innerHTML = `
+            <div style='text-align:center; color:#0f0; font-size:12px; margin-bottom:10px;'>
+              🟢 ${taskCount} ta vazifa (Real-time)
+            </div>
+            ${Object.keys(tasks).map(key => {
+              const task = tasks[key];
+              const createdTime = task.createdAt || 0;
+              const isNew = (currentTime - createdTime) < 10000;
+              
+              return `
+                <div style='
+                  padding:12px; 
+                  border-bottom:1px solid #444; 
+                  display:flex; 
+                  justify-content:space-between;
+                  align-items:center;
+                  color: #fff;
+                  background: ${isNew ? '#1e4d2b' : 'transparent'};
+                  border-radius: 4px;
+                  margin-bottom: 4px;
+                  transition: background-color 1s ease;
+                  ${isNew ? 'border-left: 3px solid #00ff00;' : ''}
+                '>
+                  <div>
+                    <div style="display:flex; align-items:center;">
+                      <span>🎯 ${task.name}</span>
+                      ${isNew ? '<span style="color:#0f0; font-size:10px; margin-left:8px; animation: pulse 1s infinite;">YANGI!</span>' : ''}
+                    </div>
+                    <div style="font-size:12px; color:#00bfff; margin-top:4px;">
+                      💰 ${task.reward || 100} coin mukofot
+                    </div>
+                    ${task.createdAt ? `<div style="font-size:10px; color:#666; margin-top:2px;">
+                      📅 ${new Date(task.createdAt).toLocaleString()}
+                    </div>` : ''}
+                  </div>
+                  <div style="text-align:right;">
+                    <div style='font-size:10px; color:#666;'>ID: ${key.substring(0, 8)}...</div>
+                    ${task.createdBy ? `<div style='font-size:9px; color:#888; margin-top:2px;'>
+                      👤 ${task.createdBy.substring(0, 8)}...
+                    </div>` : ''}
+                  </div>
+                </div>
+              `;
+            }).join("")}
+          `;
+          
+          console.log("✅ Vazifalar yangilandi:", taskCount);
+          
+          setTimeout(() => {
+            const newItems = tasksList.querySelectorAll('[style*="1e4d2b"]');
+            newItems.forEach(item => {
+              item.style.background = 'transparent';
+              item.style.borderLeft = 'none';
+            });
+          }, 10000);
+          
+        } else {
+          tasksList.innerHTML = `
+            <div style='text-align:center; color:#0f0; font-size:12px; margin-bottom:10px;'>
+              🟢 Real-time aktiv
+            </div>
+            <div style='text-align:center; color:#666; padding:20px;'>Hozircha vazifalar yo'q</div>
+          `;
+        }
+      } catch (error) {
+        console.error("❌ Tasks listener ichida xato:", error);
+        tasksList.innerHTML = "<div style='text-align:center; color:red; padding:10px;'>Xato yuz berdi</div>";
+        showError("Vazifalarni yuklashda xato");
+      }
+    }, (error) => {
+      console.error("❌ Tasks listener xatosi:", error);
+      tasksList.innerHTML = "<div style='text-align:center; color:red; padding:10px;'>Ma'lumotlarni yuklashda xato</div>";
+      showError("Vazifalarni yuklashda xato");
+    });
+    
+  } catch (error) {
+    console.error("❌ Vazifalar listenerini o'rnatishda xato:", error);
+    showError("Vazifalarni ko'rsatishda xato");
+  }
+}
+
+// Admin actions
+async function adminAction(action) {
+  if (!currentUser) {
+    showError("Admin funksiyalari uchun tizimga kirish kerak");
+    return;
+  }
+
+  // Admin huquqlarini tekshirish
+  const isAdmin = await checkAdminStatus(currentUser.uid);
+  if (!isAdmin) {
+    showError("Sizda admin huquqlari yo'q");
+    return;
+  }
+
+  try {
+    switch(action) {
+      case "addCoins":
+        const targetId = prompt("O'yinchi UID kiriting:");
+        const amount = parseInt(prompt("Nechta coin qo'shilsin?"));
+        
+        if (targetId && !isNaN(amount) && amount > 0) {
+          const playerRef = ref(database, "players/" + targetId);
+          const snap = await get(playerRef);
+          
+          if (snap.exists()) {
+            const data = snap.val();
+            const newCoins = (data.coins || 0) + amount;
+            await update(playerRef, { coins: newCoins });
+            showError("💰 " + amount + " coin qo'shildi!");
+          } else {
+            showError("❌ O'yinchi topilmadi!");
+          }
+        } else {
+          showError("❌ Noto'g'ri ma'lumot kiritildi");
+        }
+        break;
+
+      case "resetPlayer":
+        const resetId = prompt("O'yinchi UID kiriting:");
+        if (resetId && confirm("Rostdan ham bu o'yinchini qayta tiklaysizmi?")) {
+          const resetRef = ref(database, "players/" + resetId);
+          await set(resetRef, { 
+            name: "Dragon Miner", 
+            coins: 0, 
+            level: 1, 
+            referrals: 0,
+            resetAt: Date.now()
+          });
+          showError("🔄 O'yinchi qayta tiklandi!");
+        }
+        break;
+
+      case "addTask":
+        const taskName = prompt("Yangi vazifa nomi:");
+        const taskReward = parseInt(prompt("Vazifa mukofoti (coin):") || "100");
+        
+        if (taskName && !isNaN(taskReward) && taskReward > 0) {
+          const tasksRef = ref(database, "globalCustomTasks");
+          await push(tasksRef, { 
+            name: taskName, 
+            reward: taskReward,
+            createdAt: Date.now(),
+            createdBy: currentUser.uid,
+            status: "active"
+          });
+          
+          const successMsg = document.createElement('div');
+          successMsg.style.cssText = `
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #00ff00, #00aa00); 
+            color: white; padding: 15px 25px; border-radius: 10px; 
+            z-index: 10000; font-size: 16px; font-weight: bold;
+            box-shadow: 0 4px 20px rgba(0,255,0,0.4);
+            animation: successPulse 0.6s ease-in-out;
+          `;
+          successMsg.innerHTML = "✅ Vazifa muvaffaqiyatli qo'shildi!<br>🔄 Real-time yangilanmoqda...";
+          
+          document.body.appendChild(successMsg);
+          setTimeout(() => {
+            successMsg.remove();
+          }, 3000);
+          
+          console.log("➕ Yangi vazifa qo'shildi:", taskName);
+        } else {
+          showError("❌ Noto'g'ri ma'lumot kiritildi");
+        }
+        break;
+
+      case "removeTask":
+        const removeId = prompt("O'chiriladigan vazifa ID (to'liq):");
+        if (removeId && confirm("Rostdan ham bu vazifani o'chirasizmi?")) {
+          const taskRef = ref(database, "globalCustomTasks/" + removeId);
+          const snap = await get(taskRef);
+          
+          if (snap.exists()) {
+            await remove(taskRef);
+            const removeMsg = document.createElement('div');
+            removeMsg.style.cssText = `
+              position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+              background: linear-gradient(45deg, #ff4444, #aa0000); 
+              color: white; padding: 15px 25px; border-radius: 10px; 
+              z-index: 10000; font-size: 16px; font-weight: bold;
+              box-shadow: 0 4px 20px rgba(255,68,68,0.4);
+            `;
+            removeMsg.innerHTML = "🗑️ Vazifa o'chirildi!<br>🔄 Real-time yangilanmoqda...";
+            
+            document.body.appendChild(removeMsg);
+            setTimeout(() => {
+              removeMsg.remove();
+            }, 3000);
+            
+            console.log("➖ Vazifa o'chirildi:", removeId);
+          } else {
+            showError("❌ Vazifa topilmadi!");
+          }
+        }
+        break;
+
+      case "viewTasks":
+        await displayTasks();
+        break;
+
+      default:
+        console.warn("⚠️ Noma'lum action:", action);
+        showError("Noma'lum admin harakati");
+    }
+  } catch (error) {
+    console.error("❌ Admin action xatosi:", error);
+    showError("Xato yuz berdi: " + error.message);
+  }
+}
+
+// Event listenerlarni o'rnatish
+function setupEventListeners() {
+  console.log("🔗 Event listenerlar o'rnatilmoqda...");
+
+  const tabTap = document.getElementById("tab-tap");
+  const tabLeaderboard = document.getElementById("tab-leaderboard");
+  const tabAdmin = document.getElementById("tab-admin");
+
+  if (tabTap) {
+    tabTap.addEventListener("click", () => showSection("tap"));
+    console.log("✅ Tab Tap listener qo'shildi");
+  } else {
+    console.error("❌ tab-tap elementi topilmadi");
+  }
+
+  if (tabLeaderboard) {
+    tabLeaderboard.addEventListener("click", async () => { 
+      showSection("leaderboard");
+      setTimeout(() => {
+        showLeaderboard("coins");
+      }, 200);
+    });
+    console.log("✅ Tab Leaderboard listener qo'shildi");
+  } else {
+    console.error("❌ tab-leaderboard elementi topilmadi");
+  }
+
+  if (tabAdmin) {
+    tabAdmin.addEventListener("click", async () => { 
+      showSection("admin");
+      await displayTasks();
+    });
+    console.log("✅ Tab Admin listener qo'shildi");
+  } else {
+    console.error("❌ tab-admin elementi topilmadi");
+  }
+
+  const tapButton = document.getElementById("tapButton");
+  if (tapButton) {
+    tapButton.addEventListener("click", tapCoin);
+    console.log("✅ Tap button listener qo'shildi");
+  } else {
+    console.error("❌ tapButton elementi topilmadi");
+  }
+
+  const btnCoins = document.getElementById("coinsLeaderboard");
+  const btnReferrals = document.getElementById("referralsLeaderboard");
+
+  if (btnCoins) {
+    btnCoins.addEventListener("click", () => showLeaderboard("coins"));
+    console.log("✅ Coins button listener qo'shildi");
+  } else {
+    console.error("❌ coinsLeaderboard elementi topilmadi");
+  }
+
+  if (btnReferrals) {
+    btnReferrals.addEventListener("click", () => showLeaderboard("referrals"));
+    console.log("✅ Referrals button listener qo'shildi");
+  } else {
+    console.error("❌ referralsLeaderboard elementi topilmadi");
+  }
+
+  const adminButtons = document.querySelectorAll("#adminSection button[data-action]");
+  console.log("🔧 Admin buttons topildi:", adminButtons.length);
+
+  adminButtons.forEach(btn => {
+    const action = btn.dataset.action;
+    if (action) {
+      btn.addEventListener("click", () => adminAction(action));
+      console.log("✅ Admin button listener qo'shildi:", action);
+    }
+  });
+}
+
+// DOM yuklangandan keyin ishga tushirish
+document.addEventListener("DOMContentLoaded", function() {
+  console.log("🚀 DOM yuklandi, ilovani ishga tushiryapman...");
+  
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    @keyframes successPulse {
+      0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+      50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+  `;
+  document.head.appendChild(style);
+  
+  initializeFirebase();
+  setupEventListeners();
+  
+  console.log("✅ Ilova muvaffaqiyatli ishga tushdi");
 });
 
-/* ============
-   Expose functions globally for HTML buttons
-   ============ */
-window.completeTask = completeTask;
-window.adminAddTask = adminAddTask;
-window.adminDeleteTask = adminDeleteTask;
-window.adminEditTask = adminEditTask;
-window.tapCoin = handleTap;
-window.showLeaderboard = startLeaderboardListener;
+// Global xato ishlov berish
+window.addEventListener('error', function(e) {
+  console.error('❌ Global xato:', e.error);
+  showError('Kutilmagan xato yuz berdi');
+});
+
+window.addEventListener('unhandledrejection', function(e) {
+  console.error('❌ Unhandled promise rejection:', e.reason);
+  showError('Ma\'lumotlarni yuklashda xato');
+  e.preventDefault();
+});
+
+window.addEventListener('beforeunload', function() {
+  clearAllListeners();
+  console.log("🔇 Barcha listenerlar tozalandi");
+});
