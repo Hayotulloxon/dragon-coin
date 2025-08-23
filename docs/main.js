@@ -27,7 +27,7 @@ const firebaseConfig = {
 let app, db, auth, currentUser = null;
 let isAdminUser = false;
 let listeners = { player: null, leaderboard: null, tasks: null };
-let tapLimit = 1000; // Daily tap limit (customize as needed)
+let tapLimit = 1000; // Daily tap limit as per HTML
 let currentTapsToday = 0;
 
 const $ = id => document.getElementById(id);
@@ -61,9 +61,11 @@ function initializeFirebase() {
       currentUser = null;
       detachAllListeners();
       showAdmin(false);
+      safeText("firebaseStatus", "🔴 Firebase ulandi, lekin foydalanuvchi yo'q");
       return;
     }
     currentUser = user;
+    safeText("firebaseStatus", "🟢 Firebase ulandi");
 
     // Get Telegram user info if available
     const tgUser = getTelegramUser();
@@ -90,6 +92,9 @@ function initializeFirebase() {
     if (isAdminUser) {
       try { await readGlobalTaskSettings(); } catch(e) { console.warn("Global settings read failed:", e); }
     }
+
+    // Update profile UI
+    updateProfileUI(playerUid, tgUser);
   });
 }
 
@@ -99,9 +104,15 @@ function initializeFirebase() {
 function getTelegramUser() {
   try {
     const tg = window.Telegram?.WebApp;
-    if (!tg) return null;
+    if (!tg) {
+      console.warn("⚠️ Telegram WebApp not available (running in browser).");
+      return null;
+    }
     const u = tg.initDataUnsafe?.user ?? null;
-    if (!u) return null;
+    if (!u) {
+      console.warn("⚠️ Telegram user info not provided inside WebApp.");
+      return null;
+    }
     return {
       id: u.id,
       first_name: u.first_name || null,
@@ -150,16 +161,23 @@ async function mergePlayers(oldUid, newUid) {
     const oldSnap = await get(oldRef);
     if (oldSnap.exists()) {
       const oldData = oldSnap.val();
-      await update(ref(db, `players/${newUid}`), {
-        coins: (oldData.coins || 0) + (await get(ref(db, `players/${newUid}/coins`))).val() || 0,
-        taps: (oldData.taps || 0) + (await get(ref(db, `players/${newUid}/taps`))).val() || 0,
-        // Merge other fields as needed
+      const newRef = ref(db, `players/${newUid}`);
+      const newSnap = await get(newRef);
+      const newData = newSnap.val() || {};
+      await update(newRef, {
+        coins: Math.max(oldData.coins || 0, newData.coins || 0),
+        taps: Math.max(oldData.taps || 0, newData.taps || 0),
+        level: Math.max(oldData.level || 1, newData.level || 1),
+        referrals: Math.max(oldData.referrals || 0, newData.referrals || 0),
+        tasksCompleted: { ...oldData.tasksCompleted, ...newData.tasksCompleted },
+        dailyTaps: { ...oldData.dailyTaps, ...newData.dailyTaps }
       });
       await remove(oldRef);
       console.log(`Merged player ${oldUid} into ${newUid}`);
     }
   } catch (e) {
     console.error("Merge players error:", e);
+    toast("Foydalanuvchilarni birlashtirishda xato: " + (e.message || e));
   }
 }
 
@@ -177,7 +195,7 @@ async function ensurePlayerDoc(uid) {
       level: 1,
       referrals: 0,
       createdAt: Date.now(),
-      dailyTaps: {} // For daily limits
+      dailyTaps: {}
     });
   }
 }
@@ -190,6 +208,7 @@ async function loadDailyTaps(uid) {
   const tapsRef = ref(db, `players/${uid}/dailyTaps/${today}`);
   const snap = await get(tapsRef);
   currentTapsToday = snap.val() || 0;
+  safeText("energyStatus", `${tapLimit - currentTapsToday}/${tapLimit}`);
 }
 
 /* ============
@@ -224,13 +243,23 @@ function listenPlayer(uid) {
     const data = snap.val() || {};
     safeText("balance", data.coins ?? 0);
     safeText("totalTaps", data.taps ?? 0);
+    safeText("level", data.level ?? 1);
+    safeText("referrals", data.referrals ?? 0);
     localStorage.setItem("coins", String(data.coins ?? 0));
     localStorage.setItem("taps", String(data.taps ?? 0));
+    localStorage.setItem("level", String(data.level ?? 1));
+    localStorage.setItem("referrals", String(data.referrals ?? 0));
     // Update daily taps
     const today = getTodayKey();
     currentTapsToday = data.dailyTaps?.[today] || 0;
+    safeText("energyStatus", `${tapLimit - currentTapsToday}/${tapLimit}`);
+    // Update profile UI
+    safeText("playerName", data.name || "Dragon Miner");
+    safeText("playerId", uid);
+    safeText("joinDate", new Date(data.createdAt).toLocaleDateString());
   }, err => {
     console.error("player listener error:", err);
+    toast("Foydalanuvchi ma'lumotlarini yuklashda xato: " + (err.message || err));
   });
 }
 
@@ -238,8 +267,11 @@ function listenPlayer(uid) {
    Tap (with daily limit and transaction)
    ============ */
 async function handleTap() {
-  if (!currentUser) return toast("Please wait until login completes");
-  if (currentTapsToday >= tapLimit) return toast("Daily tap limit reached!");
+  if (!currentUser) return toast("Iltimos, tizimga kirishni kuting");
+  if (currentTapsToday >= tapLimit) {
+    safeText("energyWarning", "⚠️ Energiya bo'sh! Energiya to'lishi uchun kutib turing.");
+    return toast("Kunlik bosish limiti tugadi!");
+  }
 
   const basePath = `players/${currentUser.uid}`;
   const coinsRef = ref(db, `${basePath}/coins`);
@@ -250,9 +282,11 @@ async function handleTap() {
     await runTransaction(tapsRef, cur => (cur || 0) + 1);
     await runTransaction(dailyTapsRef, cur => (cur || 0) + 1);
     currentTapsToday++;
+    safeText("energyStatus", `${tapLimit - currentTapsToday}/${tapLimit}`);
+    safeText("energyWarning", "");
   } catch (e) {
     console.error("tap transaction failed:", e);
-    toast("Tap failed: " + (e.message || e));
+    toast("Bosishda xato: " + (e.message || e));
   }
 }
 
@@ -266,7 +300,7 @@ function startTasksListener() {
     const target = "customTasksList";
     if (!snap.exists()) {
       console.log("No tasks found in globalCustomTasks");
-      return safeHTML(target, "<p style='color:#999'>No tasks</p>");
+      return safeHTML(target, "<p style='color:#999'>Vazifalar yo'q</p>");
     }
     const tasks = snap.val() || {};
     console.log("Tasks data:", tasks); // Debug
@@ -276,12 +310,12 @@ function startTasksListener() {
       html += `
         <div class="task" style="background:#222;padding:10px;border-radius:8px;margin:8px 0">
           <div style="font-weight:700">${esc(t.name)}</div>
-          <div style="opacity:.8">Reward: ${Number(t.reward)||0} 🪙</div>
-          <div style="margin-top:8px"><button data-task-id="${id}" data-reward="${Number(t.reward)||0}" class="btn-complete">Complete</button></div>
+          <div style="opacity:.8">Mukofot: ${Number(t.reward)||0} 🪙</div>
+          <div style="margin-top:8px"><button data-task-id="${id}" data-reward="${Number(t.reward)||0}" class="btn-complete">Bajarish</button></div>
         </div>
       `;
     });
-    safeHTML(target, html || "<p style='color:#999'>No tasks</p>");
+    safeHTML(target, html || "<p style='color:#999'>Vazifalar yo'q</p>");
 
     const wrap = $(target);
     if (wrap) {
@@ -295,7 +329,7 @@ function startTasksListener() {
     }
   }, err => {
     console.error("tasks listener error:", err);
-    toast("Failed to load tasks: " + (err.message || err));
+    toast("Vazifalarni yuklashda xato: " + (err.message || err));
   });
 }
 
@@ -303,19 +337,22 @@ function startTasksListener() {
    Complete task (with one-time completion check)
    ============ */
 async function completeTask(taskId, reward) {
-  if (!currentUser) return toast("Login first");
+  if (!currentUser) return toast("Iltimos, tizimga kirishni kuting");
   try {
     const completedRef = ref(db, `players/${currentUser.uid}/tasksCompleted/${taskId}`);
     const snap = await get(completedRef);
-    if (snap.exists()) return toast("Task already completed");
+    if (snap.exists()) return toast("Vazifa allaqachon bajarilgan");
     
     const coinsRef = ref(db, `players/${currentUser.uid}/coins`);
     await runTransaction(coinsRef, cur => (cur || 0) + (Number(reward) || 0));
     await set(completedRef, true); // Mark task as completed
-    toast(`Task completed: +${reward} 🪙`);
+    toast(`Vazifa bajarildi: +${reward} 🪙`);
+    // Update completed tasks count
+    const tasksSnap = await get(ref(db, `players/${currentUser.uid}/tasksCompleted`));
+    safeText("completedTasks", Object.keys(tasksSnap.val() || {}).length);
   } catch (e) {
     console.error("completeTask error:", e);
-    toast("Could not complete task: " + (e.message || e));
+    toast("Vazifani bajarishda xato: " + (e.message || e));
   }
 }
 
@@ -323,10 +360,10 @@ async function completeTask(taskId, reward) {
    Admin actions
    ============ */
 async function adminAddTask() {
-  if (!isAdminUser) return toast("Admin only");
-  const name = prompt("Task name:");
-  const reward = Number(prompt("Reward (coins):"));
-  if (!name || !Number.isFinite(reward) || reward <= 0 || reward > 50000) return toast("Invalid task or reward");
+  if (!isAdminUser) return toast("Faqat adminlar uchun");
+  const name = prompt("Vazifa nomi:");
+  const reward = Number(prompt("Mukofot (tangalar):"));
+  if (!name || !Number.isFinite(reward) || reward <= 0 || reward > 50000) return toast("Noto'g'ri vazifa yoki mukofot");
   try {
     const newRef = push(ref(db, "globalCustomTasks"));
     await set(newRef, {
@@ -336,46 +373,46 @@ async function adminAddTask() {
       createdAt: Date.now(),
       createdBy: currentUser.uid
     });
-    toast("Task added");
+    toast("Vazifa qo'shildi");
   } catch (e) {
     console.error("adminAddTask error:", e);
-    toast("Add task failed: " + (e.message || e));
+    toast("Vazifa qo'shishda xato: " + (e.message || e));
   }
 }
 
 async function adminDeleteTask() {
-  if (!isAdminUser) return toast("Admin only");
-  const id = prompt("Task ID to delete:");
+  if (!isAdminUser) return toast("Faqat adminlar uchun");
+  const id = prompt("O'chiriladigan vazifa ID si:");
   if (!id) return;
   try {
     await remove(ref(db, `globalCustomTasks/${id}`));
-    toast("Task deleted");
+    toast("Vazifa o'chirildi");
   } catch (e) {
     console.error("adminDeleteTask error:", e);
-    toast("Delete failed: " + (e.message || e));
+    toast("O'chirishda xato: " + (e.message || e));
   }
 }
 
 async function adminEditTask() {
-  if (!isAdminUser) return toast("Admin only");
-  const id = prompt("Task ID to edit:");
+  if (!isAdminUser) return toast("Faqat adminlar uchun");
+  const id = prompt("Tahrirlanadigan vazifa ID si:");
   if (!id) return;
   try {
     const s = await get(ref(db, `globalCustomTasks/${id}`));
-    if (!s.exists()) return toast("Task not found");
+    if (!s.exists()) return toast("Vazifa topilmadi");
     const cur = s.val();
-    const name = prompt("New name (leave blank to keep)", cur.name || "");
-    const rewardStr = prompt("New reward (leave blank to keep)", String(cur.reward || ""));
-    const status = prompt("New status (active/inactive/completed)", cur.status || "active");
+    const name = prompt("Yangi nom (o'zgarmaslik uchun bo'sh qoldiring)", cur.name || "");
+    const rewardStr = prompt("Yangi mukofot (o'zgarmaslik uchun bo'sh qoldiring)", String(cur.reward || ""));
+    const status = prompt("Yangi holat (active/inactive/completed)", cur.status || "active");
     const upd = { updatedAt: Date.now() };
     if (name) upd.name = name;
     if (rewardStr && Number.isFinite(Number(rewardStr)) && Number(rewardStr) > 0 && Number(rewardStr) <= 50000) upd.reward = Number(rewardStr);
     if (status && ["active", "inactive", "completed"].includes(status)) upd.status = status;
     await update(ref(db, `globalCustomTasks/${id}`), upd);
-    toast("Task updated");
+    toast("Vazifa yangilandi");
   } catch (e) {
     console.error("adminEditTask error:", e);
-    toast("Edit failed: " + (e.message || e));
+    toast("Tahrirlashda xato: " + (e.message || e));
   }
 }
 
@@ -387,18 +424,19 @@ function startLeaderboardListener(type = "coins") {
   const r = ref(db, "players");
   listeners.leaderboard = onValue(r, snap => {
     const target = "leaderboardList";
-    if (!snap.exists()) return safeHTML(target, "<p style='color:#999'>No players yet</p>");
+    if (!snap.exists()) return safeHTML(target, "<p style='color:#999'>O'yinchilar yo'q</p>");
     const data = snap.val() || {};
     console.log("Leaderboard data:", data); // Debug
     const seen = new Set();
     const players = Object.entries(data)
       .map(([id, p]) => ({ id, ...p }))
       .filter(p => {
-        if (seen.has(p.id)) {
-          console.warn(`Duplicate player ID detected: ${p.id}`); // Debug
+        const key = p.telegram?.id || p.id;
+        if (seen.has(key)) {
+          console.warn(`Duplicate player detected: ${key}`); // Debug
           return false;
         }
-        seen.add(p.id);
+        seen.add(key);
         return true;
       })
       .sort((a, b) => (b[type] || 0) - (a[type] || 0))
@@ -406,22 +444,77 @@ function startLeaderboardListener(type = "coins") {
 
     const html = players.map((p, i) => `
       <div style="padding:8px;border-bottom:1px solid #333;${p.id === currentUser?.uid ? 'background:#1f1f1f;color:#ffd700;' : ''}">
-        #${i+1} — ${esc(p.name || "Player")} — ${type === "coins" ? (p.coins||0) + " 🪙" : (p.referrals||0) + " 👥"}
+        #${i+1} — ${esc(p.name || "O'yinchi")} — ${type === "coins" ? (p.coins||0) + " 🪙" : (p.referrals||0) + " 👥"}
       </div>
     `).join("");
-    safeHTML(target, html || "<p style='color:#999'>No players yet</p>");
-  }, err => { console.error("leaderboard listen error:", err); });
+    safeHTML(target, html || "<p style='color:#999'>O'yinchilar yo'q</p>");
+
+    // Update player's rank
+    const rank = players.findIndex(p => p.id === currentUser?.uid) + 1;
+    safeText("playerRank", rank > 0 ? `#${rank}` : "#-");
+  }, err => {
+    console.error("leaderboard listen error:", err);
+    toast("Reyting jadvalini yuklashda xato: " + (err.message || err));
+  });
 }
 
 /* ============
    Read globalTaskSettings (admin only)
    ============ */
 async function readGlobalTaskSettings() {
+  if (!isAdminUser) return; // Skip if not admin to avoid permission denied
   try {
     const snap = await get(ref(db, "globalTaskSettings"));
     if (snap.exists()) console.log("GlobalTaskSettings:", snap.val());
   } catch (e) {
     console.error("readGlobalTaskSettings error:", e);
+    if (e.code === "PERMISSION_DENIED") {
+      console.warn("Skipping globalTaskSettings read: Not an admin");
+    } else {
+      toast("Global vazifa sozlamalarini yuklashda xato: " + (e.message || e));
+    }
+  }
+}
+
+/* ============
+   Update profile UI
+   ============ */
+async function updateProfileUI(uid, tgUser) {
+  try {
+    const snap = await get(ref(db, `players/${uid}`));
+    if (!snap.exists()) return;
+    const data = snap.val();
+    safeText("playerName", data.name || "Dragon Miner");
+    safeText("playerId", uid);
+    safeText("joinDate", new Date(data.createdAt).toLocaleDateString());
+    safeText("profileCoins", data.coins || 0);
+    safeText("profileLevel", data.level || 1);
+    safeText("profileTaps", data.taps || 0);
+    safeText("profileReferrals", data.referrals || 0);
+    safeText("tapPower", 1); // As per HTML
+    safeText("energyLimit", tapLimit);
+    safeText("completedTasks", Object.keys(data.tasksCompleted || {}).length);
+    safeText("referralIncome", data.referralIncome || 0);
+  } catch (e) {
+    console.error("updateProfileUI error:", e);
+    toast("Profilni yangilashda xato: " + (e.message || e));
+  }
+}
+
+/* ============
+   Referral system
+   ============ */
+async function handleReferral(referralId) {
+  if (!currentUser) return;
+  if (referralId && referralId !== currentUser.uid) {
+    const referrerRef = ref(db, `players/${referralId}`);
+    const snap = await get(referrerRef);
+    if (snap.exists()) {
+      await runTransaction(ref(db, `players/${referralId}/referrals`), cur => (cur || 0) + 1);
+      await runTransaction(ref(db, `players/${referralId}/coins`), cur => (cur || 0) + 500);
+      await update(ref(db, `players/${currentUser.uid}`), { referredBy: referralId });
+      toast("Referral qo'shildi: +500 DRC refererga!");
+    }
   }
 }
 
@@ -463,6 +556,15 @@ function bindUI() {
     });
   }
 
+  // Copy referral link
+  const copyLinkBtn = $("copyLink");
+  if (copyLinkBtn) {
+    copyLinkBtn.addEventListener("click", () => {
+      const link = `https://t.me/Dragon_coin_money_bot?start=ref_${currentUser?.uid || '123456'}`;
+      navigator.clipboard.writeText(link).then(() => toast("Link nusxalandi!"));
+    });
+  }
+
   // Restore cached UI quickly
   const cachedCoins = localStorage.getItem("coins");
   const cachedTaps = localStorage.getItem("taps");
@@ -474,27 +576,27 @@ function bindUI() {
    Extra admin helpers
    ============ */
 async function adminAddCoins() {
-  if (!isAdminUser) return toast("Admin only");
-  const uid = prompt("Target UID:");
-  const amount = Number(prompt("Amount:"));
-  if (!uid || !Number.isFinite(amount)) return toast("Invalid");
+  if (!isAdminUser) return toast("Faqat adminlar uchun");
+  const uid = prompt("Foydalanuvchi UID si:");
+  const amount = Number(prompt("Miqdori:"));
+  if (!uid || !Number.isFinite(amount)) return toast("Noto'g'ri ma'lumot");
   const r = ref(db, `players/${uid}/coins`);
   await runTransaction(r, cur => (cur || 0) + amount);
-  toast("Added");
+  toast("Tangalar qo'shildi");
 }
 
 async function adminResetPlayer() {
-  if (!isAdminUser) return toast("Admin only");
-  const uid = prompt("UID to reset:");
+  if (!isAdminUser) return toast("Faqat adminlar uchun");
+  const uid = prompt("Qayta boshlanadigan UID:");
   if (!uid) return;
   await update(ref(db, `players/${uid}`), { coins: 0, taps: 0, dailyTaps: null });
-  toast("Reset done");
+  toast("Foydalanuvchi qayta boshlandi");
 }
 
 async function adminViewTasks() {
-  if (!isAdminUser) return toast("Admin only");
+  if (!isAdminUser) return toast("Faqat adminlar uchun");
   const s = await get(ref(db, "globalCustomTasks"));
-  if (!s.exists()) return safeHTML("customTasksList", "<p>No tasks</p>");
+  if (!s.exists()) return safeHTML("customTasksList", "<p>Vazifalar yo'q</p>");
   const tasks = s.val() || {};
   let html = "";
   Object.entries(tasks).forEach(([id, t]) => {
@@ -509,6 +611,11 @@ async function adminViewTasks() {
 document.addEventListener("DOMContentLoaded", () => {
   bindUI();
   initializeFirebase();
+
+  // Check for referral in URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const refId = urlParams.get('start')?.replace('ref_', '');
+  if (refId) handleReferral(refId);
 });
 
 /* ============
