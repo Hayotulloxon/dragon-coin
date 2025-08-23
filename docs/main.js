@@ -146,7 +146,7 @@ async function findOrCreatePlayer(firebaseUid, tgUser) {
 }
 
 /* ============
-   Ensure player node exists (FIXED: no overwrite existing data)
+   Ensure player node exists (FIXED: preserve existing data completely)
    ============ */
 async function ensurePlayerDoc(uid) {
   try {
@@ -164,17 +164,37 @@ async function ensurePlayerDoc(uid) {
         dailyTaps: {}
       };
       await set(pRef, newPlayer);
-      console.log(`Created new player: ${uid}`);
+      console.log(`✅ Created new player: ${uid}`);
     } else {
-      console.log(`Player exists: ${uid}`);
-      // Ensure dailyTaps field exists
+      console.log(`✅ Player exists: ${uid}`);
       const currentData = snap.val();
-      if (!currentData.dailyTaps) {
-        await update(pRef, { dailyTaps: {} });
+      
+      // Only add missing fields without overwriting existing ones
+      const updates = {};
+      if (typeof currentData.dailyTaps === 'undefined') {
+        updates.dailyTaps = {};
+      }
+      if (typeof currentData.coins === 'undefined') {
+        updates.coins = 0;
+      }
+      if (typeof currentData.taps === 'undefined') {
+        updates.taps = 0;
+      }
+      if (typeof currentData.level === 'undefined') {
+        updates.level = 1;
+      }
+      if (typeof currentData.referrals === 'undefined') {
+        updates.referrals = 0;
+      }
+      
+      // Only update if there are missing fields
+      if (Object.keys(updates).length > 0) {
+        await update(pRef, updates);
+        console.log(`✅ Updated missing fields for player: ${uid}`, updates);
       }
     }
   } catch (e) {
-    console.error("Error ensuring player doc:", e);
+    console.error("❌ Error ensuring player doc:", e);
   }
 }
 
@@ -225,7 +245,7 @@ function showAdmin(flag) {
 }
 
 /* ============
-   Player real-time listener (FIXED: proper data handling)
+   Player real-time listener (FIXED: better persistence and caching)
    ============ */
 function listenPlayer(uid) {
   if (listeners.player) {
@@ -235,16 +255,28 @@ function listenPlayer(uid) {
   const r = ref(db, `players/${uid}`);
   listeners.player = onValue(r, snap => {
     if (!snap.exists()) {
-      console.warn(`Player data not found: ${uid}`);
+      console.warn(`❌ Player data not found: ${uid}`);
       return;
     }
     
     const data = snap.val() || {};
-    playerData = data; // Cache locally
+    playerData = { ...data }; // Deep copy to cache
     
-    // Update UI
+    // Update UI immediately
     safeText("balance", data.coins ?? 0);
     safeText("totalTaps", data.taps ?? 0);
+    
+    // Cache in localStorage for faster loading
+    try {
+      localStorage.setItem("playerData", JSON.stringify({
+        coins: data.coins ?? 0,
+        taps: data.taps ?? 0,
+        uid: uid,
+        timestamp: Date.now()
+      }));
+    } catch (e) {
+      console.warn("Failed to cache player data:", e);
+    }
     
     // Update daily taps count
     const today = getTodayKey();
@@ -258,15 +290,33 @@ function listenPlayer(uid) {
       if (currentTapsToday >= tapLimit) {
         tapBtn.disabled = true;
         tapBtn.textContent = "Limit tugadi";
+        tapBtn.style.background = "#666";
       } else {
         tapBtn.disabled = false;
-        tapBtn.textContent = "Tap!";
+        tapBtn.textContent = `Tap! (${remaining} qoldi)`;
+        tapBtn.style.background = "#4CAF50";
       }
     }
     
-    console.log(`Player data updated - Coins: ${data.coins}, Taps: ${data.taps}, Daily: ${currentTapsToday}`);
+    console.log(`✅ Player data updated - Coins: ${data.coins}, Taps: ${data.taps}, Daily: ${currentTapsToday}/${tapLimit}`);
   }, err => {
-    console.error("player listener error:", err);
+    console.error("❌ Player listener error:", err);
+    
+    // Try to load from cache if listener fails
+    try {
+      const cached = localStorage.getItem("playerData");
+      if (cached) {
+        const cachedData = JSON.parse(cached);
+        // Only use cache if it's recent (less than 5 minutes old)
+        if (Date.now() - cachedData.timestamp < 5 * 60 * 1000) {
+          safeText("balance", cachedData.coins);
+          safeText("totalTaps", cachedData.taps);
+          console.log("⚡ Using cached player data");
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to load cached data:", e);
+    }
   });
 }
 
@@ -551,7 +601,7 @@ function detachAllListeners() {
 }
 
 /* ============
-   UI binding + start
+   UI binding + start (FIXED: Load cached data immediately)
    ============ */
 function bindUI() {
   const tapBtn = $("tapButton");
@@ -588,6 +638,22 @@ function bindUI() {
           console.warn(`Unknown admin action: ${action}`);
       }
     });
+  }
+
+  // Load cached data immediately for faster UI response
+  try {
+    const cached = localStorage.getItem("playerData");
+    if (cached) {
+      const cachedData = JSON.parse(cached);
+      // Use cache if it's recent (less than 10 minutes old)
+      if (Date.now() - cachedData.timestamp < 10 * 60 * 1000) {
+        safeText("balance", cachedData.coins);
+        safeText("totalTaps", cachedData.taps);
+        console.log("⚡ Loaded cached UI data for faster startup");
+      }
+    }
+  } catch (e) {
+    console.warn("Failed to load cached UI data:", e);
   }
 }
 
